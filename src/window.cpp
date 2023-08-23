@@ -14,11 +14,20 @@
 #endif
 
 #include "window.h"
+#include "kb_input.h"
 
 #if defined(USE_WIN32)
 
-HINSTANCE Window::_hInstance = GetModuleHandleW(NULL);
+HINSTANCE Window::_hInstance = GetModuleHandle(NULL);
 
+/**
+ * @brief Main entry point for Win32 apps
+ * 
+ * @param hwnd 
+ * @param uMsg 
+ * @param wParam 
+ * @param lParam
+ */
 LRESULT CALLBACK Window::_wndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_CREATE: {
@@ -41,15 +50,42 @@ LRESULT CALLBACK Window::_wndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
 
             return 0;
         }
+
+        case WM_CHAR: {
+            if (IS_HIGH_SURROGATE(wParam)) {
+                // Utf-16 encoded character is 2 code units long, high code unit is being processed
+                KbInput::currentCharacter.type = KbInput::Utf16Type::TWO_CODE_UNITS;
+                KbInput::currentCharacter.bytes_4[0] = wParam;
+            }
+            else if (IS_LOW_SURROGATE(wParam)) {
+                // Utf-16 encoded character is 2 code units long, low code unit is being processed
+                KbInput::currentCharacter.bytes_4[1] = wParam;
+                KbInput::registerCharacter(KbInput::currentCharacter);
+            }
+            else {
+                // Utf-16 encoded character is 1 code unit long
+                KbInput::utf16_t c;
+                c.type = KbInput::Utf16Type::ONE_CODE_UNIT;
+                c.bytes_2 = wParam;
+                KbInput::registerCharacter(c);
+            }
+
+            break;
+        }
     }
 
-    return DefWindowProcW(hwnd, uMsg, wParam, lParam);
+    return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
+/**
+ * @brief Creates and initializes window
+ * 
+ * @throws runtime_error Error creating window
+ */
 void Window::init() {
     const wchar_t CLASS_NAME[] = L"KIO Window Class";
 
-    WNDCLASSEXW wc = {};
+    WNDCLASSEX wc = {};
     wc.cbSize = sizeof(WNDCLASSEX);
     wc.cbClsExtra = NULL;
     wc.cbWndExtra = NULL;
@@ -63,11 +99,11 @@ void Window::init() {
     wc.hInstance = Window::_hInstance;
     wc.lpfnWndProc = Window::_wndProc;
 
-    RegisterClassExW(&wc);
+    RegisterClassEx(&wc);
 
     // Create the window.
     this->_hwnd =
-        CreateWindowExW(0,                  // Optional window styles
+        CreateWindowEx(0,                  // Optional window styles
                        CLASS_NAME,          // Window class
                        L"kio",              // Window text
                        WS_OVERLAPPEDWINDOW, // Window style
@@ -86,22 +122,34 @@ void Window::init() {
     }
 }
 
+/**
+ * @brief Shows window
+ */
 void Window::show() {
     ShowWindow(this->_hwnd, SW_NORMAL);
 }
 
+/**
+ * @brief Hides window
+ */
 void Window::hide() {
     ShowWindow(this->_hwnd, SW_HIDE);
 }
 
+/**
+ * @brief Runs main loop of window
+ */
 void Window::mainLoop() {
     MSG msg = {};
     while (GetMessage(&msg, NULL, 0, 0) > 0) {
-        TranslateMessage(&msg);
+        TranslateMessage(&msg); // Generates WM_CHAR messages
         DispatchMessage(&msg);
     }
 }
 
+/**
+ * @brief Closes window
+ */
 void Window::close() {
     PostQuitMessage(0);
 }

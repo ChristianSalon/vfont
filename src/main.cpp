@@ -28,18 +28,19 @@ private:
 
     void initVulkan() {}
 
-    void mainLoop() {}
+    void createWindow() {
+        this->window = new Window;
+        this->window->init();
+        this->window->show();
+    }
+
+    void mainLoop() {
+        this->window->mainLoop();
+    }
 
     void cleanup() {
         delete this->window;
         this->window = nullptr;
-    }
-
-    void createWindow() {
-        this->window = new Window();
-        this->window->init();
-        this->window->show();
-        this->window->mainLoop();
     }
 };
 

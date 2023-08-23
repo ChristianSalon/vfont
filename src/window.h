@@ -5,7 +5,13 @@
 
 #pragma once
 
+#if defined(USE_WIN32)
+
 #include <windows.h>
+
+#elif defined(USE_X11)
+
+#endif
 
 class Window {
 

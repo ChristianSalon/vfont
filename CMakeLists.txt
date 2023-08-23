@@ -7,7 +7,7 @@ set(VFONT_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/vfont)
 
 # Add target platform definitions
 if(WIN32)
-	add_compile_definitions(USE_WIN32 _UNICODE)
+	add_compile_definitions(USE_WIN32 UNICODE)
 elseif(UNIX AND NOT APPLE)
 	add_compile_definitions(USE_X11)
 endif()
