@@ -9,10 +9,17 @@
 
 #include "kb_input.h"
 
-std::vector<uint32_t> KbInput::_input; /**< Buffer of unicode code points for user input */
+/**
+ * @brief Buffer of unicode code points for user input
+ */
+std::vector<uint32_t> KbInput::_input;
 
 #if defined(USE_WIN32)
 
+/**
+ * @brief UTF-16 encoded character, which is being proccessed.
+ * Used for handling WIN32 keyboard input
+ */
 KbInput::utf16_t KbInput::currentCharacter = {};
 
 #endif
@@ -45,6 +52,7 @@ void KbInput::registerCharacter(KbInput::utf8_t character) {
             break;
         }
     }
+    std::cout << std::dec;
 }
 
 /**
@@ -63,6 +71,7 @@ void KbInput::registerCharacter(KbInput::utf16_t character) {
     else {
         std::cout << character.bytes_4[0] << character.bytes_4[1] << std::endl;
     }
+    std::cout << std::dec;
 }
 
 /**
@@ -111,7 +120,7 @@ uint32_t KbInput::utf8ToCodePoint(KbInput::utf8_t character) {
         }
     }
 
-    throw std::runtime_error("Invalid UTF-8 character.");
+    throw std::runtime_error("Invalid UTF-8 character");
 }
 
 /**
@@ -147,7 +156,7 @@ KbInput::utf8_t KbInput::codePointToUtf8(uint32_t codePoint) {
         utf8Character.bytes_4[3] = (codePoint & 0x3F) + 0x80;           // byte4 = 0b10xxxxxx
     }
     else {
-        throw std::runtime_error("Invalid unicode code point.");
+        throw std::runtime_error("Invalid unicode code point");
     }
 
     return utf8Character;
@@ -216,7 +225,7 @@ KbInput::utf16_t KbInput::codePointToUtf16(uint32_t codePoint) {
         character.bytes_4[1] = (codePoint & 0x03FF) + 0xDC00;     // word2 = 0b110111xxxxxxxxxx
     }
     else {
-        throw std::runtime_error("Invalid unicode code point.");
+        throw std::runtime_error("Invalid unicode code point");
     }
 
     return character;

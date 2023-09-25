@@ -1,4 +1,5 @@
 build/
+out/
 doc/
 .editorconfig
 
@@ -48,6 +49,7 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 CMakeSettings.json
+CMakePresets.json
 
 # Visual Studio and VSCode
 .vs/

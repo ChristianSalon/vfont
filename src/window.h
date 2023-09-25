@@ -5,32 +5,78 @@
 
 #pragma once
 
+#include <string>
+
 #if defined(USE_WIN32)
 
 #include <windows.h>
 
 #elif defined(USE_X11)
 
+#include <X11/Xlib.h>
+
 #endif
 
-class Window {
+/**
+ * @class MainWindow
+ * 
+ * @brief Abstraction for handling platform specific window operations
+ */
+class MainWindow {
 
 public:
 
-    void init();
-
-    void show();
-    void hide();
-    void mainLoop();
-    void close();
+    static const int DEFAULT_WIDTH;
+    static const int DEFAULT_HEIGHT;
+    static const std::string DEFAULT_WINDOW_TITLE;
 
 private:
+
+    bool _isActive;
+    bool _resized;
+    int _width;
+    int _height;
+
+public:
+
+    MainWindow();
+    ~MainWindow();
+
+    void create();
+    void show();
+    void pollEvents();
+    void wait();
+
+    bool isActive();
+    bool isMinimized();
+
+    bool wasResized();
+    void resetResized();
+
+    int getWidth();
+    int getHeight();
+
+private:
+
+    void _setWidth(int width);
+    void _setHeight(int heigth);
 
 #if defined(USE_WIN32)
 
     HWND _hwnd;
-    static HINSTANCE _hInstance;
+    HINSTANCE _hInstance;
     static LRESULT CALLBACK _wndProc(HWND hwndMain, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+#elif defined(USE_X11)
+
+#endif
+
+public:
+
+#if defined(USE_WIN32)
+
+    HWND getHwmd();
+    HINSTANCE getHInstance();
 
 #elif defined(USE_X11)
 
