@@ -69,6 +69,12 @@ private:
 
 #elif defined(USE_X11)
 
+    Display *_display;
+    int _screen;
+    Window _window;
+    XIM _inputMethod;
+    XIC _inputContext;
+
 #endif
 
 public:

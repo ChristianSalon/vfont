@@ -204,6 +204,142 @@ HINSTANCE MainWindow::getHInstance() {
 
 #elif defined(USE_X11)
 
+/**
+ * @brief Creates and initializes window
+ */
+void MainWindow::create() {
+    this->_display = XOpenDisplay(NULL);
+    if (this->_display == NULL) {
+        throw std::runtime_error("Error creating X11 window");
+        return;
+    }
+
+    this->_screen = DefaultScreen(this->_display);
+    this->_window = XCreateWindow(
+        this->_display,
+        RootWindow(this->_display, this->_screen),
+        100, 100,
+        DEFAULT_WIDTH, DEFAULT_HEIGHT,
+        1,
+        CopyFromParent,
+        InputOutput,
+        CopyFromParent,
+        0,
+        NULL
+    );
+    XStoreName(this->_display, this->_window, title.c_str());
+    XSelectInput(this->_display, this->_window, StructureNotifyMask | KeyPressMask);
+
+    this->_inputMethod = XOpenIM(this->_display, NULL, NULL, NULL);
+    if (this->_inputMethod == NULL) {
+        throw std::runtime_error("Error creating X11 window");
+        return;
+    }
+
+    this->_inputContext = XCreateIC(this->_inputMethod, XNInputStyle, XIMPreeditNothing | XIMStatusNothing, XNClientWindow, this->_window, NULL);
+    if (this->_inputContext == NULL) {
+        throw std::runtime_error("Error creating X11 window");
+        return;
+    }
+
+    XSetICFocus(this->_inputContext);
+}
+
+/**
+ * @brief Runs main loop of window
+ */
+void MainWindow::pollEvents() {
+    XEvent ev;
+    XNextEvent(this->_display, &ev);
+
+    if (XFilterEvent(&ev, this->_window))
+        return;
+
+    switch (ev.type) {
+        case KeyPress: {
+            int maxBufferBytes = 4;
+            char buffer[4];
+            int nOfCodeUnits = 0;
+            KeySym codePoint = 0;
+            Status status = 0;
+            nOfCodeUnits = Xutf8LookupString(this->_inputContext, (XKeyPressedEvent *)&ev, buffer, maxBufferBytes, &codePoint, &status);
+                
+            if (status == XBufferOverflow) {
+                throw std::runtime_error("Error processing character");
+            }
+            else if (nOfCodeUnits != 0 && (status == XLookupKeySym || status == XLookupBoth)) {
+                KbInput::utf8_t character;
+                switch (nOfCodeUnits) {
+                    case 1: {
+                        character.type = KbInput::Utf8Type::ONE_CODE_UNIT;
+                        character.bytes_1 = buffer[0];
+
+                        break;
+                    }
+
+                    case 2: {
+                        character.type = KbInput::Utf8Type::TWO_CODE_UNITS;
+                        character.bytes_2[0] = buffer[0];
+                        character.bytes_2[1] = buffer[1];
+
+                        break;
+                    }
+
+                    case 3: {
+                        character.type = KbInput::Utf8Type::THREE_CODE_UNITS;
+                        character.bytes_3[0] = buffer[0];
+                        character.bytes_3[1] = buffer[1];
+                        character.bytes_3[2] = buffer[2];
+
+                        break;
+                    }
+                        
+                    case 4: {
+                        character.type = KbInput::Utf8Type::FOUR_CODE_UNITS;
+                        character.bytes_4[0] = buffer[0];
+                        character.bytes_4[1] = buffer[1];
+                        character.bytes_4[2] = buffer[2];
+                        character.bytes_4[3] = buffer[3];
+
+                        break;
+                    }
+
+                    default:
+                        throw std::runtime_error("Error processing character");
+                }
+
+                KbInput::registerCharacter(character);
+
+                break;
+            }
+
+            case ConfigureNotify: {
+                XConfigureEvent xce = ev.xconfigure;
+
+                if (xce.width != this->_width || xce.height != this->_height) {
+                    this->_resized = true;
+                    this->_width = xce.width;
+                    this->_height = xce.height;
+                }
+            }
+        }
+    }
+}
+
+/**
+ * @brief Show window after creation
+ */
+void MainWindow::show() {
+    XMapWindow(this->_display, this->_window);
+}
+
+/**
+ * @brief Wait for window events
+ */
+void MainWindow::wait() {
+    // TODO
+}
+
 #endif
 
 /**
