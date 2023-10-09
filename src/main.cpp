@@ -191,8 +191,8 @@ private:
         this->_window->show();
 
         while (this->_window->isActive()) {
-            this->_window->pollEvents();
             _drawFrame();
+            this->_window->pollEvents();
         }
 
         vkDeviceWaitIdle(this->_logicalDevice);
@@ -310,6 +310,15 @@ private:
         }
 
 #elif defined(USE_X11)
+
+        VkXlibSurfaceCreateInfoKHR surfaceCreateInfo{};
+        surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+        surfaceCreateInfo.dpy = this->_window->getDisplay();
+        surfaceCreateInfo.window = this->_window->getWindow();
+
+        if (vkCreateXlibSurfaceKHR(this->_instance, &surfaceCreateInfo, nullptr, &this->_surface) != VK_SUCCESS) {
+            throw std::runtime_error("Error creating X11 vulkan surface");
+        }
 
 #endif
 

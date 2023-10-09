@@ -205,6 +205,29 @@ HINSTANCE MainWindow::getHInstance() {
 #elif defined(USE_X11)
 
 /**
+ * @brief Sets window attributes to default values
+ */
+MainWindow::MainWindow() {
+    this->_display = NULL;
+    this->_inputMethod = NULL;
+    this->_inputContext = NULL;
+
+    this->_isActive = false;
+    this->_resized = false;
+    this->_width = DEFAULT_WIDTH;
+    this->_height = DEFAULT_HEIGHT;
+}
+
+/**
+ * @brief MainWindow destructor
+ */
+MainWindow::~MainWindow() {
+    XDestroyWindow(this->_display, this->_window);
+    // XCloseDisplay(this->_display);
+    this->_display = NULL;
+}
+
+/**
  * @brief Creates and initializes window
  */
 void MainWindow::create() {
@@ -213,6 +236,8 @@ void MainWindow::create() {
         throw std::runtime_error("Error creating X11 window");
         return;
     }
+
+    this->_wmDeleteMessage = XInternAtom(this->_display, "WM_DELETE_WINDOW", False);
 
     this->_screen = DefaultScreen(this->_display);
     this->_window = XCreateWindow(
@@ -227,8 +252,9 @@ void MainWindow::create() {
         0,
         NULL
     );
-    XStoreName(this->_display, this->_window, title.c_str());
-    XSelectInput(this->_display, this->_window, StructureNotifyMask | KeyPressMask);
+    XStoreName(this->_display, this->_window, this->DEFAULT_WINDOW_TITLE.c_str());
+    XSelectInput(this->_display, this->_window, StructureNotifyMask | ExposureMask | KeyPressMask);
+    XSetWMProtocols(this->_display, this->_window, &(this->_wmDeleteMessage), 1);
 
     this->_inputMethod = XOpenIM(this->_display, NULL, NULL, NULL);
     if (this->_inputMethod == NULL) {
@@ -256,6 +282,28 @@ void MainWindow::pollEvents() {
         return;
 
     switch (ev.type) {
+        case ConfigureNotify: {
+            XConfigureEvent xce = ev.xconfigure;
+
+            if (xce.width != this->_width || xce.height != this->_height) {
+                this->_resized = true;
+                this->_width = xce.width;
+                this->_height = xce.height;
+            }
+
+            break;
+        }
+
+        case ClientMessage: {
+            Atom protocol = ev.xclient.data.l[0];
+
+            if(protocol == this->_wmDeleteMessage) {
+                this->_isActive = false;
+            }
+
+            break;
+        }
+
         case KeyPress: {
             int maxBufferBytes = 4;
             char buffer[4];
@@ -312,16 +360,6 @@ void MainWindow::pollEvents() {
 
                 break;
             }
-
-            case ConfigureNotify: {
-                XConfigureEvent xce = ev.xconfigure;
-
-                if (xce.width != this->_width || xce.height != this->_height) {
-                    this->_resized = true;
-                    this->_width = xce.width;
-                    this->_height = xce.height;
-                }
-            }
         }
     }
 }
@@ -331,6 +369,7 @@ void MainWindow::pollEvents() {
  */
 void MainWindow::show() {
     XMapWindow(this->_display, this->_window);
+    this->_isActive = true;
 }
 
 /**
@@ -338,6 +377,18 @@ void MainWindow::show() {
  */
 void MainWindow::wait() {
     // TODO
+}
+
+Display* MainWindow::getDisplay() {
+    return this->_display;
+}
+
+int MainWindow::getScreen() {
+    return this->_screen;
+}
+
+Window MainWindow::getWindow() {
+    return this->_window;
 }
 
 #endif

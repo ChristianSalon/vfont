@@ -75,6 +75,8 @@ private:
     XIM _inputMethod;
     XIC _inputContext;
 
+    Atom _wmDeleteMessage;
+    
 #endif
 
 public:
@@ -85,6 +87,10 @@ public:
     HINSTANCE getHInstance();
 
 #elif defined(USE_X11)
+
+    Display* getDisplay();
+    int getScreen();
+    Window getWindow();
 
 #endif
 
