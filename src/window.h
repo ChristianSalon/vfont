@@ -15,6 +15,11 @@
 
 #include <X11/Xlib.h>
 
+#elif defined(USE_WAYLAND)
+
+#include "xdg-shell-client-protocol.h"
+#include "xdg-decoration-client-protocol.h"
+
 #endif
 
 /**
@@ -77,6 +82,36 @@ private:
 
     Atom _wmDeleteMessage;
     
+#elif defined(USE_WAYLAND)
+
+    bool _isMinimized;
+
+    wl_display *_display;
+    wl_registry *_registry;
+    wl_compositor *_compositor;
+    wl_surface *_surface;
+    wl_seat *_kbSeat;
+    wl_keyboard *_wlKeyboard;
+
+    xdg_wm_base *_xdgWmBase;
+    xdg_surface *_xdgSurface;
+    xdg_toplevel *_xdgToplevel;
+
+    zxdg_decoration_manager_v1 *_decorationManager;
+    zxdg_toplevel_decoration_v1 *_toplevelDecoration;
+
+    struct xkb_context *_xkbContext;
+    struct xkb_keymap *_xkbKeymap;
+    struct xkb_state *_xkbState;
+    struct xkb_compose_state *_xkbComposeState;
+     
+    static struct wl_registry_listener _registryListener;
+    static struct wl_seat_listener _kbSeatListener;
+    static struct wl_keyboard_listener _wlKeyboardListener;
+    static struct xdg_wm_base_listener _xdgWmBaseListener;
+    static struct xdg_surface_listener _xdgSurfaceListener;
+    static struct xdg_toplevel_listener _xdgToplevelListener;
+
 #endif
 
 public:
@@ -91,6 +126,13 @@ public:
     Display* getDisplay();
     int getScreen();
     Window getWindow();
+
+#elif defined(USE_WAYLAND)
+
+    wl_display* getDisplay();
+    wl_surface* getSurface();
+    wl_registry* getRegistry();
+    wl_compositor* getCompositor();
 
 #endif
 

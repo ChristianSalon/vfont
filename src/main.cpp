@@ -62,6 +62,8 @@ private:
         "VK_KHR_win32_surface"
 #elif defined(USE_X11)
         "VK_KHR_xlib_surface"
+#elif defined(USE_WAYLAND)
+        "VK_KHR_wayland_surface"
 #endif
 
     };
@@ -320,6 +322,17 @@ private:
             throw std::runtime_error("Error creating X11 vulkan surface");
         }
 
+#elif defined(USE_WAYLAND)
+
+        VkWaylandSurfaceCreateInfoKHR surfaceCreateInfo{};
+        surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
+        surfaceCreateInfo.display = this->_window->getDisplay();
+        surfaceCreateInfo.surface = this->_window->getSurface();
+
+        if (vkCreateWaylandSurfaceKHR(this->_instance, &surfaceCreateInfo, nullptr, &this->_surface) != VK_SUCCESS) {
+            throw std::runtime_error("Error creating Wayland vulkan surface");
+        }
+
 #endif
 
     }
@@ -421,7 +434,13 @@ private:
         }
 
         if (physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+
+#if defined(USE_WAYLAND)
+
+#else
             score += 100;
+#endif
+
         }
         else if (physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
             score += 10;
@@ -603,10 +622,10 @@ private:
      * @brief Creates a new swapchain when needed and destroys the previous one
      */
     void _recreateSwapChain() {
-        while (this->_window->isMinimized()) {
+        /* while (this->_window->isMinimized()) {
             this->_window->wait();
             this->_window->pollEvents();
-        }
+        } */
 
         vkDeviceWaitIdle(this->_logicalDevice);
         _cleanupSwapChain();

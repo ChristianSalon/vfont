@@ -12,8 +12,18 @@
 
 #elif defined(USE_X11)
 
-#include <X11/Xlib.h>
 #include <cstring>
+
+#include <X11/Xlib.h>
+
+#elif defined(USE_WAYLAND)
+
+#include <cstring>
+#include <unistd.h>
+#include <sys/mman.h>
+
+#include <xkbcommon/xkbcommon.h>
+#include <xkbcommon/xkbcommon-compose.h>
 
 #endif
 
@@ -202,72 +212,93 @@ HINSTANCE MainWindow::getHInstance() {
     return this->_hInstance;
 }
 
+/**
+ * @brief Checks if window is minimized
+ *
+ * @return True if window is minimized, else false
+ */
+bool MainWindow::isMinimized() {
+    return this->_width == 0 && this->_height == 0;
+}
+
 #elif defined(USE_X11)
 
 /**
  * @brief Sets window attributes to default values
  */
 MainWindow::MainWindow() {
-    this->_display = NULL;
-    this->_inputMethod = NULL;
-    this->_inputContext = NULL;
-
     this->_isActive = false;
     this->_resized = false;
     this->_width = DEFAULT_WIDTH;
     this->_height = DEFAULT_HEIGHT;
+
+    this->_display = nullptr;
+    this->_inputMethod = nullptr;
+    this->_inputContext = nullptr;
 }
 
 /**
  * @brief MainWindow destructor
  */
 MainWindow::~MainWindow() {
+    // Closes window
     XDestroyWindow(this->_display, this->_window);
-    // XCloseDisplay(this->_display);
-    this->_display = NULL;
+    this->_display = nullptr;
 }
 
 /**
  * @brief Creates and initializes window
  */
 void MainWindow::create() {
-    this->_display = XOpenDisplay(NULL);
-    if (this->_display == NULL) {
-        throw std::runtime_error("Error creating X11 window");
+    // Get current locale, and if not set, set it to default locale
+    // Locale is used for detecting key sequences
+    const char *locale = setlocale(LC_ALL, "");
+    if (!locale) {
+        locale = setlocale(LC_ALL, "en_US.UTF-8");
+    }
+    
+    // Open X11 display
+    this->_display = XOpenDisplay(nullptr);
+    if (this->_display == nullptr) {
+        throw std::runtime_error("Error opening X11 display");
         return;
     }
 
+    // Handle window close
     this->_wmDeleteMessage = XInternAtom(this->_display, "WM_DELETE_WINDOW", False);
 
+    // Create window
     this->_screen = DefaultScreen(this->_display);
     this->_window = XCreateWindow(
         this->_display,
         RootWindow(this->_display, this->_screen),
-        100, 100,
+        0, 0,
         DEFAULT_WIDTH, DEFAULT_HEIGHT,
         1,
         CopyFromParent,
         InputOutput,
         CopyFromParent,
         0,
-        NULL
+        nullptr
     );
     XStoreName(this->_display, this->_window, this->DEFAULT_WINDOW_TITLE.c_str());
     XSelectInput(this->_display, this->_window, StructureNotifyMask | ExposureMask | KeyPressMask);
     XSetWMProtocols(this->_display, this->_window, &(this->_wmDeleteMessage), 1);
 
-    this->_inputMethod = XOpenIM(this->_display, NULL, NULL, NULL);
-    if (this->_inputMethod == NULL) {
-        throw std::runtime_error("Error creating X11 window");
+    this->_inputMethod = XOpenIM(this->_display, nullptr, nullptr, nullptr);
+    if (this->_inputMethod == nullptr) {
+        throw std::runtime_error("Error creating X11 input method");
         return;
     }
 
-    this->_inputContext = XCreateIC(this->_inputMethod, XNInputStyle, XIMPreeditNothing | XIMStatusNothing, XNClientWindow, this->_window, NULL);
-    if (this->_inputContext == NULL) {
-        throw std::runtime_error("Error creating X11 window");
+    // Create input context for window
+    this->_inputContext = XCreateIC(this->_inputMethod, XNInputStyle, XIMPreeditNothing | XIMStatusNothing, XNClientWindow, this->_window, nullptr);
+    if (this->_inputContext == nullptr) {
+        throw std::runtime_error("Error creating X11 input context");
         return;
     }
 
+    // Set input focus to window
     XSetICFocus(this->_inputContext);
 }
 
@@ -286,6 +317,7 @@ void MainWindow::pollEvents() {
             XConfigureEvent xce = ev.xconfigure;
 
             if (xce.width != this->_width || xce.height != this->_height) {
+                // Handle window resize
                 this->_resized = true;
                 this->_width = xce.width;
                 this->_height = xce.height;
@@ -298,6 +330,7 @@ void MainWindow::pollEvents() {
             Atom protocol = ev.xclient.data.l[0];
 
             if(protocol == this->_wmDeleteMessage) {
+                // Window should close
                 this->_isActive = false;
             }
 
@@ -305,17 +338,16 @@ void MainWindow::pollEvents() {
         }
 
         case KeyPress: {
-            int maxBufferBytes = 4;
-            char buffer[4];
-            int nOfCodeUnits = 0;
-            KeySym codePoint = 0;
+            int maxBufferBytes = 8;
+            char buffer[maxBufferBytes];
+            int nOfCodeUnits = 0; // Size of utf-8 character in bytes
             Status status = 0;
-            nOfCodeUnits = Xutf8LookupString(this->_inputContext, (XKeyPressedEvent *)&ev, buffer, maxBufferBytes, &codePoint, &status);
+            nOfCodeUnits = Xutf8LookupString(this->_inputContext, (XKeyPressedEvent *)&ev, buffer, maxBufferBytes, nullptr, &status);
                 
             if (status == XBufferOverflow) {
                 throw std::runtime_error("Error processing character");
             }
-            else if (nOfCodeUnits != 0 && (status == XLookupKeySym || status == XLookupBoth)) {
+            else if (status == XLookupChars) {
                 KbInput::utf8_t character;
                 switch (nOfCodeUnits) {
                     case 1: {
@@ -379,16 +411,418 @@ void MainWindow::wait() {
     // TODO
 }
 
+/**
+ * @brief Checks if window is minimized
+ *
+ * @return True if window is minimized, else false
+ */
+bool MainWindow::isMinimized() {
+    return this->_width == 0 && this->_height == 0;
+}
+
+/**
+ * @brief Getter for x11 display
+ * 
+ * @returns Pointer to x11 Display
+ */
 Display* MainWindow::getDisplay() {
     return this->_display;
 }
 
+/**
+ * @brief Getter for x11 Screen
+ * 
+ * @returns x11 screen
+ */
 int MainWindow::getScreen() {
     return this->_screen;
 }
 
+/**
+ * @brief Getter for x11 window
+ * 
+ * @returns Pointer to x11 Window
+ */
 Window MainWindow::getWindow() {
     return this->_window;
+}
+
+#elif defined(USE_WAYLAND)
+
+/**
+ * @brief Wayland registry listener
+ */
+struct wl_registry_listener MainWindow::_registryListener = {
+    .global = [](void *data, struct wl_registry *registry, uint32_t name, const char *interface, uint32_t version) {
+        MainWindow *pThis = reinterpret_cast<MainWindow *>(data);
+
+        if (strcmp(interface, wl_compositor_interface.name) == 0) {
+            pThis->_compositor = static_cast<wl_compositor *>(wl_registry_bind(registry, name, &wl_compositor_interface, 1));
+        }
+        else if (strcmp(interface, xdg_wm_base_interface.name) == 0) {
+            pThis->_xdgWmBase = static_cast<xdg_wm_base *>(wl_registry_bind(registry, name, &xdg_wm_base_interface, 1));
+        }
+        else if(strcmp(interface, zxdg_decoration_manager_v1_interface.name) == 0) {
+            pThis->_decorationManager = static_cast<zxdg_decoration_manager_v1 *>(wl_registry_bind(registry, name, &zxdg_decoration_manager_v1_interface, 1));
+        }
+        else if (strcmp(interface, wl_seat_interface.name) == 0) {
+            pThis->_kbSeat = static_cast<wl_seat *>(wl_registry_bind(registry, name, &wl_seat_interface, 1));
+        }
+    }
+};
+
+/**
+ * @brief Wayland xdg-shell wm base listener
+ */
+struct xdg_wm_base_listener MainWindow::_xdgWmBaseListener = {
+    .ping = [](void *data, struct xdg_wm_base *xdgWmBase, uint32_t serial) {
+        xdg_wm_base_pong(xdgWmBase, serial);
+    }
+};
+
+/**
+ * @brief Wayland xdg-shell surface listener
+ */
+struct xdg_surface_listener MainWindow::_xdgSurfaceListener = {
+    .configure = [](void *data, struct xdg_surface *xdgSurface, uint32_t serial) {
+        MainWindow *pThis = reinterpret_cast<MainWindow *>(data);
+
+        xdg_surface_ack_configure(xdgSurface, serial);
+        wl_surface_commit(pThis->_surface);
+    }
+};
+
+/**
+ * @brief Wayland xdg-shell toplevel listener
+ */
+struct xdg_toplevel_listener MainWindow::_xdgToplevelListener = {
+    .configure = [](void *data, struct xdg_toplevel *xdgToplevel, int32_t width, int32_t height, struct wl_array *states) {
+        MainWindow *pThis = reinterpret_cast<MainWindow *>(data);
+
+        // Check if window is minimized
+        uint32_t *state;
+        bool isMinimized = true;
+        for(int i = 0; i < states->size; i++) {
+            state = (uint32_t *) ((char *) states->data + i * sizeof(uint32_t));
+            if(*state == XDG_TOPLEVEL_STATE_ACTIVATED) {
+                isMinimized = false;
+            }
+        }
+        pThis->_isMinimized = isMinimized;
+
+        if((width != 0 && height != 0) && (pThis->_width != width || pThis->_height != height)) {
+            // Update window dimensions
+            pThis->_setWidth(width);
+            pThis->_setHeight(height);
+            pThis->_resized = true;
+        }
+    },
+    .close = [](void *data, struct xdg_toplevel *xdgToplevel) {
+        MainWindow *pThis = reinterpret_cast<MainWindow *>(data);
+
+        // Window should be closed
+        pThis->_isActive = false;
+    }
+};
+
+/**
+ * @brief Wayland seat listener
+ */
+struct wl_seat_listener MainWindow::_kbSeatListener = {
+    .capabilities = [](void *data, struct wl_seat *seat, uint32_t capabilities) {
+        MainWindow *pThis = reinterpret_cast<MainWindow *>(data);
+
+        // Check if keyboard input is supported
+        if (capabilities & WL_SEAT_CAPABILITY_KEYBOARD) {
+            pThis->_wlKeyboard = wl_seat_get_keyboard(seat);
+            wl_keyboard_add_listener(pThis->_wlKeyboard, &(pThis->_wlKeyboardListener), pThis);
+        }
+    }
+};
+
+/**
+ * @brief Wayland keyboard listener
+ */
+struct wl_keyboard_listener MainWindow::_wlKeyboardListener = {
+    // Creates keymap file
+    // Describes the keyboard layout used by user
+    .keymap = [](void *data, struct wl_keyboard *wl_keyboard, uint32_t format, int32_t fd, uint32_t size) {
+        MainWindow *pThis = reinterpret_cast<MainWindow *>(data);
+
+        // Unref currently used xkb keymap
+        xkb_keymap_unref(pThis->_xkbKeymap);
+
+        // Create new xkb keymap
+        char *keymap_string = static_cast<char *>(mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, 0));
+        pThis->_xkbKeymap = xkb_keymap_new_from_string(pThis->_xkbContext, keymap_string, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS);
+        munmap(keymap_string, size);
+        close(fd);
+
+        // Update xkb state with new keymap
+        xkb_state_unref(pThis->_xkbState);
+        pThis->_xkbState = xkb_state_new(pThis->_xkbKeymap);
+    },
+    .enter = [](void *data, struct wl_keyboard *wl_keyboard, uint32_t serial, struct wl_surface *surface, struct wl_array *keys) {},
+    .leave = [](void *data, struct wl_keyboard *wl_keyboard, uint32_t serial, struct wl_surface *surface) {},
+    // Entered on key press
+    .key = [](void *data, struct wl_keyboard *wl_keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state) {
+        MainWindow *pThis = reinterpret_cast<MainWindow *>(data);
+
+        if (state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+            int maxBufferSize = 8;
+            char buffer[maxBufferSize];
+            int nOfCodeUnits = 0; // Size of utf-8 character in bytes
+            xkb_keysym_t keysym = xkb_state_key_get_one_sym(pThis->_xkbState, key + 8);
+            xkb_compose_state_feed(pThis->_xkbComposeState, keysym);
+
+            // Check if a valid key sequence is detected
+            // Valid key sequence is at least two key symbols long
+            // Key sequence does not include modifier keys (SHIFT, CAPS LOCK, ...)
+            if(xkb_compose_state_get_status(pThis->_xkbComposeState) == XKB_COMPOSE_COMPOSED) {
+                // Valid key sequence is detected
+                nOfCodeUnits = xkb_compose_state_get_utf8(pThis->_xkbComposeState, buffer, maxBufferSize);
+                xkb_compose_state_reset(pThis->_xkbComposeState);
+            }
+            else {
+                // Process current character
+                nOfCodeUnits = xkb_state_key_get_utf8(pThis->_xkbState, key + 8, buffer, maxBufferSize);
+            }
+
+            KbInput::utf8_t character;
+            switch (nOfCodeUnits) {
+                case 1: {
+                    character.type = KbInput::Utf8Type::ONE_CODE_UNIT;
+                    character.bytes_1 = buffer[0];
+
+                    break;
+                }
+
+                case 2: {
+                    character.type = KbInput::Utf8Type::TWO_CODE_UNITS;
+                    character.bytes_2[0] = buffer[0];
+                    character.bytes_2[1] = buffer[1];
+
+                    break;
+                }
+
+                case 3: {
+                    character.type = KbInput::Utf8Type::THREE_CODE_UNITS;
+                    character.bytes_3[0] = buffer[0];
+                    character.bytes_3[1] = buffer[1];
+                    character.bytes_3[2] = buffer[2];
+
+                    break;
+                }
+                    
+                case 4: {
+                    character.type = KbInput::Utf8Type::FOUR_CODE_UNITS;
+                    character.bytes_4[0] = buffer[0];
+                    character.bytes_4[1] = buffer[1];
+                    character.bytes_4[2] = buffer[2];
+                    character.bytes_4[3] = buffer[3];
+
+                    break;
+                }
+
+                default: {
+                    // Current key does not have an utf-8 value
+                    return;
+                }
+            }
+
+            KbInput::registerCharacter(character);
+        }
+    },
+    .modifiers = [](void *data, struct wl_keyboard *wl_keyboard, uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked, uint32_t group) {
+        MainWindow *pThis = reinterpret_cast<MainWindow *>(data);
+
+        // Notify xkb of changed modifiers keys (SHIFT, CAPS LOCK, ...)
+        xkb_state_update_mask(pThis->_xkbState, mods_depressed, mods_latched, mods_locked, 0, 0, group);
+    },
+    .repeat_info = [](void *data, struct wl_keyboard *wl_keyboard, int32_t rate, int32_t delay) {
+        MainWindow *pThis = reinterpret_cast<MainWindow *>(data);
+
+        // TODO
+    }
+};
+
+/**
+ * @brief Sets window attributes to default values
+ */
+MainWindow::MainWindow() {
+    this->_isActive = false;
+    this->_isMinimized = false;
+    this->_resized = false;
+    this->_width = DEFAULT_WIDTH;
+    this->_height = DEFAULT_HEIGHT;
+
+    this->_display = nullptr;
+    this->_registry = nullptr;
+    this->_compositor = nullptr;
+    this->_surface = nullptr;
+    this->_kbSeat = nullptr;
+    this->_wlKeyboard = nullptr;
+
+    this->_xkbContext = nullptr;
+    this->_xkbKeymap = nullptr;
+    this->_xkbState = nullptr;
+
+    this->_xdgWmBase = nullptr;
+    this->_xdgSurface = nullptr;
+    this->_xdgToplevel = nullptr;
+
+    this->_decorationManager = nullptr;
+    this->_toplevelDecoration = nullptr;
+}
+
+/**
+ * @brief MainWindow destructor
+ */
+MainWindow::~MainWindow() {
+    // Destroy xdg-shell and xdg decoration objects
+    zxdg_toplevel_decoration_v1_destroy(this->_toplevelDecoration);
+    xdg_toplevel_destroy(this->_xdgToplevel);
+    xdg_surface_destroy(this->_xdgSurface);
+    wl_surface_destroy(this->_surface);
+    xdg_wm_base_destroy(this->_xdgWmBase);
+
+    // Destroy keyboard input handling objects
+    xkb_state_unref(this->_xkbState);
+    xkb_keymap_unref(this->_xkbKeymap);
+    xkb_context_unref(this->_xkbContext);
+    wl_keyboard_destroy(this->_wlKeyboard);
+    wl_seat_destroy(this->_kbSeat);
+
+    // Destroy wayland objects
+    wl_compositor_destroy(this->_compositor);
+    wl_registry_destroy(this->_registry);
+    wl_display_disconnect(this->_display);
+}
+
+/**
+ * @brief Creates and initializes window
+ */
+void MainWindow::create() {
+    // Connect to wayland server
+    this->_display = wl_display_connect(nullptr);
+    if(this->_display == nullptr) {
+        throw std::runtime_error("Error connecting to Wayland server");
+    }
+
+    // Initialize wl_registry object and listener
+    this->_registry = wl_display_get_registry(this->_display);
+    wl_registry_add_listener(this->_registry, &(this->_registryListener), this);
+    wl_display_roundtrip(this->_display);
+
+    // Create objects for handling keyboard input
+    this->_xkbContext = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+    wl_seat_add_listener(this->_kbSeat, &(this->_kbSeatListener), this);
+    wl_display_roundtrip(this->_display);
+
+    // Get current locale, and if not set, set it to default locale
+    // Locale is used for detecting key sequences
+    const char *locale = setlocale(LC_CTYPE, nullptr);
+    if (!locale) {
+        locale = setlocale(LC_ALL, "en_US.UTF-8");
+    }
+
+    // Create table containing all possible key sequences defined by selected locale
+    xkb_compose_table *composeTable = xkb_compose_table_new_from_locale(this->_xkbContext, locale, XKB_COMPOSE_COMPILE_NO_FLAGS);
+    this->_xkbComposeState = xkb_compose_state_new(composeTable, XKB_COMPOSE_STATE_NO_FLAGS);
+
+    xdg_wm_base_add_listener(this->_xdgWmBase, &(this->_xdgWmBaseListener), nullptr);
+
+    // Initialize objects for creating a xdg-shell surface
+    this->_surface = wl_compositor_create_surface(this->_compositor);
+    this->_xdgSurface = xdg_wm_base_get_xdg_surface(this->_xdgWmBase, this->_surface);
+    xdg_surface_add_listener(this->_xdgSurface, &(this->_xdgSurfaceListener), this);
+
+    this->_xdgToplevel = xdg_surface_get_toplevel(this->_xdgSurface);
+
+    if(this->_decorationManager) {
+        // If xdg-shell decorations are available, initialize them
+        this->_toplevelDecoration = zxdg_decoration_manager_v1_get_toplevel_decoration(this->_decorationManager, this->_xdgToplevel);
+        zxdg_toplevel_decoration_v1_set_mode(this->_toplevelDecoration, ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
+    }
+
+    xdg_toplevel_add_listener(this->_xdgToplevel, &(this->_xdgToplevelListener), this);
+    xdg_toplevel_set_title(this->_xdgToplevel, DEFAULT_WINDOW_TITLE.c_str());
+
+    wl_surface_commit(this->_surface);
+    wl_display_flush(this->_display);
+}
+
+/**
+ * @brief Runs main loop of window
+ */
+void MainWindow::pollEvents() {
+    while(wl_display_prepare_read(this->_display) != 0) {
+        wl_display_dispatch_pending(this->_display);
+    }
+
+    wl_display_flush(this->_display);
+    wl_display_read_events(this->_display);
+    wl_display_dispatch_pending(this->_display);
+    wl_display_flush(this->_display);
+}
+
+/**
+ * @brief Show window after creation
+ */
+void MainWindow::show() {
+    this->_isActive = true;
+}
+
+/**
+ * @brief Wait for window events
+ */
+void MainWindow::wait() {
+    // TODO
+}
+
+/**
+ * @brief Checks if window is minimized
+ *
+ * @return True if window is minimized, else false
+ */
+bool MainWindow::isMinimized() {
+    return _isMinimized;
+}
+
+/**
+ * @brief Getter for wayland display
+ * 
+ * @returns Pointer to wl_display
+ */
+wl_display* MainWindow::getDisplay() {
+    return this->_display;
+}
+
+/**
+ * @brief Getter for wayland surface
+ * 
+ * @returns Pointer to wl_surface
+ */
+wl_surface* MainWindow::getSurface() {
+    return this->_surface;
+}
+
+/**
+ * @brief Getter for wayland registry
+ * 
+ * @returns Pointer to wl_registry
+ */
+wl_registry* MainWindow::getRegistry() {
+    return this->_registry;
+}
+
+/**
+ * @brief Getter for wayland compositor
+ * 
+ * @returns Pointer to wl_compositor
+ */
+wl_compositor* MainWindow::getCompositor() {
+    return this->_compositor;
 }
 
 #endif
@@ -419,15 +853,6 @@ void MainWindow::resetResized() {
 }
 
 /**
- * @brief Checks if window is minimized
- *
- * @return True if window is minimized, else false
- */
-bool MainWindow::isMinimized() {
-    return this->_width == 0 || this->_height == 0;
-}
-
-/**
  * @brief Getter for window width
  *
  * @return Window width
@@ -445,7 +870,6 @@ void MainWindow::_setWidth(int width) {
     }
 
     this->_width = width;
-    // std::cout << "Window width: " << this->_width << std::endl;
 }
 
 /**
@@ -466,5 +890,4 @@ void MainWindow::_setHeight(int height) {
     }
 
     this->_height = height;
-    // std::cout << "Window height: " << this->_height << std::endl;
 }
