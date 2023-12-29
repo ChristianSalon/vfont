@@ -31,8 +31,8 @@
 #include "kb_input.h"
 
 const std::string MainWindow::DEFAULT_WINDOW_TITLE = "kio";     /**< Default window title */
-const int MainWindow::DEFAULT_WIDTH = 1280;                     /**< Default window width */
-const int MainWindow::DEFAULT_HEIGHT = 780;                     /**< Default window height */
+const int MainWindow::DEFAULT_WIDTH = 512;                      /**< Default window width */
+const int MainWindow::DEFAULT_HEIGHT = 512;                     /**< Default window height */
 
 #if defined(USE_WIN32)
 

@@ -8,6 +8,7 @@
 #include <stdexcept>
 
 #include "kb_input.h"
+#include "text_renderer.h"
 
 /**
  * @brief Buffer of unicode code points for user input
@@ -36,23 +37,30 @@ void KbInput::registerCharacter(KbInput::utf8_t character) {
     std::cout << "UTF-8: Processing character U+" << std::hex << codePoint << ", 0x";
     switch (character.type) {
         case KbInput::Utf8Type::ONE_CODE_UNIT: {
-            std::cout << (uint32_t)character.bytes_1 << std::endl;
+            std::cout << (uint32_t)character.bytes_1 << ", ";
+            std::cout << static_cast<char>(character.bytes_1) << std::endl;
             break;
         }
         case KbInput::Utf8Type::TWO_CODE_UNITS: {
-            std::cout << (uint32_t)character.bytes_2[0] << (uint32_t)character.bytes_2[1] << std::endl;
+            std::cout << (uint32_t)character.bytes_2[0] << (uint32_t)character.bytes_2[1] << ", ";
+            std::cout << static_cast<char>(character.bytes_2[0]) << static_cast<char>(character.bytes_2[1]) << std::endl;
             break;
         }
         case KbInput::Utf8Type::THREE_CODE_UNITS: {
-            std::cout << (uint32_t)character.bytes_3[0] << (uint32_t)character.bytes_3[1] << (uint32_t)character.bytes_3[2] << std::endl;
+            std::cout << (uint32_t)character.bytes_3[0] << (uint32_t)character.bytes_3[1] << (uint32_t)character.bytes_3[2] << ", ";
+            std::cout << static_cast<char>(character.bytes_3[0]) << static_cast<char>(character.bytes_3[1]) << static_cast<char>(character.bytes_3[2]) << std::endl;
             break;
         }
         case KbInput::Utf8Type::FOUR_CODE_UNITS: {
-            std::cout << (uint32_t)character.bytes_4[0] << (uint32_t)character.bytes_4[1] << (uint32_t)character.bytes_4[2] << (uint32_t)character.bytes_4[3] << std::endl;
+            std::cout << (uint32_t)character.bytes_4[0] << (uint32_t)character.bytes_4[1] << (uint32_t)character.bytes_4[2] << (uint32_t)character.bytes_4[3] << ", ";
+            std::cout << static_cast<char>(character.bytes_4[0]) << static_cast<char>(character.bytes_4[1]) << static_cast<char>(character.bytes_4[2]) << static_cast<char>(character.bytes_4[3]) << std::endl;
             break;
         }
     }
     std::cout << std::dec;
+
+    TextRenderer &renderer = TextRenderer::getInstance();
+    renderer.renderGlyph(codePoint);
 }
 
 /**
@@ -72,6 +80,9 @@ void KbInput::registerCharacter(KbInput::utf16_t character) {
         std::cout << character.bytes_4[0] << character.bytes_4[1] << std::endl;
     }
     std::cout << std::dec;
+
+    TextRenderer &renderer = TextRenderer::getInstance();
+    renderer.renderGlyph(codePoint);
 }
 
 /**

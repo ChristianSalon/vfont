@@ -83,7 +83,16 @@ find_package(Vulkan REQUIRED COMPONENTS glslc)
 set(INCLUDES ${INCLUDES} ${Vulkan_INCLUDE_DIRS})
 set(LIBS ${LIBS} Vulkan::Vulkan)
 
+# Freetype initialization
+find_package(Freetype REQUIRED)
+set(INCLUDES ${INCLUDES} ${FREETYPE_INCLUDE_DIRS})
+set(LIBS ${LIBS} ${FREETYPE_LIBRARIES})
+
 add_compile_definitions(${DEFINES})
+
+# CDT library initialization
+add_subdirectory("libs/CDT" CDT)
+set(LIBS ${LIBS} CDT::CDT)
 
 add_subdirectory("src")
 add_subdirectory("libs/vfont")

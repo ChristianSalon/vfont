@@ -19,6 +19,9 @@
 #include <vulkan/vulkan.h>
 
 #include "window.h"
+#include "text_renderer.h"
+
+std::string DEFAULT_FONT_FILE = "arial.ttf";
 
 /**
  * @class App
@@ -82,7 +85,10 @@ private:
         "VK_LAYER_KHRONOS_validation"
     };
 
-    std::unique_ptr<MainWindow> _window;                    /**< Application window */
+    std::string _fontFilePath;
+
+    std::shared_ptr<MainWindow> _window;                    /**< Application window */
+    TextRenderer &_tr = TextRenderer::getInstance();        /**< Text Renderer */
 
     VkInstance _instance;                                   /**< Vulkan instance */
     VkSurfaceKHR _surface;                                  /**< Vulkan surface */
@@ -100,6 +106,8 @@ private:
     VkPipeline _graphicsPipeline;                           /**< Vulkan graphics pipeline */
     std::vector<VkFramebuffer> _framebuffers;               /**< Vulkan frame buffers */
     VkCommandPool _commandPool;                             /**< Vulkan command pool */
+    VkBuffer _vertexBuffer;                                 /**< Vulkan vertex buffer */
+    VkDeviceMemory _vertexBufferMemory;                     /**< Vulkan vertex buffer memory */
     std::vector<VkCommandBuffer> _commandBuffers;           /**< Vulkan command buffers */
     std::vector<VkSemaphore> _imageAvailableSemaphores;     /**< Semaphore to signal that an image was acquired from the swap chain */
     std::vector<VkSemaphore> _renderFinishedSemaphores;     /**< Semaphore to signal if vulkan finished rendering and can begin presenting */
@@ -110,7 +118,9 @@ public:
     /**
      * @brief Sets attributes to default values
      */
-    App() {
+    App(std::string fontFilePath) {
+        this->_fontFilePath = fontFilePath;
+
         this->_instance = nullptr;
         this->_surface = nullptr;
         this->_physicalDevice = nullptr;
@@ -124,6 +134,7 @@ public:
         this->_pipelineLayout = nullptr;
         this->_graphicsPipeline = nullptr;
         this->_commandPool = nullptr;
+        this->_vertexBuffer = nullptr;
     }
 
     /**
@@ -155,7 +166,19 @@ public:
     void run() {
         _createWindow();
         _initVulkan();
+
+        this->_tr.init(
+            this->_fontFilePath,
+            this->_window,
+            this->_physicalDevice,
+            this->_logicalDevice,
+            this->_commandPool,
+            this->_graphicsQueue
+        );
+        
         _mainLoop();
+
+        this->_tr.destroy();
     }
 
 private:
@@ -850,12 +873,15 @@ private:
         dynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
         dynamicStateCreateInfo.pDynamicStates = dynamicStates.data();
 
+        VkVertexInputBindingDescription vertexInputBindingDescription = TextRenderer::vertex_t::getVertexInutBindingDescription();
+        VkVertexInputAttributeDescription vertexInputAttributeDescription = TextRenderer::vertex_t::getVertexInputAttributeDescription();
+
         VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo{};
         vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        vertexInputStateCreateInfo.vertexBindingDescriptionCount = 0;
-        vertexInputStateCreateInfo.pVertexBindingDescriptions = nullptr;
-        vertexInputStateCreateInfo.vertexAttributeDescriptionCount = 0;
-        vertexInputStateCreateInfo.pVertexAttributeDescriptions = nullptr;
+        vertexInputStateCreateInfo.vertexBindingDescriptionCount = 1;
+        vertexInputStateCreateInfo.pVertexBindingDescriptions = &vertexInputBindingDescription;
+        vertexInputStateCreateInfo.vertexAttributeDescriptionCount = 1;
+        vertexInputStateCreateInfo.pVertexAttributeDescriptions = &vertexInputAttributeDescription;
 
         VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCreateInfo{};
         inputAssemblyStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -1034,7 +1060,15 @@ private:
         vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+        if(this->_tr.getVertexCount() > 0) {
+            VkBuffer vertexBuffers[] = { this->_tr.getVertexBuffer() };
+            VkDeviceSize offsets[] = { 0 };
+            vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+            vkCmdBindIndexBuffer(commandBuffer, this->_tr.getIndexBuffer(), 0, VK_INDEX_TYPE_UINT16);
+
+            vkCmdDrawIndexed(commandBuffer, this->_tr.getIndexCount(), 1, 0, 0, 0);
+        }
 
         vkCmdEndRenderPass(commandBuffer);
 
@@ -1137,11 +1171,19 @@ private:
 /**
  * @brief Entry point for app
  */
-int main() {
+int main(int argc, char **argv) {
     std::cout << "App started" << std::endl;
 
     try {
-        App app;
+        std::string filePathName;
+        if(argc < 2) {
+            filePathName = DEFAULT_FONT_FILE;
+        }
+        else {
+            filePathName = argv[1];
+        }
+
+        App app(static_cast<std::string>(filePathName));
         app.run();
     } catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
