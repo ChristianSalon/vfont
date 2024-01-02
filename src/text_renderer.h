@@ -97,12 +97,6 @@ public:
     VkBuffer getVertexBuffer();
     VkBuffer getIndexBuffer();
 
-    void setWindow(std::shared_ptr<MainWindow> window);
-    void setPhysicalDevice(VkPhysicalDevice physicalDevice);
-    void setLogicalDevice(VkDevice logicalDevice);
-    void setCommandPool(VkCommandPool commandPool);
-    void setGraphicsQueue(VkQueue graphicsQueue);
-
 private:
 
     TextRenderer();
@@ -117,6 +111,12 @@ private:
     void _createIndexBuffer();
     void _destroyBuffer(VkBuffer &buffer, VkDeviceMemory &bufferMemory);
     uint32_t _selectMemoryType(uint32_t memoryType, VkMemoryPropertyFlags properties);
+
+    void _setWindow(std::shared_ptr<MainWindow> window);
+    void _setPhysicalDevice(VkPhysicalDevice physicalDevice);
+    void _setLogicalDevice(VkDevice logicalDevice);
+    void _setCommandPool(VkCommandPool commandPool);
+    void _setGraphicsQueue(VkQueue graphicsQueue);
 
     TextRenderer(const TextRenderer &) = delete;
     TextRenderer &operator=(const TextRenderer &) = delete;

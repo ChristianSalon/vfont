@@ -252,9 +252,9 @@ MainWindow::~MainWindow() {
 void MainWindow::create() {
     // Get current locale, and if not set, set it to default locale
     // Locale is used for detecting key sequences
-    const char *locale = setlocale(LC_ALL, "");
+    const char *locale = setlocale(LC_CTYPE, nullptr);
     if (!locale) {
-        locale = setlocale(LC_ALL, "en_US.UTF-8");
+        locale = setlocale(LC_CTYPE, "en_US.UTF-8");
     }
     
     // Open X11 display
@@ -723,7 +723,7 @@ void MainWindow::create() {
     // Locale is used for detecting key sequences
     const char *locale = setlocale(LC_CTYPE, nullptr);
     if (!locale) {
-        locale = setlocale(LC_ALL, "en_US.UTF-8");
+        locale = setlocale(LC_CTYPE, "en_US.UTF-8");
     }
 
     // Create table containing all possible key sequences defined by selected locale

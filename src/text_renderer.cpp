@@ -137,11 +137,11 @@ FT_Outline_CubicToFunc TextRenderer::_cubicToFunc = [](const FT_Vector *control1
  * @param graphicsQueue Vulkan graphics queue
  */
 void TextRenderer::init(std::string fontFilePath, std::shared_ptr<MainWindow> window, VkPhysicalDevice physicalDevice, VkDevice logicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue) {
-    this->setWindow(window);
-    this->setPhysicalDevice(physicalDevice);
-    this->setLogicalDevice(logicalDevice);
-    this->setCommandPool(commandPool);
-    this->setGraphicsQueue(graphicsQueue);
+    this->_setWindow(window);
+    this->_setPhysicalDevice(physicalDevice);
+    this->_setLogicalDevice(logicalDevice);
+    this->_setCommandPool(commandPool);
+    this->_setGraphicsQueue(graphicsQueue);
 
     if(fontFilePath.empty()) {
         throw std::runtime_error("Path to .ttf file was not entered");
@@ -504,7 +504,7 @@ VkBuffer TextRenderer::getIndexBuffer() {
  * 
  * @param window Window object
  */
-void TextRenderer::setWindow(std::shared_ptr<MainWindow> window) {
+void TextRenderer::_setWindow(std::shared_ptr<MainWindow> window) {
     if(window == nullptr)
         throw std::runtime_error("Window is not initialized");
 
@@ -516,7 +516,7 @@ void TextRenderer::setWindow(std::shared_ptr<MainWindow> window) {
  * 
  * @param physicalDevice Vulkan physical device
  */
-void TextRenderer::setPhysicalDevice(VkPhysicalDevice physicalDevice) {
+void TextRenderer::_setPhysicalDevice(VkPhysicalDevice physicalDevice) {
     if(physicalDevice == nullptr)
         throw std::runtime_error("Vulkan physical device is not initialized");
 
@@ -528,7 +528,7 @@ void TextRenderer::setPhysicalDevice(VkPhysicalDevice physicalDevice) {
  * 
  * @param logicalDevice Vulkan logical device
  */
-void TextRenderer::setLogicalDevice(VkDevice logicalDevice) {
+void TextRenderer::_setLogicalDevice(VkDevice logicalDevice) {
     if(logicalDevice == nullptr)
         throw std::runtime_error("Vulkan logical device is not initialized");
         
@@ -540,7 +540,7 @@ void TextRenderer::setLogicalDevice(VkDevice logicalDevice) {
  * 
  * @param commandPool Vulkan command pool
  */
-void TextRenderer::setCommandPool(VkCommandPool commandPool) {
+void TextRenderer::_setCommandPool(VkCommandPool commandPool) {
     if(commandPool == nullptr)
         throw std::runtime_error("Vulkan command pool is not initialized");
 
@@ -552,7 +552,7 @@ void TextRenderer::setCommandPool(VkCommandPool commandPool) {
  * 
  * @param graphicsQueue Vulkan graphics queue
  */
-void TextRenderer::setGraphicsQueue(VkQueue graphicsQueue) {
+void TextRenderer::_setGraphicsQueue(VkQueue graphicsQueue) {
     if(graphicsQueue == nullptr)
         throw std::runtime_error("Vulkan graphics queue is not initialized");
 
