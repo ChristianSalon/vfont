@@ -258,7 +258,7 @@ MainWindow::~MainWindow() {
 void MainWindow::create() {
     // Get current locale, and if not set, set it to default locale
     // Locale is used for detecting key sequences
-    const char *locale = setlocale(LC_CTYPE, nullptr);
+    const char *locale = setlocale(LC_CTYPE, "");
     if (!locale) {
         locale = setlocale(LC_CTYPE, "en_US.UTF-8");
     }
