@@ -96,6 +96,11 @@ LRESULT CALLBACK MainWindow::_wndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARA
                 throw std::runtime_error("Error getting window data");
             }
 
+            // Window minimization
+            if (LOWORD(lParam) == 0 || HIWORD(lParam) == 0) {
+                break;
+            }
+
             pThis->_resized = true;
             pThis->_setWidth(LOWORD(lParam));
             pThis->_setHeight(HIWORD(lParam));
@@ -153,16 +158,17 @@ void MainWindow::create() {
     RegisterClassEx(&wc);
     
     this->_hwnd =
-        CreateWindowEx(0,                       // Optional window styles
-                       CLASS_NAME,              // Window class
-                       L"kio",                  // Window text
-                       WS_OVERLAPPEDWINDOW,     // Window style
-                       // Size and position
-                       CW_USEDEFAULT, CW_USEDEFAULT, DEFAULT_WIDTH, DEFAULT_HEIGHT,
-                       NULL,                    // Parent window
-                       NULL,                    // Menu
-                       MainWindow::_hInstance,  // Instance handle
-                       this                     // Additional application data
+        CreateWindowEx(
+            0,                       // Optional window styles
+            CLASS_NAME,              // Window class
+            L"kio",                  // Window text
+            WS_OVERLAPPEDWINDOW,     // Window style
+            // Size and position
+            CW_USEDEFAULT, CW_USEDEFAULT, DEFAULT_WIDTH, DEFAULT_HEIGHT,
+            NULL,                    // Parent window
+            NULL,                    // Menu
+            MainWindow::_hInstance,  // Instance handle
+            this                     // Additional application data
         );
 
     if (this->_hwnd == NULL) {

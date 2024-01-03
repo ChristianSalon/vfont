@@ -31,3 +31,8 @@ Required library is **xlib**.
 To explicitly build for Wayland, instead of `cmake ..` use `cmake .. -DUSE_WAYLAND`.
 
 Libraries required are **wayland**, **wayland-protocols** and **xkbcommon**.
+
+## Used libraries
+
+- [Freetype](https://www.freetype.org)
+- [CDT](https://github.com/artem-ogre/CDT)

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 project(kio VERSION 1.0)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/")
 
 set(VFONT_PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libs/vfont")
@@ -86,15 +86,20 @@ set(INCLUDES ${INCLUDES} ${Vulkan_INCLUDE_DIRS})
 set(LIBS ${LIBS} Vulkan::Vulkan)
 
 # Freetype initialization
-find_package(Freetype REQUIRED)
-set(INCLUDES ${INCLUDES} ${FREETYPE_INCLUDE_DIRS})
-set(LIBS ${LIBS} ${FREETYPE_LIBRARIES})
+set(FT_DISABLE_ZLIB ON CACHE BOOL "a" FORCE)
+set(FT_DISABLE_BZIP2 ON CACHE BOOL "a" FORCE)
+set(FT_DISABLE_PNG ON CACHE BOOL "a" FORCE)
+set(FT_DISABLE_HARFBUZZ ON CACHE BOOL "a" FORCE)
+set(FT_DISABLE_BROTLI ON CACHE BOOL "a" FORCE)
 
-add_compile_definitions(${DEFINES})
+add_subdirectory("libs/freetype")
+set(LIBS ${LIBS} freetype)
 
 # CDT library initialization
-add_subdirectory("libs/CDT" CDT)
+add_subdirectory("libs/CDT")
 set(LIBS ${LIBS} CDT::CDT)
+
+add_compile_definitions(${DEFINES})
 
 add_subdirectory("src")
 add_subdirectory("libs/vfont")
