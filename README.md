@@ -34,5 +34,8 @@ Libraries required are **wayland**, **wayland-protocols** and **xkbcommon**.
 
 ## Used libraries
 
+- [xkbcommon](https://xkbcommon.org/)
 - [Freetype](https://www.freetype.org)
 - [CDT](https://github.com/artem-ogre/CDT)
+
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
