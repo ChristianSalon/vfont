@@ -51,6 +51,7 @@ private:
         VkSurfaceCapabilitiesKHR surfaceCapabilities{};
         std::vector<VkSurfaceFormatKHR> surfaceFormats;
         std::vector<VkPresentModeKHR> presentModes;
+        VkCompositeAlphaFlagBitsKHR compositeAlphaMode;
     };
 
     const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -457,13 +458,7 @@ private:
         }
 
         if (physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-
-#if defined(USE_WAYLAND)
-
-#else
             score += 100;
-#endif
-
         }
         else if (physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
             score += 10;
@@ -549,8 +544,24 @@ private:
      */
     SwapChainSupportDetails _querySwapChainSupport(VkPhysicalDevice physicalDevice) {
         SwapChainSupportDetails details;
-
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, this->_surface, &details.surfaceCapabilities);
+
+        // Select composite alpha mode
+        if(details.surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR) {
+            details.compositeAlphaMode = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        }
+        else if(details.surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR) {
+            details.compositeAlphaMode = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
+        }
+        else if(details.surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR) {
+            details.compositeAlphaMode = VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR;
+        }
+        else if(details.surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR) {
+            details.compositeAlphaMode = VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR;
+        }
+        else {
+            throw std::runtime_error("No supported composite alpha mode for vulkan");
+        }
 
         uint32_t surfaceFormatCount;
         vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, this->_surface, &surfaceFormatCount, nullptr);
@@ -699,7 +710,7 @@ private:
         }
 
         swapChainCreateInfo.preTransform = swapChainSupport.surfaceCapabilities.currentTransform;
-        swapChainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        swapChainCreateInfo.compositeAlpha = swapChainSupport.compositeAlphaMode;
         swapChainCreateInfo.presentMode = presentMode;
         swapChainCreateInfo.clipped = true;
         swapChainCreateInfo.oldSwapchain = nullptr;
