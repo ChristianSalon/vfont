@@ -7,12 +7,16 @@
 
 #include <vector>
 #include <memory>
+#include <unordered_map>
 
 #include <vulkan/vulkan.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
 #include "window.h"
+#include "glyph.h"
+#include "character.h"
+#include "text_renderer_utils.h"
 
 /**
  * @class TextRenderer
@@ -23,51 +27,34 @@ class TextRenderer {
 
 public:
 
-    static const int LOD = 32; /**< Bezier curve level of detail */
+    static const uint32_t U_BACKSPACE = 0x00000008;
+    static const uint32_t U_ENTER = 0x0000000d;
+    static const uint32_t U_SPACE = 0x00000020;
 
-    /**
-     * @brief Represents a 2D vertex
-     */
-    typedef struct vertex {
-        float x;    /**< X coordinate of vertex */
-        float y;    /**< Y coordinate of vertex */
-
-        static VkVertexInputBindingDescription getVertexInutBindingDescription() {
-            VkVertexInputBindingDescription bindingDescription{};
-            bindingDescription.binding = 0;
-            bindingDescription.stride = sizeof(vertex);
-            bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-            return bindingDescription;
-        }
-
-        static VkVertexInputAttributeDescription getVertexInputAttributeDescription() {
-            VkVertexInputAttributeDescription attributeDescriptions{};
-            attributeDescriptions.binding = 0;
-            attributeDescriptions.location = 0;
-            attributeDescriptions.format = VK_FORMAT_R32G32_SFLOAT;
-            attributeDescriptions.offset = 0;
-
-            return attributeDescriptions;
-        }
-    } vertex_t;
-
-    /**
-     * @brief Represents an edge between two vertices
-     */
-    typedef struct edge {
-        uint16_t firstVertexIndex;  /**< First vertex index */
-        uint16_t secondVertexIndex; /**< Second vertex index */
-    } edge_t;
+    static const unsigned int LOD = 32; /**< Bezier curve level of detail */
+    static const unsigned int DEFAULT_FONT_SIZE = 64;
 
 private:
 
-    std::vector<vertex_t> _vertices;                /**< Character vertices */
-    std::vector<edge_t> _edges;                     /**< Character edges */
-    std::vector<uint16_t> _indices;                 /**< Character vertex indices */
+    std::vector<tr::vertex_t> _vertices;            /**< Character vertices */
+    std::vector<tr::edge_t> _edges;                 /**< Character edges */
+    std::vector<uint32_t> _indices;                 /**< Character vertex indices */
+
+    std::unordered_map<uint32_t, Glyph> _glyphInfo;
+    std::vector<Character> _characters;
+
+    unsigned int _fontSize;
+    bool _useKerning;
+    int _penX;
+    int _penY;
 
     FT_Library _ft;                                 /**< Freetype library */
     FT_Face _face;                                  /**< Freetype face */
+    Glyph _currentGlyph;
+    uint32_t _vertexId;
+    uint32_t _contourStartVertexId;
+    tr::vertex_t _lastVertex;
+    bool _isFirstContour;
     static FT_Outline_MoveToFunc _moveToFunc;
     static FT_Outline_LineToFunc _lineToFunc;
     static FT_Outline_ConicToFunc _conicToFunc;
@@ -87,11 +74,23 @@ private:
 public:
 
     static TextRenderer &getInstance();
-    void init(std::string fontFilePath, std::shared_ptr<MainWindow> window, VkPhysicalDevice physicalDevice, VkDevice logicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue);
+    void init(
+        unsigned int fontSize,
+        bool useKerning,
+        std::string fontFilePath,
+        std::shared_ptr<MainWindow> window,
+        VkPhysicalDevice physicalDevice,
+        VkDevice logicalDevice,
+        VkCommandPool commandPool,
+        VkQueue graphicsQueue
+    );
     void destroy();
 
     void renderGlyph(uint32_t codePoint);
+    void renderText(std::vector<uint32_t> codePoints);
+    void deleteGlyph();
 
+    std::vector<Character> getCharacters();
     uint32_t getVertexCount();
     uint32_t getIndexCount();
     VkBuffer getVertexBuffer();
@@ -102,8 +101,12 @@ private:
     TextRenderer();
     ~TextRenderer();
 
-    void _detailBezier(vertex_t startPoint, vertex_t controlPoint, vertex_t endPoint);
-    vertex_t _normalizeVertex(float x, float y);
+    void _detailBezier(tr::vertex_t startPoint, tr::vertex_t controlPoint, tr::vertex_t endPoint);
+    void _initializeGlyphInfo(int fontSize);
+
+    void _decomposeGlyph(uint32_t codePoint);
+    void _triangulate();
+    void _recreateBuffers();
 
     void _createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
     void _copyBuffer(VkBuffer sourceBuffer, VkBuffer destinationBuffer, VkDeviceSize size);

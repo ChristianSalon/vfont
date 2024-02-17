@@ -20,6 +20,7 @@
 
 #include "window.h"
 #include "text_renderer.h"
+#include "text_renderer_utils.h"
 
 std::string DEFAULT_FONT_FILE = "arial.ttf";
 
@@ -81,7 +82,7 @@ private:
     /**
      * @brief Selected vulkan validation layers
      */
-    const std::vector<const char*> validationLayers = {
+    const std::vector<const char *> validationLayers = {
         "VK_LAYER_KHRONOS_validation"
     };
 
@@ -143,7 +144,7 @@ public:
     ~App() {
         _cleanupSwapChain();
 
-        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             vkDestroySemaphore(this->_logicalDevice, this->_imageAvailableSemaphores[i], nullptr);
             vkDestroySemaphore(this->_logicalDevice, this->_renderFinishedSemaphores[i], nullptr);
             vkDestroyFence(this->_logicalDevice, this->_inFlightFences[i], nullptr);
@@ -168,6 +169,8 @@ public:
         _initVulkan();
 
         this->_tr.init(
+            64,
+            false,
             this->_fontFilePath,
             this->_window,
             this->_physicalDevice,
@@ -175,7 +178,7 @@ public:
             this->_commandPool,
             this->_graphicsQueue
         );
-        
+
         _mainLoop();
 
         this->_tr.destroy();
@@ -215,7 +218,7 @@ private:
     void _mainLoop() {
         this->_window->show();
 
-        while (this->_window->isActive()) {
+        while(this->_window->isActive()) {
             _drawFrame();
             this->_window->pollEvents();
         }
@@ -235,17 +238,17 @@ private:
         std::vector<VkExtensionProperties> availableExtensionsProperties(extensionCount);
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableExtensionsProperties.data());
 
-        for (const char *extension : extensions) {
+        for(const char *extension : extensions) {
             bool extensionFound = false;
 
-            for (const VkExtensionProperties &extensionProperties : availableExtensionsProperties) {
-                if (strcmp(extension, extensionProperties.extensionName) == 0) {
+            for(const VkExtensionProperties &extensionProperties : availableExtensionsProperties) {
+                if(strcmp(extension, extensionProperties.extensionName) == 0) {
                     extensionFound = true;
                     break;
                 }
             }
 
-            if (!extensionFound) {
+            if(!extensionFound) {
                 return false;
             }
         }
@@ -265,17 +268,17 @@ private:
         std::vector<VkLayerProperties> supportedLayers(layerCount);
         vkEnumerateInstanceLayerProperties(&layerCount, supportedLayers.data());
 
-        for (const char *validationLayer : validationLayers) {
+        for(const char *validationLayer : validationLayers) {
             bool layerFound = false;
 
-            for (const VkLayerProperties &layerProperties : supportedLayers) {
-                if (strcmp(validationLayer, layerProperties.layerName) == 0) {
+            for(const VkLayerProperties &layerProperties : supportedLayers) {
+                if(strcmp(validationLayer, layerProperties.layerName) == 0) {
                     layerFound = true;
                     break;
                 }
             }
 
-            if (!layerFound) {
+            if(!layerFound) {
                 return false;
             }
         }
@@ -287,11 +290,11 @@ private:
      * @brief Creates vulkan instance
      */
     void _createInstance() {
-        if (!_areExtensionsSupported()) {
+        if(!_areExtensionsSupported()) {
             throw std::runtime_error("Selected vulkan extensions are not supported");
         }
 
-        if (!_areValidationLayersSupported()) {
+        if(!_areValidationLayersSupported()) {
             throw std::runtime_error("Selected vulkan validation layers are not supported");
         }
 
@@ -313,7 +316,7 @@ private:
         instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
         instanceCreateInfo.ppEnabledExtensionNames = extensions.data();
 
-        if (vkCreateInstance(&instanceCreateInfo, nullptr, &this->_instance) != VK_SUCCESS) {
+        if(vkCreateInstance(&instanceCreateInfo, nullptr, &this->_instance) != VK_SUCCESS) {
             throw std::runtime_error("Error creating vulkan instance");
         }
     }
@@ -330,7 +333,7 @@ private:
         surfaceCreateInfo.hwnd = this->_window->getHwmd();
         surfaceCreateInfo.hinstance = this->_window->getHInstance();
 
-        if (vkCreateWin32SurfaceKHR(this->_instance, &surfaceCreateInfo, nullptr, &this->_surface) != VK_SUCCESS) {
+        if(vkCreateWin32SurfaceKHR(this->_instance, &surfaceCreateInfo, nullptr, &this->_surface) != VK_SUCCESS) {
             throw std::runtime_error("Error creating WIN32 vulkan surface");
         }
 
@@ -341,7 +344,7 @@ private:
         surfaceCreateInfo.dpy = this->_window->getDisplay();
         surfaceCreateInfo.window = this->_window->getWindow();
 
-        if (vkCreateXlibSurfaceKHR(this->_instance, &surfaceCreateInfo, nullptr, &this->_surface) != VK_SUCCESS) {
+        if(vkCreateXlibSurfaceKHR(this->_instance, &surfaceCreateInfo, nullptr, &this->_surface) != VK_SUCCESS) {
             throw std::runtime_error("Error creating X11 vulkan surface");
         }
 
@@ -352,7 +355,7 @@ private:
         surfaceCreateInfo.display = this->_window->getDisplay();
         surfaceCreateInfo.surface = this->_window->getSurface();
 
-        if (vkCreateWaylandSurfaceKHR(this->_instance, &surfaceCreateInfo, nullptr, &this->_surface) != VK_SUCCESS) {
+        if(vkCreateWaylandSurfaceKHR(this->_instance, &surfaceCreateInfo, nullptr, &this->_surface) != VK_SUCCESS) {
             throw std::runtime_error("Error creating Wayland vulkan surface");
         }
 
@@ -374,17 +377,17 @@ private:
         std::vector<VkExtensionProperties> availableDeviceExtensionsProperties(deviceExtensionCount);
         vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &deviceExtensionCount, availableDeviceExtensionsProperties.data());
 
-        for (const char *requiredDeviceExtension : deviceExtensions) {
+        for(const char *requiredDeviceExtension : deviceExtensions) {
             bool deviceExtensionFound = false;
 
-            for (const VkExtensionProperties &availableDeviceExtensionProperties : availableDeviceExtensionsProperties) {
-                if (strcmp(requiredDeviceExtension, availableDeviceExtensionProperties.extensionName) == 0) {
+            for(const VkExtensionProperties &availableDeviceExtensionProperties : availableDeviceExtensionsProperties) {
+                if(strcmp(requiredDeviceExtension, availableDeviceExtensionProperties.extensionName) == 0) {
                     deviceExtensionFound = true;
                     break;
                 }
             }
 
-            if (!deviceExtensionFound) {
+            if(!deviceExtensionFound) {
                 return false;
             }
         }
@@ -408,18 +411,18 @@ private:
 
         QueueFamilyIndices indices;
         int i = 0;
-        for (const VkQueueFamilyProperties &queueFamilyProperties : queueFamilies) {
-            if (queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+        for(const VkQueueFamilyProperties &queueFamilyProperties : queueFamilies) {
+            if(queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
                 indices.graphicsFamily = i;
             }
 
             VkBool32 presentSupport = false;
             vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, this->_surface, &presentSupport);
-            if (presentSupport) {
+            if(presentSupport) {
                 indices.presentFamily = i;
             }
 
-            if (indices.isComplete()) {
+            if(indices.isComplete()) {
                 break;
             }
 
@@ -441,22 +444,22 @@ private:
         vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
         int score = 0;
 
-        if (!_areDeviceExtensionsSupported(physicalDevice)) {
+        if(!_areDeviceExtensionsSupported(physicalDevice)) {
             return score;
         }
 
         SwapChainSupportDetails swapChainSupport = _querySwapChainSupport(physicalDevice);
         bool isSwapChainSupported = !swapChainSupport.surfaceFormats.empty() && !swapChainSupport.presentModes.empty();
-        if (!isSwapChainSupported) {
+        if(!isSwapChainSupported) {
             return score;
         }
 
         QueueFamilyIndices indices = _findQueueFamilies(physicalDevice);
-        if (!indices.isComplete()) {
+        if(!indices.isComplete()) {
             return score;
         }
 
-        if (physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+        if(physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
 
 #if defined(USE_WAYLAND)
 
@@ -465,7 +468,7 @@ private:
 #endif
 
         }
-        else if (physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
+        else if(physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
             score += 10;
         }
 
@@ -479,7 +482,7 @@ private:
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(this->_instance, &deviceCount, nullptr);
 
-        if (deviceCount == 0) {
+        if(deviceCount == 0) {
             throw std::runtime_error("No GPU found which supports vulkan");
         }
 
@@ -487,13 +490,13 @@ private:
         vkEnumeratePhysicalDevices(this->_instance, &deviceCount, physicalDevices.data());
 
         std::multimap<int, VkPhysicalDevice> ratedPhysicalDevices;
-        for (const VkPhysicalDevice &physicalDevice : physicalDevices) {
+        for(const VkPhysicalDevice &physicalDevice : physicalDevices) {
             ratedPhysicalDevices.insert(
                 std::make_pair(_ratePhysicalDevice(physicalDevice), physicalDevice)
             );
         }
 
-        if (ratedPhysicalDevices.rbegin()->first > 0) {
+        if(ratedPhysicalDevices.rbegin()->first > 0) {
             this->_physicalDevice = ratedPhysicalDevices.rbegin()->second;
         }
         else {
@@ -511,7 +514,7 @@ private:
         std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
         float queuePriority = 1.0f;
-        for (uint32_t queueFamily : uniqueQueueFamilies) {
+        for(uint32_t queueFamily : uniqueQueueFamilies) {
             VkDeviceQueueCreateInfo deviceQueueCreateInfo{};
             deviceQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
             deviceQueueCreateInfo.queueFamilyIndex = queueFamily;
@@ -532,7 +535,7 @@ private:
         deviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
         deviceCreateInfo.ppEnabledLayerNames = validationLayers.data();
 
-        if (vkCreateDevice(this->_physicalDevice, &deviceCreateInfo, nullptr, &this->_logicalDevice) != VK_SUCCESS) {
+        if(vkCreateDevice(this->_physicalDevice, &deviceCreateInfo, nullptr, &this->_logicalDevice) != VK_SUCCESS) {
             throw std::runtime_error("Error creating vulkan logical device");
         }
 
@@ -554,14 +557,14 @@ private:
 
         uint32_t surfaceFormatCount;
         vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, this->_surface, &surfaceFormatCount, nullptr);
-        if (surfaceFormatCount != 0) {
+        if(surfaceFormatCount != 0) {
             details.surfaceFormats.resize(surfaceFormatCount);
             vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, this->_surface, &surfaceFormatCount, details.surfaceFormats.data());
         }
 
         uint32_t surfacePresentModeCount;
         vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, this->_surface, &surfacePresentModeCount, nullptr);
-        if (surfacePresentModeCount != 0) {
+        if(surfacePresentModeCount != 0) {
             details.presentModes.resize(surfacePresentModeCount);
             vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, this->_surface, &surfacePresentModeCount, details.presentModes.data());
         }
@@ -577,8 +580,8 @@ private:
      * @return Selected vulkan swap chain surface format
      */
     VkSurfaceFormatKHR _selectSwapChainSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableSurfaceFormats) {
-        for (const VkSurfaceFormatKHR &availableSurfaceFormat : availableSurfaceFormats) {
-            if (availableSurfaceFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableSurfaceFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+        for(const VkSurfaceFormatKHR &availableSurfaceFormat : availableSurfaceFormats) {
+            if(availableSurfaceFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableSurfaceFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
                 return availableSurfaceFormat;
             }
         }
@@ -594,8 +597,8 @@ private:
      * @return Selected vulkan present mode
      */
     VkPresentModeKHR _selectSwapChainPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) {
-        for (const VkPresentModeKHR &availablePresentMode : availablePresentModes) {
-            if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+        for(const VkPresentModeKHR &availablePresentMode : availablePresentModes) {
+            if(availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
                 return availablePresentMode;
             }
         }
@@ -611,7 +614,7 @@ private:
      * @return Vulkan 2D extent
      */
     VkExtent2D _selectSwapChainExtent(const VkSurfaceCapabilitiesKHR &surfaceCapabilities) {
-        if (surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
+        if(surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
             return surfaceCapabilities.currentExtent;
         }
 
@@ -630,11 +633,11 @@ private:
      * @brief Destroys vulkan swap chain, image views and frame buffers
      */
     void _cleanupSwapChain() {
-        for (VkFramebuffer swapChainFramebuffer : this->_framebuffers) {
+        for(VkFramebuffer swapChainFramebuffer : this->_framebuffers) {
             vkDestroyFramebuffer(this->_logicalDevice, swapChainFramebuffer, nullptr);
         }
 
-        for (const VkImageView &swapChainImageView : this->_swapChainImageViews) {
+        for(const VkImageView &swapChainImageView : this->_swapChainImageViews) {
             vkDestroyImageView(this->_logicalDevice, swapChainImageView, nullptr);
         }
 
@@ -668,7 +671,7 @@ private:
         VkExtent2D extent = _selectSwapChainExtent(swapChainSupport.surfaceCapabilities);
 
         uint32_t imageCount = swapChainSupport.surfaceCapabilities.minImageCount + 1;
-        if (
+        if(
             swapChainSupport.surfaceCapabilities.maxImageCount > 0 &&
             imageCount > swapChainSupport.surfaceCapabilities.maxImageCount
         ) {
@@ -687,7 +690,7 @@ private:
 
         QueueFamilyIndices indices = _findQueueFamilies(this->_physicalDevice);
         uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
-        if (indices.graphicsFamily != indices.presentFamily) {
+        if(indices.graphicsFamily != indices.presentFamily) {
             swapChainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
             swapChainCreateInfo.queueFamilyIndexCount = 2;
             swapChainCreateInfo.pQueueFamilyIndices = queueFamilyIndices;
@@ -704,7 +707,7 @@ private:
         swapChainCreateInfo.clipped = true;
         swapChainCreateInfo.oldSwapchain = nullptr;
 
-        if (vkCreateSwapchainKHR(this->_logicalDevice, &swapChainCreateInfo, nullptr, &this->_swapChain) != VK_SUCCESS) {
+        if(vkCreateSwapchainKHR(this->_logicalDevice, &swapChainCreateInfo, nullptr, &this->_swapChain) != VK_SUCCESS) {
             throw std::runtime_error("Error creating vulkan swap chain");
         }
 
@@ -723,7 +726,7 @@ private:
         this->_swapChainImageViews.resize(this->_swapChainImages.size());
 
         int i = 0;
-        for (const VkImage &swapChainImage : this->_swapChainImages) {
+        for(const VkImage &swapChainImage : this->_swapChainImages) {
             VkImageViewCreateInfo imageViewCreateInfo{};
             imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
             imageViewCreateInfo.image = swapChainImage;
@@ -739,7 +742,7 @@ private:
             imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
             imageViewCreateInfo.subresourceRange.layerCount = 1;
 
-            if (vkCreateImageView(this->_logicalDevice, &imageViewCreateInfo, nullptr, &this->_swapChainImageViews[i]) != VK_SUCCESS) {
+            if(vkCreateImageView(this->_logicalDevice, &imageViewCreateInfo, nullptr, &this->_swapChainImageViews[i]) != VK_SUCCESS) {
                 throw std::runtime_error("Error creating vulkan image views");
             }
 
@@ -787,7 +790,7 @@ private:
         renderPassCreateInfo.dependencyCount = 1;
         renderPassCreateInfo.pDependencies = &subpassDependency;
 
-        if (vkCreateRenderPass(this->_logicalDevice, &renderPassCreateInfo, nullptr, &this->_renderPass) != VK_SUCCESS) {
+        if(vkCreateRenderPass(this->_logicalDevice, &renderPassCreateInfo, nullptr, &this->_renderPass) != VK_SUCCESS) {
             throw std::runtime_error("Error creating vulkan render pass");
         }
     }
@@ -802,7 +805,7 @@ private:
     std::vector<char> _readFile(std::string fileName) {
         std::ifstream file(fileName, std::ios::ate | std::ios::binary);
 
-        if (!file.is_open()) {
+        if(!file.is_open()) {
             throw std::runtime_error("Error opening file " + fileName);
         }
 
@@ -831,7 +834,7 @@ private:
 
         VkShaderModule shaderModule;
 
-        if (vkCreateShaderModule(this->_logicalDevice, &shaderModuleCreateInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+        if(vkCreateShaderModule(this->_logicalDevice, &shaderModuleCreateInfo, nullptr, &shaderModule) != VK_SUCCESS) {
             throw std::runtime_error("Error creating vulkan shader module");
         }
 
@@ -873,8 +876,8 @@ private:
         dynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
         dynamicStateCreateInfo.pDynamicStates = dynamicStates.data();
 
-        VkVertexInputBindingDescription vertexInputBindingDescription = TextRenderer::vertex_t::getVertexInutBindingDescription();
-        VkVertexInputAttributeDescription vertexInputAttributeDescription = TextRenderer::vertex_t::getVertexInputAttributeDescription();
+        VkVertexInputBindingDescription vertexInputBindingDescription = tr::vertex_t::getVertexInutBindingDescription();
+        VkVertexInputAttributeDescription vertexInputAttributeDescription = tr::vertex_t::getVertexInputAttributeDescription();
 
         VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo{};
         vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -899,7 +902,7 @@ private:
         rasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
         rasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
         rasterizationStateCreateInfo.lineWidth = 1.0f;
-        rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+        rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_NONE;
         rasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
         rasterizationStateCreateInfo.depthBiasEnable = VK_FALSE;
 
@@ -924,14 +927,19 @@ private:
         colorBlendStateCreateInfo.attachmentCount = 1;
         colorBlendStateCreateInfo.pAttachments = &colorBlendAttachmentState;
 
+        VkPushConstantRange pushConstantRange{};
+        pushConstantRange.size = sizeof(tr::character_push_constants_t);
+        pushConstantRange.offset = 0;
+        pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
         VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
         pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutCreateInfo.setLayoutCount = 0;
         pipelineLayoutCreateInfo.pSetLayouts = nullptr;
-        pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
-        pipelineLayoutCreateInfo.pPushConstantRanges = nullptr;
+        pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
+        pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 
-        if (vkCreatePipelineLayout(this->_logicalDevice, &pipelineLayoutCreateInfo, nullptr, &this->_pipelineLayout) != VK_SUCCESS) {
+        if(vkCreatePipelineLayout(this->_logicalDevice, &pipelineLayoutCreateInfo, nullptr, &this->_pipelineLayout) != VK_SUCCESS) {
             throw std::runtime_error("Error creating vulkan pipeline layout");
         }
 
@@ -951,8 +959,8 @@ private:
         graphicsPipelineCreateInfo.renderPass = this->_renderPass;
         graphicsPipelineCreateInfo.subpass = 0;
 
-        if (vkCreateGraphicsPipelines(this->_logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr, &this->_graphicsPipeline) != VK_SUCCESS) {
-            throw std::runtime_error("Error creating vulkan graphics pipeline");    
+        if(vkCreateGraphicsPipelines(this->_logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr, &this->_graphicsPipeline) != VK_SUCCESS) {
+            throw std::runtime_error("Error creating vulkan graphics pipeline");
         }
 
         vkDestroyShaderModule(this->_logicalDevice, vertexShaderModule, nullptr);
@@ -965,7 +973,7 @@ private:
     void _createFramebuffers() {
         this->_framebuffers.resize(this->_swapChainImageViews.size());
 
-        for (size_t i = 0; i < this->_framebuffers.size(); i++) {
+        for(size_t i = 0; i < this->_framebuffers.size(); i++) {
             VkImageView attachments[] = { this->_swapChainImageViews[i] };
 
             VkFramebufferCreateInfo framebufferCreateInfo{};
@@ -977,7 +985,7 @@ private:
             framebufferCreateInfo.height = this->_swapChainExtent.height;
             framebufferCreateInfo.layers = 1;
 
-            if (vkCreateFramebuffer(this->_logicalDevice, &framebufferCreateInfo, nullptr, &this->_framebuffers[i]) != VK_SUCCESS) {
+            if(vkCreateFramebuffer(this->_logicalDevice, &framebufferCreateInfo, nullptr, &this->_framebuffers[i]) != VK_SUCCESS) {
                 throw std::runtime_error("Error creating vulkan frame buffer");
             }
         }
@@ -994,7 +1002,7 @@ private:
         commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
         commandPoolCreateInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
-        if (vkCreateCommandPool(this->_logicalDevice, &commandPoolCreateInfo, nullptr, &this->_commandPool) != VK_SUCCESS) {
+        if(vkCreateCommandPool(this->_logicalDevice, &commandPoolCreateInfo, nullptr, &this->_commandPool) != VK_SUCCESS) {
             throw std::runtime_error("Error creating vulkan command pool");
         }
     }
@@ -1011,7 +1019,7 @@ private:
         commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         commandBufferAllocateInfo.commandBufferCount = static_cast<uint32_t>(this->_commandBuffers.size());
 
-        if (vkAllocateCommandBuffers(this->_logicalDevice, &commandBufferAllocateInfo, this->_commandBuffers.data()) != VK_SUCCESS) {
+        if(vkAllocateCommandBuffers(this->_logicalDevice, &commandBufferAllocateInfo, this->_commandBuffers.data()) != VK_SUCCESS) {
             throw std::runtime_error("Error creating vulkan command buffer");
         }
     }
@@ -1026,7 +1034,7 @@ private:
         VkCommandBufferBeginInfo commandBufferBeginInfo{};
         commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-        if (vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo) != VK_SUCCESS) {
+        if(vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo) != VK_SUCCESS) {
             throw std::runtime_error("Error while recording vulkan command buffer");
         }
 
@@ -1063,16 +1071,28 @@ private:
         if(this->_tr.getVertexCount() > 0) {
             VkBuffer vertexBuffers[] = { this->_tr.getVertexBuffer() };
             VkDeviceSize offsets[] = { 0 };
+
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+            vkCmdBindIndexBuffer(commandBuffer, this->_tr.getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+        }
 
-            vkCmdBindIndexBuffer(commandBuffer, this->_tr.getIndexBuffer(), 0, VK_INDEX_TYPE_UINT16);
+        for(Character &character : this->_tr.getCharacters()) {
+            if(character.glyph.getVertexCount() > 0) {
+                tr::character_push_constants_t pushConstants = {
+                    .penX = character.getX(),
+                    .penY = character.getY(),
+                    .screenWidth = this->_window.get()->getWidth(),
+                    .screenHeight = this->_window.get()->getHeight(),
+                };
+                vkCmdPushConstants(commandBuffer, this->_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(tr::character_push_constants_t), &pushConstants);
 
-            vkCmdDrawIndexed(commandBuffer, this->_tr.getIndexCount(), 1, 0, 0, 0);
+                vkCmdDrawIndexed(commandBuffer, character.glyph.getIndexCount(), 1, character.getIndexBufferOffset(), 0, 0);
+            }
         }
 
         vkCmdEndRenderPass(commandBuffer);
 
-        if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+        if(vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
             throw std::runtime_error("Error recording vulkan command buffer");
         }
     }
@@ -1092,8 +1112,8 @@ private:
         fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            if (
+        for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            if(
                 vkCreateSemaphore(this->_logicalDevice, &semaphoreCreateInfo, nullptr, &this->_imageAvailableSemaphores[i]) != VK_SUCCESS ||
                 vkCreateSemaphore(this->_logicalDevice, &semaphoreCreateInfo, nullptr, &this->_renderFinishedSemaphores[i]) != VK_SUCCESS ||
                 vkCreateFence(this->_logicalDevice, &fenceCreateInfo, nullptr, &this->_inFlightFences[i]) != VK_SUCCESS
@@ -1113,11 +1133,11 @@ private:
 
         uint32_t imageIndex;
         VkResult result = vkAcquireNextImageKHR(this->_logicalDevice, this->_swapChain, UINT64_MAX, this->_imageAvailableSemaphores[currentFrameIndex], nullptr, &imageIndex);
-        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        if(result == VK_ERROR_OUT_OF_DATE_KHR) {
             _recreateSwapChain();
             return;
         }
-        else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+        else if(result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
             throw std::runtime_error("Error acquiring vulkan swap chain image");
         }
 
@@ -1140,7 +1160,7 @@ private:
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &this->_commandBuffers[currentFrameIndex];
 
-        if (vkQueueSubmit(this->_graphicsQueue, 1, &submitInfo, this->_inFlightFences[currentFrameIndex]) != VK_SUCCESS) {
+        if(vkQueueSubmit(this->_graphicsQueue, 1, &submitInfo, this->_inFlightFences[currentFrameIndex]) != VK_SUCCESS) {
             throw std::runtime_error("Error submiting draw command buffer");
         }
 
@@ -1155,12 +1175,12 @@ private:
         presentInfo.pImageIndices = &imageIndex;
 
         result = vkQueuePresentKHR(this->_presentQueue, &presentInfo);
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || this->_window->wasResized()) {
+        if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || this->_window->wasResized()) {
             this->_window->resetResized();
             _recreateSwapChain();
             return;
         }
-        else if (result != VK_SUCCESS) {
+        else if(result != VK_SUCCESS) {
             throw std::runtime_error("Error presenting vulkan swap chain image");
         }
 
@@ -1185,7 +1205,7 @@ int main(int argc, char **argv) {
 
         App app(static_cast<std::string>(filePathName));
         app.run();
-    } catch (const std::exception &e) {
+    } catch(const std::exception &e) {
         std::cerr << e.what() << std::endl;
         std::cerr << "App closing because of error" << std::endl;
 

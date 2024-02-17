@@ -1,6 +1,19 @@
 # Create kio executable
 add_executable(kio)
-set(KIO_SOURCES main.cpp window.h window.cpp kb_input.h kb_input.cpp text_renderer.h text_renderer.cpp)
+set(KIO_SOURCES
+    main.cpp
+    window.h
+    window.cpp
+    kb_input.h
+    kb_input.cpp
+    text_renderer.h
+    text_renderer.cpp
+    glyph.h
+    glyph.cpp
+    text_renderer_utils.h
+    character.h
+    character.cpp
+)
 
 # Setup xdg-shell and xdg-decoration on Wayland
 if("${PLATFORM}" STREQUAL "USE_WAYLAND")

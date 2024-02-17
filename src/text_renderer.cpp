@@ -13,25 +13,35 @@
 #include "CDT.h"
 
 #include "text_renderer.h"
+#include "text_renderer_utils.h"
 #include "window.h"
+#include "character.h"
 
-TextRenderer::vertex_t lastVertex = { 0, 0 };
-uint16_t vertexId = 0;
-uint16_t startVertexId = 0;
-
-/**
- * @brief Text renderer constructor
- */
+ /**
+  * @brief Text renderer constructor
+  */
 TextRenderer::TextRenderer() {
+    this->_fontSize = TextRenderer::DEFAULT_FONT_SIZE;
+    this->_useKerning = false;
+    this->_penX = 0;
+    this->_penY = TextRenderer::DEFAULT_FONT_SIZE;
+
+    this->_vertices = {};
+    this->_edges = {};
+    this->_indices = {};
+    this->_glyphInfo = {};
+
+    this->_vertexId = 0;
+    this->_contourStartVertexId = 0;
+    this->_lastVertex = { 0, 0 };
+    this->_isFirstContour = true;
+
     this->_physicalDevice = nullptr;
     this->_logicalDevice = nullptr;
     this->_vertexBuffer = nullptr;
     this->_vertexBufferMemory = nullptr;
     this->_indexBuffer = nullptr;
     this->_indexBufferMemory = nullptr;
-    this->_vertices = {};
-    this->_edges = {};
-    this->_indices = {};
 }
 
 /**
@@ -44,22 +54,24 @@ TextRenderer::~TextRenderer() {
 /**
  * @brief Freetype outline decomposition move_to function.
  * Used when new contour is detected.
- * 
+ *
  * @param to Contour starting vertex
  * @param user User defined data
- * 
+ *
  * @return Exit code
  */
 FT_Outline_MoveToFunc TextRenderer::_moveToFunc = [](const FT_Vector *to, void *user) {
     TextRenderer *pThis = reinterpret_cast<TextRenderer *>(user);
-    
-    lastVertex = pThis->_normalizeVertex(to->x, to->y);
 
-    if(vertexId != 0) {
+    pThis->_lastVertex = { static_cast<float>(to->x), static_cast<float>(to->y) };
+    if(!pThis->_isFirstContour) {
         // Makes the contour closed
-        pThis->_edges.at(pThis->_edges.size() - 1).secondVertexIndex = startVertexId;
+        pThis->_currentGlyph.getEdges().back().secondVertexIndex = pThis->_contourStartVertexId;
     }
-    startVertexId = vertexId;
+    else {
+        pThis->_isFirstContour = false;
+    }
+    pThis->_contourStartVertexId = pThis->_vertexId;
 
     return 0;
 };
@@ -67,18 +79,18 @@ FT_Outline_MoveToFunc TextRenderer::_moveToFunc = [](const FT_Vector *to, void *
 /**
  * @brief Freetype outline decomposition line_to function.
  * Used when between two points is a line segment.
- * 
+ *
  * @param to Line segment ending point
  * @param user User defined data
- * 
+ *
  * @return Exit code
  */
 FT_Outline_LineToFunc TextRenderer::_lineToFunc = [](const FT_Vector *to, void *user) {
     TextRenderer *pThis = reinterpret_cast<TextRenderer *>(user);
 
-    lastVertex = pThis->_normalizeVertex(to->x, to->y);
-    pThis->_vertices.push_back(lastVertex);
-    pThis->_edges.push_back({ vertexId, ++vertexId });
+    pThis->_lastVertex = { static_cast<float>(to->x), static_cast<float>(to->y) };
+    pThis->_currentGlyph.getVertices().push_back(pThis->_lastVertex);
+    pThis->_currentGlyph.getEdges().push_back({ pThis->_vertexId, ++(pThis->_vertexId) });
 
     return 0;
 };
@@ -86,26 +98,21 @@ FT_Outline_LineToFunc TextRenderer::_lineToFunc = [](const FT_Vector *to, void *
 /**
  * @brief Freetype outline decomposition conic_to function.
  * Used when there is a quadratic bezier curve.
- * 
+ *
  * @param control Bezier curve control point
  * @param to  Bezier curve ending point
  * @param user User defined data
- * 
+ *
  * @return Exit code
  */
 FT_Outline_ConicToFunc TextRenderer::_conicToFunc = [](const FT_Vector *control, const FT_Vector *to, void *user) {
     TextRenderer *pThis = reinterpret_cast<TextRenderer *>(user);
 
-    vertex_t toNormalized = pThis->_normalizeVertex(to->x, to->y);
-    vertex_t controlNormalized = pThis->_normalizeVertex(control->x, control->y);
-    
-    pThis->_detailBezier(
-        lastVertex,
-        controlNormalized,
-        toNormalized
-    );
+    tr::vertex_t controlPoint = { static_cast<float>(control->x), static_cast<float>(control->y) };
+    tr::vertex_t endPoint = { static_cast<float>(to->x), static_cast<float>(to->y) };
 
-    lastVertex = toNormalized;
+    pThis->_detailBezier(pThis->_lastVertex, controlPoint, endPoint);
+    pThis->_lastVertex = endPoint;
 
     return 0;
 };
@@ -113,12 +120,12 @@ FT_Outline_ConicToFunc TextRenderer::_conicToFunc = [](const FT_Vector *control,
 /**
  * @brief Freetype outline decomposition cubic_to function.
  * Used when there is a cubic bezier curve.
- * 
+ *
  * @param control1 First bezier curve control point
  * @param control2 Second bezier curve control point
  * @param to  Bezier curve ending point
  * @param user User defined data
- * 
+ *
  * @return Exit code
  */
 FT_Outline_CubicToFunc TextRenderer::_cubicToFunc = [](const FT_Vector *control1, const FT_Vector *control2, const FT_Vector *to, void *user) {
@@ -128,7 +135,9 @@ FT_Outline_CubicToFunc TextRenderer::_cubicToFunc = [](const FT_Vector *control1
 
 /**
  * @brief Initializes text renderer
- * 
+ *
+ * @param fontSize Rendered text size in pixels
+ * @param useKerning Indicates whether to use kerning
  * @param fontFilePath File path to .ttf file
  * @param window Window where to render
  * @param physicalDevice Vulkan physical device
@@ -136,7 +145,11 @@ FT_Outline_CubicToFunc TextRenderer::_cubicToFunc = [](const FT_Vector *control1
  * @param commandPool Vulkan command pool
  * @param graphicsQueue Vulkan graphics queue
  */
-void TextRenderer::init(std::string fontFilePath, std::shared_ptr<MainWindow> window, VkPhysicalDevice physicalDevice, VkDevice logicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue) {
+void TextRenderer::init(unsigned int fontSize, bool useKerning, std::string fontFilePath, std::shared_ptr<MainWindow> window, VkPhysicalDevice physicalDevice, VkDevice logicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue) {
+    this->_useKerning = useKerning;
+    this->_fontSize = fontSize;
+    this->_initializeGlyphInfo(this->_fontSize);
+
     this->_setWindow(window);
     this->_setPhysicalDevice(physicalDevice);
     this->_setLogicalDevice(logicalDevice);
@@ -155,7 +168,7 @@ void TextRenderer::init(std::string fontFilePath, std::shared_ptr<MainWindow> wi
         throw std::runtime_error("Error loading font face, check path to .ttf file");
     }
 
-    FT_Set_Pixel_Sizes(this->_face, 256, 0);
+    FT_Set_Pixel_Sizes(this->_face, this->_fontSize, 0);
 }
 
 /**
@@ -179,34 +192,120 @@ void TextRenderer::destroy() {
 
 /**
  * @brief Creates vertex and index buffer for rendering using Freetype and CDT
- * 
+ *
  * @param codePoint Unicode code point
  */
 void TextRenderer::renderGlyph(uint32_t codePoint) {
+    this->_vertexId = 0;
+    this->_contourStartVertexId = 0;
+    this->_lastVertex = { 0, 0 };
+    this->_isFirstContour = true;
+
+    if(!this->_glyphInfo.contains(codePoint)) {
+        this->_decomposeGlyph(codePoint);
+        this->_triangulate();
+
+        // Insert glyph info to map
+        this->_glyphInfo.insert({ codePoint, this->_currentGlyph });
+    }
+
+    if(codePoint == TextRenderer::U_ENTER) {
+        this->_penX = 0;
+        this->_penY += this->_fontSize;
+
+        this->_characters.push_back(Character(codePoint, this->_glyphInfo.at(codePoint), this->_penX, this->_penY));
+    }
+    else {
+        this->_characters.push_back(Character(codePoint, this->_glyphInfo.at(codePoint), this->_penX, this->_penY));
+
+        this->_penX += this->_characters.back().glyph.getAdvanceX();
+        this->_penY += this->_characters.back().glyph.getAdvanceY();
+    }
+
+    this->_recreateBuffers();
+}
+
+/**
+ * @brief Creates vertex and index buffer for rendering using Freetype and CDT
+ *
+ * @param codePoints Vector of unicode code points
+ */
+void TextRenderer::renderText(std::vector<uint32_t> codePoints) {
     this->_indices.clear();
     this->_vertices.clear();
     this->_edges.clear();
-    lastVertex = { 0, 0 };
-    vertexId = 0;
-    startVertexId = 0;
-    
+    this->_lastVertex = { 0, 0 };
+    this->_vertexId = 0;
+    this->_contourStartVertexId = 0;
+    this->_isFirstContour = true;
+    this->_penX = 0;
+    this->_penY = this->_fontSize;
+
+    for(uint32_t codePoint : codePoints) {
+        if(codePoint == TextRenderer::U_ENTER) {
+            this->_penX = 0;
+            this->_penY += this->_fontSize;
+        }
+        else {
+            this->_decomposeGlyph(codePoint);
+            this->_triangulate();
+            this->_isFirstContour = true;
+        }
+    }
+
+    this->_recreateBuffers();
+}
+
+/**
+ * @brief Deletes last inputed character and recreates vertex and index buffers
+ */
+void TextRenderer::deleteGlyph() {
+    if(this->_characters.size() == 0) {
+        return;
+    }
+    else if(this->_characters.size() == 1) {
+        this->_characters.pop_back();
+        this->_penX = 0;
+        this->_penY = this->_fontSize;
+
+        return;
+    }
+
+    if(this->_characters.back().getUnicodeCodePoint() == TextRenderer::U_ENTER) {
+        this->_characters.pop_back();
+
+        this->_penX = this->_characters.back().getX() + this->_characters.back().glyph.getAdvanceX();
+        this->_penY -= this->_fontSize;
+    }
+    else {
+        this->_characters.pop_back();
+
+        this->_penX = this->_characters.back().getX() + this->_characters.back().glyph.getAdvanceX();
+        this->_penY = this->_characters.back().getY();
+    }
+
+    this->_recreateBuffers();
+}
+
+/**
+ * @brief Decomposes a glyph into a set of points and edges
+ *
+ * @param codePoint Unicode code point of glyph
+ */
+void TextRenderer::_decomposeGlyph(uint32_t codePoint) {
     // Get glyph from .ttf file
-    FT_UInt glyph_index = FT_Get_Char_Index(this->_face, codePoint);
-    if(FT_Load_Glyph(this->_face, glyph_index, FT_LOAD_DEFAULT)) {
+    if(FT_Load_Char(this->_face, codePoint, FT_LOAD_DEFAULT)) {
         throw std::runtime_error("Error loading glyph");
     }
 
     FT_GlyphSlot slot = this->_face->glyph;
-    if(slot->outline.n_points == 0)
-        return;
-
-    for (int i = 0; i < slot->outline.n_points; i++) {
-        float scale = 64;
-        slot->outline.points[i].x /= scale;
-        slot->outline.points[i].y /= scale;
+    for(int i = 0; i < slot->outline.n_points; i++) {
+        slot->outline.points[i].x >>= 6;
+        slot->outline.points[i].y >>= 6;
     }
 
     // Decompose outlines to vertices and vertex indices
+    this->_currentGlyph = Glyph();
     FT_Outline_Funcs outlineFunctions = {
         .move_to = this->_moveToFunc,
         .line_to = this->_lineToFunc,
@@ -216,83 +315,98 @@ void TextRenderer::renderGlyph(uint32_t codePoint) {
         .delta = 0
     };
     FT_Outline_Decompose(&(slot->outline), &outlineFunctions, this);
-    this->_edges.at(this->_edges.size() - 1).secondVertexIndex = startVertexId;
-
-    // Reposition vertices to center of window
-    for (int i = 0; i < this->_vertices.size(); i++) {
-        this->_vertices.at(i).x += 1 - (this->_face->glyph->metrics.width / 64.f / this->_window.get()->getWidth()) - (this->_face->glyph->metrics.horiBearingX / 64.f / this->_window.get()->getWidth());
-        this->_vertices.at(i).y -= 1 - (this->_face->glyph->metrics.height / 64.f / this->_window.get()->getHeight());
+    if(this->_currentGlyph.getVertexCount() > 0) {
+        this->_currentGlyph.updateEdge(
+            this->_currentGlyph.getEdgeCount() - 1,
+            { this->_currentGlyph.getEdges().back().firstVertexIndex, this->_contourStartVertexId }
+        );
     }
 
-    // Triangulate glyph vertices
+    this->_currentGlyph.setAdvanceX(slot->advance.x >> 6);
+    this->_currentGlyph.setAdvanceY(slot->advance.y >> 6);
+}
+
+/**
+ * @brief Performs constrained delaunay triangulation on a decomposed glyph
+ */
+void TextRenderer::_triangulate() {
     // CDT uses Constrained Delaunay Triangulation algorithm
-    CDT::Triangulation<float> cdt;
-    cdt.insertVertices(
-        this->_vertices.begin(),
-        this->_vertices.end(),
-        [](const vertex_t &p) { return p.x; },
-        [](const vertex_t &p) { return p.y; }
+    CDT::Triangulation<float> cdt(
+        CDT::VertexInsertionOrder::Auto,
+        CDT::IntersectingConstraintEdges::TryResolve,
+        0.00001
     );
-    cdt.insertEdges(
+
+    /* CDT::RemoveDuplicatesAndRemapEdges(
+        this->_vertices,
+        [](const tr::vertex_t &p) -> float { return p.x; },
+        [](const tr::vertex_t &p) -> float { return p.y; },
         this->_edges.begin(),
         this->_edges.end(),
-        [](const edge_t &e) { return e.firstVertexIndex; },
-        [](const edge_t &e) { return e.secondVertexIndex; }
+        [](const tr::edge_t &e) -> CDT::VertInd { return e.firstVertexIndex; },
+        [](const tr::edge_t &e) -> CDT::VertInd { return e.secondVertexIndex; },
+        [](uint16_t i1, uint16_t i2) -> tr::edge_t { return { i1, i2 }; }
+    ); */
+
+    cdt.insertVertices(
+        this->_currentGlyph.getVertices().begin(),
+        this->_currentGlyph.getVertices().end(),
+        [](const tr::vertex_t &p) { return p.x; },
+        [](const tr::vertex_t &p) { return p.y; }
+    );
+    cdt.insertEdges(
+        this->_currentGlyph.getEdges().begin(),
+        this->_currentGlyph.getEdges().end(),
+        [](const tr::edge_t &e) { return e.firstVertexIndex; },
+        [](const tr::edge_t &e) { return e.secondVertexIndex; }
     );
     cdt.eraseOuterTrianglesAndHoles();
 
     // Create index buffer from triangulation
     CDT::TriangleVec cdtTriangles = cdt.triangles;
     for(int i = 0; i < cdtTriangles.size(); i++) {
-        this->_indices.push_back(cdtTriangles.at(i).vertices.at(0));
-        this->_indices.push_back(cdtTriangles.at(i).vertices.at(1));
-        this->_indices.push_back(cdtTriangles.at(i).vertices.at(2));
+        this->_currentGlyph.addIndex(cdtTriangles.at(i).vertices.at(0));
+        this->_currentGlyph.addIndex(cdtTriangles.at(i).vertices.at(1));
+        this->_currentGlyph.addIndex(cdtTriangles.at(i).vertices.at(2));
     }
-    
-    // Create vulkan buffers
+}
+
+/**
+ * @brief Destroys old vertex and index buffers and creates new ones used for rendering
+ */
+void TextRenderer::_recreateBuffers() {
+    // Destroy vulkan buffers
     this->_destroyBuffer(this->_indexBuffer, this->_indexBufferMemory);
     this->_destroyBuffer(this->_vertexBuffer, this->_vertexBufferMemory);
+
+    // Create vulkan buffers
+    // Always call _createVertexBuffer() before _createIndexBuffer()
     this->_createVertexBuffer();
     this->_createIndexBuffer();
 }
 
 /**
  * @brief Computes vertices of a quadratic bezier curve with specified level of detail
- * 
+ *
  * @param startPoint Bezier curve starting point
  * @param controlPoint Bezier curve control point
  * @param endPoint Bezier curve ending point
  */
-void TextRenderer::_detailBezier(vertex_t startPoint, vertex_t controlPoint, vertex_t endPoint) {
+void TextRenderer::_detailBezier(tr::vertex_t startPoint, tr::vertex_t controlPoint, tr::vertex_t endPoint) {
     for(int i = 1; i <= LOD; i++) {
         double t = i * (1.0 / LOD);
 
         float x = (1 - t) * (1 - t) * startPoint.x + 2 * (1 - t) * t * controlPoint.x + (t * t) * endPoint.x;
         float y = (1 - t) * (1 - t) * startPoint.y + 2 * (1 - t) * t * controlPoint.y + (t * t) * endPoint.y;
 
-        this->_vertices.push_back({x, y});
-        this->_edges.push_back({ vertexId, ++vertexId });
+        this->_currentGlyph.getVertices().push_back({ x, y });
+        this->_currentGlyph.getEdges().push_back({ this->_vertexId, ++(this->_vertexId) });
     }
 }
 
 /**
- * @brief Normalizes vertex to vulkan NDC
- * 
- * @param x X coordinate of vertex
- * @param y Y coordinate of vertex
- * 
- * @return Normalized vertex
- */
-TextRenderer::vertex_t TextRenderer::_normalizeVertex(float x, float y) {
-    x = 2.0f * (static_cast<float>(x) / this->_window.get()->getWidth()) - 1.0f;
-    y = 1.0f - 2.0f * (static_cast<float>(y) / this->_window.get()->getHeight());
-
-    return { x, y };
-}
-
-/**
  * @brief Selects the best possible memory to use for vertex buffer
- * 
+ *
  * @param memoryType Required memory type
  * @param properties Required memory properties
  */
@@ -300,7 +414,7 @@ uint32_t TextRenderer::_selectMemoryType(uint32_t memoryType, VkMemoryPropertyFl
     VkPhysicalDeviceMemoryProperties memoryProperties;
     vkGetPhysicalDeviceMemoryProperties(this->_physicalDevice, &memoryProperties);
 
-    for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++) {
+    for(uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++) {
         if((memoryType & (1 << i)) && (memoryProperties.memoryTypes[i].propertyFlags & properties) == properties) {
             return i;
         }
@@ -311,7 +425,7 @@ uint32_t TextRenderer::_selectMemoryType(uint32_t memoryType, VkMemoryPropertyFl
 
 /**
  * @brief Creates and allocates memory for vulkan buffer
- * 
+ *
  * @param size Size of buffer
  * @param usage Usage of buffer
  * @param properties Memory properties
@@ -346,7 +460,7 @@ void TextRenderer::_createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, Vk
 
 /**
  * @brief Copies vulkan buffer to another vulkan buffer
- * 
+ *
  * @param sourceBuffer Source vulkan buffer
  * @param destinationBuffer Destination vulkan buffer
  * @param bufferSize Vulkan buffer size
@@ -390,6 +504,27 @@ void TextRenderer::_copyBuffer(VkBuffer sourceBuffer, VkBuffer destinationBuffer
  * @brief Creates and allocates memory for vertex buffer
  */
 void TextRenderer::_createVertexBuffer() {
+    this->_vertices.clear();
+
+    uint32_t vertexCount = 0;
+    // Key: unicode code point, Value: vertex buffer offset
+    std::unordered_map<uint32_t, uint32_t> usedCodePoints;
+    for(Character &character : this->_characters) {
+        if(!usedCodePoints.contains(character.getUnicodeCodePoint())) {
+            usedCodePoints.insert({ character.getUnicodeCodePoint(), vertexCount });
+            vertexCount += character.glyph.getVertexCount();
+
+            this->_vertices.insert(this->_vertices.end(), character.glyph.getVertices().begin(), character.glyph.getVertices().end());
+        }
+
+        character.setVertexBufferOffset(usedCodePoints.at(character.getUnicodeCodePoint()));
+    }
+    std::cout << "Vertex count: " << this->_vertices.size() << ", " << this->getVertexCount() << std::endl;
+
+    if(vertexCount == 0) {
+        return;
+    }
+
     VkDeviceSize bufferSize = sizeof(this->_vertices.at(0)) * this->_vertices.size();
 
     // Staging buffer
@@ -414,6 +549,31 @@ void TextRenderer::_createVertexBuffer() {
  * @brief Creates and allocates memory for index buffer
  */
 void TextRenderer::_createIndexBuffer() {
+    this->_indices.clear();
+
+    uint32_t indexCount = 0;
+    // Key: unicode code point, Value: index buffer offset
+    std::unordered_map<uint32_t, uint32_t> usedCodePoints;
+    for(Character &character : this->_characters) {
+        if(!usedCodePoints.contains(character.getUnicodeCodePoint())) {
+            usedCodePoints.insert({ character.getUnicodeCodePoint(), indexCount });
+            this->_indices.insert(this->_indices.end(), character.glyph.getIndices().begin(), character.glyph.getIndices().end());
+
+            for(int i = indexCount; i < this->_indices.size(); i++) {
+                this->_indices.at(i) += character.getVertexBufferOffset();
+            }
+
+            indexCount += character.glyph.getIndexCount();
+        }
+
+        character.setIndexBufferOffset(usedCodePoints.at(character.getUnicodeCodePoint()));
+    }
+    std::cout << "Index count: " << this->_indices.size() << ", " << this->getIndexCount() << std::endl;
+
+    if(indexCount == 0) {
+        return;
+    }
+
     VkDeviceSize bufferSize = sizeof(this->_indices.at(0)) * this->_indices.size();
 
     // Staging buffer
@@ -436,7 +596,7 @@ void TextRenderer::_createIndexBuffer() {
 
 /**
  * @brief Destroys and deallocates memory for vulkan buffer
- * 
+ *
  * @param buffer Vulkan buffer
  * @param bufferMemory Vulkan buffer memory
  */
@@ -453,9 +613,17 @@ void TextRenderer::_destroyBuffer(VkBuffer &buffer, VkDeviceMemory &bufferMemory
     bufferMemory = nullptr;
 }
 
+void TextRenderer::_initializeGlyphInfo(int fontSize) {
+    this->_glyphInfo.clear();
+
+    this->_glyphInfo.insert({ TextRenderer::U_ENTER,  Glyph() });
+    this->_glyphInfo.at(TextRenderer::U_ENTER).setAdvanceX(0);
+    this->_glyphInfo.at(TextRenderer::U_ENTER).setAdvanceY(fontSize);
+}
+
 /**
  * @brief Getter for text renderer
- * 
+ *
  * @return Text renderer object
  */
 TextRenderer &TextRenderer::getInstance() {
@@ -464,8 +632,17 @@ TextRenderer &TextRenderer::getInstance() {
 }
 
 /**
+ * @brief Get a vector of characters, which are to be rendered
+ *
+ * @return Vector of renderable characters
+ */
+std::vector<Character> TextRenderer::getCharacters() {
+    return this->_characters;
+}
+
+/**
  * @brief Get vertex count in vertex buffer
- * 
+ *
  * @return Vertex count
  */
 uint32_t TextRenderer::getVertexCount() {
@@ -474,7 +651,7 @@ uint32_t TextRenderer::getVertexCount() {
 
 /**
  * @brief Get index count in index buffer
- * 
+ *
  * @return Index count
  */
 uint32_t TextRenderer::getIndexCount() {
@@ -483,7 +660,7 @@ uint32_t TextRenderer::getIndexCount() {
 
 /**
  * @brief Getter for vulkan vertex buffer
- * 
+ *
  * @return Vertex buffer
  */
 VkBuffer TextRenderer::getVertexBuffer() {
@@ -492,7 +669,7 @@ VkBuffer TextRenderer::getVertexBuffer() {
 
 /**
  * @brief Getter for vulkan index buffer
- * 
+ *
  * @return Index buffer
  */
 VkBuffer TextRenderer::getIndexBuffer() {
@@ -501,7 +678,7 @@ VkBuffer TextRenderer::getIndexBuffer() {
 
 /**
  * @brief Setter for window object
- * 
+ *
  * @param window Window object
  */
 void TextRenderer::_setWindow(std::shared_ptr<MainWindow> window) {
@@ -513,7 +690,7 @@ void TextRenderer::_setWindow(std::shared_ptr<MainWindow> window) {
 
 /**
  * @brief Setter for vulkan physical device
- * 
+ *
  * @param physicalDevice Vulkan physical device
  */
 void TextRenderer::_setPhysicalDevice(VkPhysicalDevice physicalDevice) {
@@ -525,19 +702,19 @@ void TextRenderer::_setPhysicalDevice(VkPhysicalDevice physicalDevice) {
 
 /**
  * @brief Setter for vulkan logical device
- * 
+ *
  * @param logicalDevice Vulkan logical device
  */
 void TextRenderer::_setLogicalDevice(VkDevice logicalDevice) {
     if(logicalDevice == nullptr)
         throw std::runtime_error("Vulkan logical device is not initialized");
-        
+
     this->_logicalDevice = logicalDevice;
 }
 
 /**
  * @brief Setter for vulkan command pool
- * 
+ *
  * @param commandPool Vulkan command pool
  */
 void TextRenderer::_setCommandPool(VkCommandPool commandPool) {
@@ -549,7 +726,7 @@ void TextRenderer::_setCommandPool(VkCommandPool commandPool) {
 
 /**
  * @brief Setter for vulkan graphics queue
- * 
+ *
  * @param graphicsQueue Vulkan graphics queue
  */
 void TextRenderer::_setGraphicsQueue(VkQueue graphicsQueue) {

@@ -70,7 +70,6 @@ void KbInput::registerCharacter(KbInput::utf8_t character) {
  */
 void KbInput::registerCharacter(KbInput::utf16_t character) {
     uint32_t codePoint = KbInput::utf16ToCodePoint(character);
-    _input.push_back(codePoint);
 
     std::cout << "UTF-16: Processing character U+" << std::hex << codePoint << ", 0x";
     if (character.type == KbInput::Utf16Type::ONE_CODE_UNIT) {
@@ -82,7 +81,16 @@ void KbInput::registerCharacter(KbInput::utf16_t character) {
     std::cout << std::dec;
 
     TextRenderer &renderer = TextRenderer::getInstance();
-    renderer.renderGlyph(codePoint);
+    if(codePoint == TextRenderer::U_BACKSPACE) {
+        if(_input.size() > 0) {
+            _input.pop_back();
+            renderer.deleteGlyph();
+        }
+    }
+    else {
+        _input.push_back(codePoint);
+        renderer.renderGlyph(codePoint);
+    }
 }
 
 /**
