@@ -15,6 +15,14 @@
 #include "text_renderer.h"
 #include "text_renderer_utils.h"
 
+const uint32_t TextRenderer::U_BACKSPACE = 0x00000008;
+const uint32_t TextRenderer::U_ENTER = 0x0000000d;
+const uint32_t TextRenderer::U_SPACE = 0x00000020;
+const uint32_t TextRenderer::U_TAB = 0x00000009;
+
+const unsigned int TextRenderer::LOD = 32;
+const unsigned int TextRenderer::DEFAULT_FONT_SIZE = 64;
+
 /**
  * @brief Text renderer constructor
  */

@@ -26,13 +26,13 @@ class TextRenderer {
 
 public:
 
-    static const uint32_t U_BACKSPACE = 0x00000008;
-    static const uint32_t U_ENTER = 0x0000000d;
-    static const uint32_t U_SPACE = 0x00000020;
-    static const uint32_t U_TAB = 0x00000009;
+    static const uint32_t U_BACKSPACE;
+    static const uint32_t U_ENTER;
+    static const uint32_t U_SPACE;
+    static const uint32_t U_TAB;
 
-    static const unsigned int LOD = 32;                 /**< Bezier curve level of detail */
-    static const unsigned int DEFAULT_FONT_SIZE = 64;   /**< Default font size */
+    static const unsigned int LOD;                  /**< Bezier curve level of detail */
+    static const unsigned int DEFAULT_FONT_SIZE;    /**< Default font size */
 
 private:
 

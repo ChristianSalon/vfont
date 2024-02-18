@@ -248,11 +248,12 @@ bool MainWindow::isMinimized() {
 /**
  * @brief Sets window attributes to default values
  */
-MainWindow::MainWindow() {
+MainWindow::MainWindow(std::function<void(int, int)> resizeCallback) {
     this->_isActive = false;
     this->_resized = false;
     this->_width = DEFAULT_WIDTH;
     this->_height = DEFAULT_HEIGHT;
+    this->_resizeCallback = resizeCallback;
 
     this->_display = nullptr;
     this->_inputMethod = nullptr;
@@ -343,7 +344,7 @@ void MainWindow::pollEvents() {
                 this->_resized = true;
                 this->_width = xce.width;
                 this->_height = xce.height;
-                this->_resizeCallback(pThis->_width, pThis->_height);
+                this->_resizeCallback(this->_width, this->_height);
             }
 
             break;
@@ -673,12 +674,13 @@ struct wl_keyboard_listener MainWindow::_wlKeyboardListener = {
 /**
  * @brief Sets window attributes to default values
  */
-MainWindow::MainWindow() {
+MainWindow::MainWindow(std::function<void(int, int)> resizeCallback) {
     this->_isActive = false;
     this->_isMinimized = false;
     this->_resized = false;
     this->_width = DEFAULT_WIDTH;
     this->_height = DEFAULT_HEIGHT;
+    this->_resizeCallback = resizeCallback;
 
     this->_display = nullptr;
     this->_registry = nullptr;
