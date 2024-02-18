@@ -44,11 +44,14 @@ typedef struct edge {
     uint32_t secondVertexIndex; /**< Second vertex index */
 } edge_t;
 
+/**
+ * @brief Push constants used by Vulkan for rendering
+ */
 typedef struct character_push_constants {
-    int penX;
-    int penY;
-    int screenWidth;
-    int screenHeight;
+    int x;              /**< X coordinate of character */
+    int y;              /**< Y coordinate of character */
+    int windowWidth;    /**< Target window's width */
+    int windowHeight;   /**< Target window's height */
 } character_push_constants_t;
 
 }

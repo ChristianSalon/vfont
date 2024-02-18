@@ -5,6 +5,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <functional>
 
 #if defined(USE_WIN32)
 
@@ -39,10 +40,11 @@ const int MainWindow::DEFAULT_HEIGHT = 512;                     /**< Default win
 /**
  * @brief Sets window attributes to default values
  */
-MainWindow::MainWindow() {
+MainWindow::MainWindow(std::function<void(int, int)> resizeCallback) {
     this->_hwnd = NULL;
     this->_hInstance = GetModuleHandle(NULL);
 
+    this->_resizeCallback = resizeCallback;
     this->_isActive = false;
     this->_resized = false;
     this->_width = DEFAULT_WIDTH;
@@ -108,6 +110,18 @@ LRESULT CALLBACK MainWindow::_wndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARA
             break;
         }
 
+        // End of window resizing or window repositioning
+        case WM_EXITSIZEMOVE: {
+            pThis = reinterpret_cast<MainWindow *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+            if(!pThis) {
+                throw std::runtime_error("Error getting window data");
+            }
+
+            pThis->_resizeCallback(pThis->_width, pThis->_height);
+
+            break;
+        }
+
         // Handle UTF-16 input
         case WM_CHAR: {
             if (IS_HIGH_SURROGATE(wParam)) {
@@ -154,9 +168,11 @@ void MainWindow::create() {
     wc.lpszClassName = CLASS_NAME;
     wc.hInstance = this->_hInstance;
     wc.lpfnWndProc = this->_wndProc;
-
     RegisterClassEx(&wc);
-    
+
+    RECT rect = { 0, 0, DEFAULT_WIDTH, DEFAULT_HEIGHT };
+    AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
+
     this->_hwnd =
         CreateWindowEx(
             0,                       // Optional window styles
@@ -164,7 +180,7 @@ void MainWindow::create() {
             L"kio",                  // Window text
             WS_OVERLAPPEDWINDOW,     // Window style
             // Size and position
-            CW_USEDEFAULT, CW_USEDEFAULT, DEFAULT_WIDTH, DEFAULT_HEIGHT,
+            CW_USEDEFAULT, CW_USEDEFAULT, rect.right - rect.left, rect.bottom - rect.top,
             NULL,                    // Parent window
             NULL,                    // Menu
             MainWindow::_hInstance,  // Instance handle
@@ -327,6 +343,7 @@ void MainWindow::pollEvents() {
                 this->_resized = true;
                 this->_width = xce.width;
                 this->_height = xce.height;
+                this->_resizeCallback(pThis->_width, pThis->_height);
             }
 
             break;
@@ -521,6 +538,7 @@ struct xdg_toplevel_listener MainWindow::_xdgToplevelListener = {
             pThis->_setWidth(width);
             pThis->_setHeight(height);
             pThis->_resized = true;
+            pThis->_resizeCallback(pThis->_width, pThis->_height);
         }
     },
     .close = [](void *data, struct xdg_toplevel *xdgToplevel) {

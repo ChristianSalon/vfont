@@ -7,7 +7,13 @@
 
 #include "glyph.h"
 
-Glyph::Glyph() {}
+/**
+ * @brief Glyph constructor
+ */
+Glyph::Glyph() {
+    this->_advanceX = 0;
+    this->_advanceY = 0;
+}
 
 void Glyph::addVertex(tr::vertex_t vertex) {
     this->_vertices.push_back(vertex);

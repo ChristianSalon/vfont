@@ -12,7 +12,7 @@
 /**
  * @class Glyph
  *
- * @brief Represents a character to render
+ * @brief Represents glyph vertex data and metrics
  */
 class Glyph {
 
@@ -22,7 +22,17 @@ private:
     std::vector<uint32_t> _indices;         /**< Glyph vertex indices */
     std::vector<tr::edge_t> _edges;         /**< Glyph edges */
 
+    /**
+     * Indicates by how much to increment the X coordinate of pen position.
+     * This includes the glyph's width plus the space behind.
+     * Used for horizontal layouts
+     */
     int _advanceX;
+
+    /**
+     * Indicates by how much to increment the Y coordinate of pen position.
+     * Not specified for horizontal layouts
+     */
     int _advanceY;
 
 public:

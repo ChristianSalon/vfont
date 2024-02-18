@@ -59,8 +59,7 @@ void KbInput::registerCharacter(KbInput::utf8_t character) {
     }
     std::cout << std::dec;
 
-    TextRenderer &renderer = TextRenderer::getInstance();
-    renderer.renderGlyph(codePoint);
+    KbInput::_drawCharacter(codePoint);
 }
 
 /**
@@ -80,17 +79,7 @@ void KbInput::registerCharacter(KbInput::utf16_t character) {
     }
     std::cout << std::dec;
 
-    TextRenderer &renderer = TextRenderer::getInstance();
-    if(codePoint == TextRenderer::U_BACKSPACE) {
-        if(_input.size() > 0) {
-            _input.pop_back();
-            renderer.deleteGlyph();
-        }
-    }
-    else {
-        _input.push_back(codePoint);
-        renderer.renderGlyph(codePoint);
-    }
+    KbInput::_drawCharacter(codePoint);
 }
 
 /**
@@ -248,4 +237,24 @@ KbInput::utf16_t KbInput::codePointToUtf16(uint32_t codePoint) {
     }
 
     return character;
+}
+
+/**
+ * @brief Draw character using TextRenderer
+ *
+ * @param codePoint Unicode code point of character
+ */
+void KbInput::_drawCharacter(uint32_t codePoint) {
+    TextRenderer &renderer = TextRenderer::getInstance();
+
+    if(codePoint == TextRenderer::U_BACKSPACE) {
+        if(_input.size() > 0) {
+            _input.pop_back();
+            renderer.deleteCharacter();
+        }
+    }
+    else {
+        _input.push_back(codePoint);
+        renderer.renderCharacter(codePoint);
+    }
 }

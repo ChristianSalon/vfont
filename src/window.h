@@ -6,6 +6,7 @@
 #pragma once
 
 #include <string>
+#include <functional>
 
 #if defined(USE_WIN32)
 
@@ -42,9 +43,11 @@ private:
     int _width;
     int _height;
 
+    std::function<void(int, int)> _resizeCallback;
+
 public:
 
-    MainWindow();
+    MainWindow(std::function<void(int, int)> _resizeCallback);
     ~MainWindow();
 
     void create();

@@ -88,6 +88,7 @@ private:
     };
 
     std::string _fontFilePath;
+    int _fontSize;
 
     std::shared_ptr<MainWindow> _window;                    /**< Application window */
     TextRenderer &_tr = TextRenderer::getInstance();        /**< Text Renderer */
@@ -122,6 +123,7 @@ public:
      */
     App(std::string fontFilePath) {
         this->_fontFilePath = fontFilePath;
+        this->_fontSize = 32;
 
         this->_instance = nullptr;
         this->_surface = nullptr;
@@ -170,10 +172,12 @@ public:
         _initVulkan();
 
         this->_tr.init(
-            64,
-            false,
+            this->_fontSize,
+            true,
+            true,
             this->_fontFilePath,
-            this->_window,
+            this->_window.get()->getWidth(),
+            this->_window.get()->getHeight(),
             this->_physicalDevice,
             this->_logicalDevice,
             this->_commandPool,
@@ -209,7 +213,11 @@ private:
      * @brief Creates window with default values
      */
     void _createWindow() {
-        this->_window.reset(new MainWindow());
+        this->_window.reset(new MainWindow(
+            [](int width, int height) -> void {
+                TextRenderer::getInstance().setWindowDimensions(width, height);
+            }
+        ));
         this->_window->create();
     }
 
@@ -1090,10 +1098,10 @@ private:
         for(Character &character : this->_tr.getCharacters()) {
             if(character.glyph.getVertexCount() > 0) {
                 tr::character_push_constants_t pushConstants = {
-                    .penX = character.getX(),
-                    .penY = character.getY(),
-                    .screenWidth = this->_window.get()->getWidth(),
-                    .screenHeight = this->_window.get()->getHeight(),
+                    .x = character.getX(),
+                    .y = character.getY(),
+                    .windowWidth = this->_window.get()->getWidth(),
+                    .windowHeight = this->_window.get()->getHeight(),
                 };
                 vkCmdPushConstants(commandBuffer, this->_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(tr::character_push_constants_t), &pushConstants);
 

@@ -81,4 +81,9 @@ public:
     static utf8_t utf16ToUtf8(utf16_t character);
     static uint32_t utf16ToCodePoint(utf16_t character);
     static utf16_t codePointToUtf16(uint32_t codePoint);
+
+private:
+
+    static void _drawCharacter(uint32_t codePoint);
+
 };

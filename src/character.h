@@ -10,23 +10,24 @@
  /**
   * @class Character
   *
-  * @brief Represents a character, which is rendered by vulkan
+  * @brief Represents a character, which is rendered by Vulkan
   */
 class Character {
 
 public:
 
-    Glyph &glyph;
+    Glyph &glyph;                   /**< Reference to glyph data */
 
 private:
 
-    uint32_t _unicodeCodePoint;
+    uint32_t _unicodeCodePoint;     /**< Unicode code point of character */
 
-    int _x;
-    int _y;
+    // Coordinates represent the lower left corner of character
+    int _x;                         /**< X coordinate of character */
+    int _y;                         /**< Y coordinate of character */
 
-    uint32_t _indexBufferOffset;
-    uint32_t _vertexBufferOffset;
+    uint32_t _vertexBufferOffset;   /**< Offset in vertex buffer */
+    uint32_t _indexBufferOffset;    /**< Offset in index buffer */
 
 public:
 

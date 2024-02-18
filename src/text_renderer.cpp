@@ -14,20 +14,18 @@
 
 #include "text_renderer.h"
 #include "text_renderer_utils.h"
-#include "window.h"
-#include "character.h"
 
- /**
-  * @brief Text renderer constructor
-  */
+/**
+ * @brief Text renderer constructor
+ */
 TextRenderer::TextRenderer() {
     this->_fontSize = TextRenderer::DEFAULT_FONT_SIZE;
     this->_useKerning = false;
+    this->_useWrapping = false;
     this->_penX = 0;
     this->_penY = TextRenderer::DEFAULT_FONT_SIZE;
 
     this->_vertices = {};
-    this->_edges = {};
     this->_indices = {};
     this->_glyphInfo = {};
 
@@ -100,7 +98,7 @@ FT_Outline_LineToFunc TextRenderer::_lineToFunc = [](const FT_Vector *to, void *
  * Used when there is a quadratic bezier curve.
  *
  * @param control Bezier curve control point
- * @param to  Bezier curve ending point
+ * @param to Bezier curve ending point
  * @param user User defined data
  *
  * @return Exit code
@@ -123,7 +121,7 @@ FT_Outline_ConicToFunc TextRenderer::_conicToFunc = [](const FT_Vector *control,
  *
  * @param control1 First bezier curve control point
  * @param control2 Second bezier curve control point
- * @param to  Bezier curve ending point
+ * @param to Bezier curve ending point
  * @param user User defined data
  *
  * @return Exit code
@@ -138,19 +136,25 @@ FT_Outline_CubicToFunc TextRenderer::_cubicToFunc = [](const FT_Vector *control1
  *
  * @param fontSize Rendered text size in pixels
  * @param useKerning Indicates whether to use kerning
+ * @param useWrapping Indicates whether to use wrapping
  * @param fontFilePath File path to .ttf file
- * @param window Window where to render
+ * @param windowWidth Target window width
+ * @param windowHeight Target window height
  * @param physicalDevice Vulkan physical device
  * @param logicalDevice Vulkan logical device
  * @param commandPool Vulkan command pool
  * @param graphicsQueue Vulkan graphics queue
  */
-void TextRenderer::init(unsigned int fontSize, bool useKerning, std::string fontFilePath, std::shared_ptr<MainWindow> window, VkPhysicalDevice physicalDevice, VkDevice logicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue) {
+void TextRenderer::init(unsigned int fontSize, bool useKerning, bool useWrapping, std::string fontFilePath, unsigned int windowWidth, unsigned int windowHeight, VkPhysicalDevice physicalDevice, VkDevice logicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue) {
     this->_useKerning = useKerning;
+    this->_useWrapping = useWrapping;
     this->_fontSize = fontSize;
-    this->_initializeGlyphInfo(this->_fontSize);
+    this->_penX = 0;
+    this->_penY = this->_fontSize;
+    this->_initializeGlyphInfo();
 
-    this->_setWindow(window);
+    this->setWindowDimensions(windowWidth, windowHeight);
+
     this->_setPhysicalDevice(physicalDevice);
     this->_setLogicalDevice(logicalDevice);
     this->_setCommandPool(commandPool);
@@ -169,6 +173,12 @@ void TextRenderer::init(unsigned int fontSize, bool useKerning, std::string font
     }
 
     FT_Set_Pixel_Sizes(this->_face, this->_fontSize, 0);
+
+    // Check if .ttf file supports freetype kerning
+    if(!FT_HAS_KERNING(this->_face) && this->_useKerning == true) {
+        std::cout << "Kerning is not supported" << std::endl;
+        this->_useKerning = false;
+    }
 }
 
 /**
@@ -195,18 +205,20 @@ void TextRenderer::destroy() {
  *
  * @param codePoint Unicode code point
  */
-void TextRenderer::renderGlyph(uint32_t codePoint) {
+void TextRenderer::_renderGlyph(uint32_t codePoint) {
     this->_vertexId = 0;
     this->_contourStartVertexId = 0;
     this->_lastVertex = { 0, 0 };
     this->_isFirstContour = true;
 
-    if(!this->_glyphInfo.contains(codePoint)) {
-        this->_decomposeGlyph(codePoint);
+    // If code point is TAB, then it is rendered as four SPACE characters
+    uint32_t newCodePoint = codePoint == TextRenderer::U_TAB ? TextRenderer::U_SPACE : codePoint;
+    if(!this->_glyphInfo.contains(newCodePoint)) {
+        this->_decomposeGlyph(newCodePoint);
         this->_triangulate();
 
         // Insert glyph info to map
-        this->_glyphInfo.insert({ codePoint, this->_currentGlyph });
+        this->_glyphInfo.insert({ newCodePoint, this->_currentGlyph });
     }
 
     if(codePoint == TextRenderer::U_ENTER) {
@@ -215,51 +227,85 @@ void TextRenderer::renderGlyph(uint32_t codePoint) {
 
         this->_characters.push_back(Character(codePoint, this->_glyphInfo.at(codePoint), this->_penX, this->_penY));
     }
+    else if(codePoint == TextRenderer::U_TAB) {
+        this->_characters.push_back(Character(codePoint, this->_glyphInfo.at(TextRenderer::U_SPACE), this->_penX, this->_penY));
+
+        for(int i = 0; i < 4; i++) {
+            this->_penX += this->_characters.back().glyph.getAdvanceX();
+            this->_penY += this->_characters.back().glyph.getAdvanceY();
+        }
+    }
     else {
+        // Apply wrapping if specified
+        bool wasWrapped = false;
+        if(this->_useWrapping) {
+            if(this->_penX + this->_glyphInfo.at(codePoint).getAdvanceX() > this->_windowWidth) {
+                // Render character on new line by adding enter character
+                wasWrapped = true;
+                this->_penX = 0;
+                this->_penY += this->_fontSize;
+            }
+        }
+
+        // Apply kerning if specified
+        if(!wasWrapped && this->_useKerning && this->_characters.size() > 0) {
+            uint32_t leftCharIndex = FT_Get_Char_Index(this->_face, this->_characters.back().getUnicodeCodePoint());
+            uint32_t rightCharIndex = FT_Get_Char_Index(this->_face, codePoint);
+
+            FT_Vector delta;
+            FT_Get_Kerning(this->_face, leftCharIndex, rightCharIndex, FT_KERNING_DEFAULT, &delta);
+            this->_penX += delta.x >> 6;
+        }
+
         this->_characters.push_back(Character(codePoint, this->_glyphInfo.at(codePoint), this->_penX, this->_penY));
 
         this->_penX += this->_characters.back().glyph.getAdvanceX();
         this->_penY += this->_characters.back().glyph.getAdvanceY();
     }
+}
 
+/**
+ * @brief Renders a single character at current pen position
+ * 
+ * @param codePoint Unicode code point of character
+ */
+void TextRenderer::renderCharacter(uint32_t codePoint) {
+    this->_renderGlyph(codePoint);
     this->_recreateBuffers();
 }
 
 /**
- * @brief Creates vertex and index buffer for rendering using Freetype and CDT
+ * @brief Renders characters at the origin pen position
  *
  * @param codePoints Vector of unicode code points
  */
 void TextRenderer::renderText(std::vector<uint32_t> codePoints) {
-    this->_indices.clear();
-    this->_vertices.clear();
-    this->_edges.clear();
-    this->_lastVertex = { 0, 0 };
-    this->_vertexId = 0;
-    this->_contourStartVertexId = 0;
-    this->_isFirstContour = true;
-    this->_penX = 0;
-    this->_penY = this->_fontSize;
+    this->_characters.clear();
+    this->renderText(codePoints, 0, this->_fontSize);
+}
+
+/**
+ * @brief Renders characters starting at the specified pen position
+ *
+ * @param codePoints Vector of unicode code points
+ * @param x X coordinate of starting pen position
+ * @param y Y coordinate of starting pen position
+ */
+void TextRenderer::renderText(std::vector<uint32_t> codePoints, int x, int y) {
+    this->_penX = x;
+    this->_penY = y;
 
     for(uint32_t codePoint : codePoints) {
-        if(codePoint == TextRenderer::U_ENTER) {
-            this->_penX = 0;
-            this->_penY += this->_fontSize;
-        }
-        else {
-            this->_decomposeGlyph(codePoint);
-            this->_triangulate();
-            this->_isFirstContour = true;
-        }
+        this->_renderGlyph(codePoint);
     }
 
     this->_recreateBuffers();
 }
 
 /**
- * @brief Deletes last inputed character and recreates vertex and index buffers
+ * @brief Deletes last character and recreates vertex and index buffers used for rendering
  */
-void TextRenderer::deleteGlyph() {
+void TextRenderer::deleteCharacter() {
     if(this->_characters.size() == 0) {
         return;
     }
@@ -280,8 +326,18 @@ void TextRenderer::deleteGlyph() {
     else {
         this->_characters.pop_back();
 
-        this->_penX = this->_characters.back().getX() + this->_characters.back().glyph.getAdvanceX();
-        this->_penY = this->_characters.back().getY();
+        if(this->_characters.back().getUnicodeCodePoint() == TextRenderer::U_TAB) {
+            this->_penX = this->_characters.back().getX();
+            this->_penY = this->_characters.back().getY();
+
+            for(int i = 0; i < 4; i++) {
+                this->_penX += this->_characters.back().glyph.getAdvanceX();
+            }
+        }
+        else {
+            this->_penX = this->_characters.back().getX() + this->_characters.back().glyph.getAdvanceX();
+            this->_penY = this->_characters.back().getY();
+        }
     }
 
     this->_recreateBuffers();
@@ -297,12 +353,7 @@ void TextRenderer::_decomposeGlyph(uint32_t codePoint) {
     if(FT_Load_Char(this->_face, codePoint, FT_LOAD_DEFAULT)) {
         throw std::runtime_error("Error loading glyph");
     }
-
     FT_GlyphSlot slot = this->_face->glyph;
-    for(int i = 0; i < slot->outline.n_points; i++) {
-        slot->outline.points[i].x >>= 6;
-        slot->outline.points[i].y >>= 6;
-    }
 
     // Decompose outlines to vertices and vertex indices
     this->_currentGlyph = Glyph();
@@ -334,7 +385,7 @@ void TextRenderer::_triangulate() {
     CDT::Triangulation<float> cdt(
         CDT::VertexInsertionOrder::Auto,
         CDT::IntersectingConstraintEdges::TryResolve,
-        0.00001
+        0.001
     );
 
     /* CDT::RemoveDuplicatesAndRemapEdges(
@@ -519,7 +570,6 @@ void TextRenderer::_createVertexBuffer() {
 
         character.setVertexBufferOffset(usedCodePoints.at(character.getUnicodeCodePoint()));
     }
-    std::cout << "Vertex count: " << this->_vertices.size() << ", " << this->getVertexCount() << std::endl;
 
     if(vertexCount == 0) {
         return;
@@ -568,7 +618,6 @@ void TextRenderer::_createIndexBuffer() {
 
         character.setIndexBufferOffset(usedCodePoints.at(character.getUnicodeCodePoint()));
     }
-    std::cout << "Index count: " << this->_indices.size() << ", " << this->getIndexCount() << std::endl;
 
     if(indexCount == 0) {
         return;
@@ -613,12 +662,36 @@ void TextRenderer::_destroyBuffer(VkBuffer &buffer, VkDeviceMemory &bufferMemory
     bufferMemory = nullptr;
 }
 
-void TextRenderer::_initializeGlyphInfo(int fontSize) {
+/**
+ * @brief Initializes glyph metrics
+ */
+void TextRenderer::_initializeGlyphInfo() {
     this->_glyphInfo.clear();
 
-    this->_glyphInfo.insert({ TextRenderer::U_ENTER,  Glyph() });
+    this->_glyphInfo.insert({ TextRenderer::U_ENTER, Glyph() });
     this->_glyphInfo.at(TextRenderer::U_ENTER).setAdvanceX(0);
-    this->_glyphInfo.at(TextRenderer::U_ENTER).setAdvanceY(fontSize);
+    this->_glyphInfo.at(TextRenderer::U_ENTER).setAdvanceY(this->_fontSize);
+}
+
+/**
+ * @brief Updates the window dimensions. If wrapping is used, rerenders text with respect to new window dimensions
+ * 
+ * @param windowWidth New window width
+ * @param windowHeight New window height
+ */
+void TextRenderer::setWindowDimensions(unsigned int windowWidth, unsigned int windowHeight) {
+    this->_windowWidth = windowWidth;
+    this->_windowHeight = windowHeight;
+
+    // Recalculate character positions if wrapping is enabled
+    if(this->_useWrapping) {
+        std::vector<uint32_t> codePoints;
+        for(Character &character : this->_characters) {
+            codePoints.push_back(character.getUnicodeCodePoint());
+        }
+
+        this->renderText(codePoints);
+    }
 }
 
 /**
@@ -674,18 +747,6 @@ VkBuffer TextRenderer::getVertexBuffer() {
  */
 VkBuffer TextRenderer::getIndexBuffer() {
     return this->_indexBuffer;
-}
-
-/**
- * @brief Setter for window object
- *
- * @param window Window object
- */
-void TextRenderer::_setWindow(std::shared_ptr<MainWindow> window) {
-    if(window == nullptr)
-        throw std::runtime_error("Window is not initialized");
-
-    this->_window = window;
 }
 
 /**
