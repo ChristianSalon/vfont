@@ -21,7 +21,6 @@ const uint32_t TextRenderer::U_ENTER = 0x0000000d;
 const uint32_t TextRenderer::U_SPACE = 0x00000020;
 const uint32_t TextRenderer::U_TAB = 0x00000009;
 
-const unsigned int TextRenderer::LOD = 32;
 const unsigned int TextRenderer::DEFAULT_FONT_SIZE = 64;
 
 /**
@@ -498,21 +497,53 @@ void TextRenderer::_recreateBuffers() {
 }
 
 /**
- * @brief Computes vertices of a quadratic bezier curve with specified level of detail
+ * @brief Computes vertices of a quadratic bezier curve with adaptive level of detail
  *
  * @param startPoint Bezier curve starting point
  * @param controlPoint Bezier curve control point
  * @param endPoint Bezier curve ending point
  */
 void TextRenderer::_detailBezier(glm::vec2 startPoint, glm::vec2 controlPoint, glm::vec2 endPoint) {
-    for(int i = 1; i <= LOD; i++) {
-        double t = i * (1.0 / LOD);
+    std::map<float, glm::vec2> vertices{ { 1.f, glm::vec2(endPoint) } };
+    this->_subdivide(startPoint, controlPoint, endPoint, 0.5f, 0.5f, vertices);
 
-        float x = (1 - t) * (1 - t) * startPoint.x + 2 * (1 - t) * t * controlPoint.x + (t * t) * endPoint.x;
-        float y = (1 - t) * (1 - t) * startPoint.y + 2 * (1 - t) * t * controlPoint.y + (t * t) * endPoint.y;
-
-        this->_currentGlyph.getVertices().push_back({ x, y });
+    for(std::map<float, glm::vec2>::iterator i = vertices.begin(); i != vertices.end(); i++) {
+        this->_currentGlyph.getVertices().push_back(i->second);
         this->_currentGlyph.getEdges().push_back({ this->_vertexId, ++(this->_vertexId) });
+    }
+}
+
+/**
+ * @brief Subdivides a quadratic bezier curve until there is no loss of quality
+ * 
+ * @param startPoint Bezier curve starting point
+ * @param controlPoint Bezier curve control point
+ * @param endPoint Bezier curve ending point
+ * @param t Parameter for the position on the bezier curve (t = <0, 1>)
+ * @param delta Indicates distance between current point and computed points in the previous step
+ * @param vertices Created vertices by dividing bezier curve into line segments
+ */
+void TextRenderer::_subdivide(glm::vec2 startPoint, glm::vec2 controlPoint, glm::vec2 endPoint, float t, float delta, std::map<float, glm::vec2> &vertices) {
+    // Add current point
+    glm::vec2 newVertex{ (1 - t) * (1 - t) * startPoint + 2 * (1 - t) * t * controlPoint + (t * t) * endPoint };
+    vertices.insert({ t, newVertex });
+
+    // Compute points around the current point with the given delta
+    glm::vec2 left{ (1 - (t - delta)) * (1 - (t - delta)) * startPoint + 2 * (1 - (t - delta)) * (t - delta) * controlPoint + (t - delta) * (t - delta) * endPoint };
+    glm::vec2 right{ (1 - (t + delta)) * (1 - (t + delta)) * startPoint + 2 * (1 - (t + delta)) * (t + delta) * controlPoint + (t + delta) * (t + delta) * endPoint };
+
+    // Check if distance between curve(t - delta) and curve(t) is less than one pixel
+    // or if points can be connected by a line without losing quality
+    if(glm::length(newVertex - left) >= 64.f && newVertex.x != left.x && newVertex.y != left.y) {
+        // The segment curve(t - delta) and curve(t) should be subdivided
+        this->_subdivide(startPoint, controlPoint, endPoint, t - delta / 2.f, delta / 2.f, vertices);
+    }
+
+    // Check if distance between curve(t) and curve(t + delta) is less than one pixel
+    // or if points can be connected by a line without losing quality
+    if(glm::length(newVertex - right) >= 64.f && newVertex.x != right.x && newVertex.y != right.y) {
+        // The segment curve(t) and curve(t + delta) should be subdivided
+        this->_subdivide(startPoint, controlPoint, endPoint, t + delta / 2.f, delta / 2.f, vertices);
     }
 }
 

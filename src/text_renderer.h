@@ -8,6 +8,7 @@
 #include <vector>
 #include <memory>
 #include <unordered_map>
+#include <map>
 
 #include <vulkan/vulkan.h>
 #include <ft2build.h>
@@ -33,7 +34,6 @@ public:
     static const uint32_t U_SPACE;
     static const uint32_t U_TAB;
 
-    static const unsigned int LOD;                  /**< Bezier curve level of detail */
     static const unsigned int DEFAULT_FONT_SIZE;    /**< Default font size */
 
 private:
@@ -123,6 +123,14 @@ private:
     ~TextRenderer();
 
     void _detailBezier(glm::vec2 startPoint, glm::vec2 controlPoint, glm::vec2 endPoint);
+    void _subdivide(
+        glm::vec2 startPoint,
+        glm::vec2 controlPoint,
+        glm::vec2 endPoint,
+        float t,
+        float delta,
+        std::map<float, glm::vec2> &vertices
+    );
     void _initializeGlyphInfo();
 
     void _renderGlyph(uint32_t codePoint);
