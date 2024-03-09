@@ -7,6 +7,8 @@
 
 #include <vector>
 
+#include <glm/vec2.hpp>
+
 #include "text_renderer_utils.h"
 
 /**
@@ -18,7 +20,7 @@ class Glyph {
 
 private:
 
-    std::vector<tr::vertex_t> _vertices;    /**< Glyph vertices */
+    std::vector<glm::vec2> _vertices;       /**< Glyph vertices */
     std::vector<uint32_t> _indices;         /**< Glyph vertex indices */
     std::vector<tr::edge_t> _edges;         /**< Glyph edges */
 
@@ -39,8 +41,8 @@ public:
 
     Glyph();
 
-    void addVertex(tr::vertex_t vertex);
-    void updateVertex(int index, tr::vertex_t vertex);
+    void addVertex(glm::vec2 vertex);
+    void updateVertex(int index, glm::vec2 vertex);
 
     void addEdge(tr::edge_t edge);
     void updateEdge(int index, tr::edge_t edge);
@@ -53,7 +55,7 @@ public:
     int getAdvanceX();
     int getAdvanceY();
 
-    std::vector<tr::vertex_t> &getVertices();
+    std::vector<glm::vec2> &getVertices();
     std::vector<uint32_t> &getIndices();
     std::vector<tr::edge_t> &getEdges();
 

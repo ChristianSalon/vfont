@@ -15,11 +15,11 @@ Glyph::Glyph() {
     this->_advanceY = 0;
 }
 
-void Glyph::addVertex(tr::vertex_t vertex) {
+void Glyph::addVertex(glm::vec2 vertex) {
     this->_vertices.push_back(vertex);
 }
 
-void Glyph::updateVertex(int index, tr::vertex_t vertex) {
+void Glyph::updateVertex(int index, glm::vec2 vertex) {
     this->_vertices.at(index) = vertex;
 }
 
@@ -51,7 +51,7 @@ int Glyph::getAdvanceY() {
     return this->_advanceY;
 }
 
-std::vector<tr::vertex_t> &Glyph::getVertices() {
+std::vector<glm::vec2> &Glyph::getVertices() {
     return this->_vertices;
 }
 

@@ -3,6 +3,8 @@
  * @author Christian Saloň
  */
 
+#include <glm/gtc/matrix_transform.hpp>
+
 #include "character.h"
 #include "glyph.h"
 
@@ -11,15 +13,20 @@
  * 
  * @param codePoint Unicode code point
  * @param glyph Glyph data
- * @param x X coordinate of character
- * @param y Y coordinate of character
+ * @param position Position of character
+ * @param transform Character transform matrix
  */
-Character::Character(uint32_t codePoint, Glyph &glyph, int x, int y) : glyph(glyph) {
+Character::Character(uint32_t codePoint, Glyph &glyph, glm::vec3 position, glm::mat4 transform) : glyph(glyph) {
     this->_unicodeCodePoint = codePoint;
-    this->_x = x;
-    this->_y = y;
+    this->_position = position;
     this->_indexBufferOffset = 0;
     this->_vertexBufferOffset = 0;
+
+    this->_modelMatrix =
+        transform *
+        glm::translate(glm::mat4(1.f), this->_position) *
+        glm::rotate(glm::mat4(1.f), glm::radians(180.f), glm::vec3(1.f, 0.f, 0.f)) *
+        glm::scale(glm::mat4(1.f), glm::vec3(1.f / 64.f, 1.f / 64.f, 0.f));
 }
 
 /**
@@ -68,6 +75,15 @@ void Character::setIndexBufferOffset(uint32_t indexBufferOffset) {
 }
 
 /**
+ * @brief Setter for character model matrix
+ *
+ * @param modelMatrix New model matrix
+ */
+void Character::setModelMatrix(glm::mat4 modelMatrix) {
+    this->_modelMatrix = modelMatrix;
+}
+
+/**
  * @brief Getter for index buffer offset
  *
  * @return Offset in index buffer
@@ -77,19 +93,19 @@ uint32_t Character::getIndexBufferOffset() {
 }
 
 /**
- * @brief Getter for X coordinate
+ * @brief Getter for character position
  *
- * @return X coordinate of character
+ * @return (X, Y, Z) coordinates of character
  */
-int Character::getX() {
-    return this->_x;
+glm::vec3 Character::getPosition() {
+    return this->_position;
 }
 
 /**
- * @brief Getter for Y coordinate
+ * @brief Getter for character model matrix
  *
- * @return Y coordinate of character
+ * @return Model matrix
  */
-int Character::getY() {
-    return this->_y;
+glm::mat4 Character::getModelMatrix() {
+    return this->_modelMatrix;
 }

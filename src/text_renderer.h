@@ -12,6 +12,8 @@
 #include <vulkan/vulkan.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#include <glm/vec2.hpp>
+#include <glm/mat4x4.hpp>
 
 #include "glyph.h"
 #include "character.h"
@@ -36,7 +38,7 @@ public:
 
 private:
 
-    std::vector<tr::vertex_t> _vertices;            /**< Vertex buffer */
+    std::vector<glm::vec2> _vertices;               /**< Vertex buffer */
     std::vector<uint32_t> _indices;                 /**< Index buffer */
 
     /**
@@ -48,7 +50,8 @@ private:
 
     unsigned int _fontSize;                         /**< Character size used for rendering */
     bool _useKerning;                               /**< Indicates whether to use kerning */
-    bool _useWrapping;                              /**< Indicates whether to use word wrapping (line breaking) */
+    bool _useWrapping;                              /**< Indicates whether to use word wrapping (line breaking), works only in 2D */
+    glm::mat4 _transformMatrix;                     /**< User specified transforms, resets after every add() call */
     int _penX;                                      /**< X coordinate of current pen position (indicates where to render next characters) */
     int _penY;                                      /**< Y coordinate of current pen position (indicates where to render next characters) */
 
@@ -57,15 +60,15 @@ private:
     Glyph _currentGlyph;                            /**< Currently processed glyph */
     uint32_t _vertexId;                             /**< Currently processed glyph's vertex id counter */
     uint32_t _contourStartVertexId;                 /**< Vertex id for the starting vertex of a contour */
-    tr::vertex_t _lastVertex;                       /**< Last vertex processed */
+    glm::vec2 _lastVertex;                          /**< Last vertex processed */
     bool _isFirstContour;                           /**< Indicates whether currently processed contour is the first one */
     static FT_Outline_MoveToFunc _moveToFunc;
     static FT_Outline_LineToFunc _lineToFunc;
     static FT_Outline_ConicToFunc _conicToFunc;
     static FT_Outline_CubicToFunc _cubicToFunc;
 
-    unsigned int _windowWidth;                      /**< Target window's width */
-    unsigned int _windowHeight;                     /**< Target window's height */
+    unsigned int _viewportWidth;                    /**< Target window's width */
+    unsigned int _viewportHeight;                   /**< Target window's height */
 
     VkPhysicalDevice _physicalDevice;               /**< Vulkan physical device */
     VkDevice _logicalDevice;                        /**< Vulkan logical device */
@@ -75,30 +78,38 @@ private:
     VkDeviceMemory _indexBufferMemory;              /**< Vulkan index buffer memory */
     VkQueue _graphicsQueue;                         /**< Vulkan graphics queue */
     VkCommandPool _commandPool;                     /**< Vulkan command pool */
+    VkPipelineLayout _pipelineLayout;
 
 public:
 
     static TextRenderer &getInstance();
     void init(
         unsigned int fontSize,
-        bool useKerning,
-        bool useWrapping,
         std::string fontFilePath,
-        unsigned int windowWidth,
-        unsigned int windowHeight,
+        unsigned int viewportWidth,
+        unsigned int viewportHeight,
         VkPhysicalDevice physicalDevice,
         VkDevice logicalDevice,
         VkCommandPool commandPool,
-        VkQueue graphicsQueue
+        VkQueue graphicsQueue,
+        VkPipelineLayout pipelineLayout,
+        bool useKerning = true,
+        bool useWrapping = false
     );
+    void draw(VkCommandBuffer commandBuffer);
     void destroy();
 
-    void renderCharacter(uint32_t codePoint);
-    void renderText(std::vector<uint32_t> codePoints);
-    void renderText(std::vector<uint32_t> codePoints, int x, int y);
-    void deleteCharacter();
+    void add(std::vector<uint32_t> codePoints);
+    void add(std::vector<uint32_t> codePoints, int x, int y);
+    void add(std::vector<uint32_t> codePoints, std::vector<glm::mat4> transforms);
+    void remove(unsigned int count = 1);
 
-    void setWindowDimensions(unsigned int windowWidth, unsigned int windowHeight);
+    void useKerning(bool kerning);
+    void useWrapping(bool wrapping);
+    void scale(float x, float y, float z);
+    void translate(float x, float y, float z);
+    void rotate(float x, float y, float z);
+    void setViewport(unsigned int width, unsigned int height);
 
     std::vector<Character> getCharacters();
     uint32_t getVertexCount();
@@ -111,7 +122,7 @@ private:
     TextRenderer();
     ~TextRenderer();
 
-    void _detailBezier(tr::vertex_t startPoint, tr::vertex_t controlPoint, tr::vertex_t endPoint);
+    void _detailBezier(glm::vec2 startPoint, glm::vec2 controlPoint, glm::vec2 endPoint);
     void _initializeGlyphInfo();
 
     void _renderGlyph(uint32_t codePoint);
@@ -130,6 +141,7 @@ private:
     void _setLogicalDevice(VkDevice logicalDevice);
     void _setCommandPool(VkCommandPool commandPool);
     void _setGraphicsQueue(VkQueue graphicsQueue);
+    void _setPipelineLayout(VkPipelineLayout pipelineLayout);
 
     TextRenderer(const TextRenderer &) = delete;
     TextRenderer &operator=(const TextRenderer &) = delete;

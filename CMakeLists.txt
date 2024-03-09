@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.25)
 project(kio VERSION 1.0)
 
+include(FetchContent)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/")
 
@@ -98,6 +100,16 @@ set(LIBS ${LIBS} freetype)
 # CDT library initialization
 add_subdirectory("libs/CDT")
 set(LIBS ${LIBS} CDT::CDT)
+
+# glm initialization
+FetchContent_Declare(
+	glm
+	GIT_REPOSITORY https://github.com/g-truc/glm.git
+	GIT_TAG bf71a834948186f4097caa076cd2663c69a10e1e
+)
+FetchContent_MakeAvailable(glm)
+set(LIBS ${LIBS} glm::glm)
+set(DEFINES ${DEFINES} GLM_FORCE_DEPTH_ZERO_TO_ONE)
 
 add_compile_definitions(${DEFINES})
 

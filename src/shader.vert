@@ -3,28 +3,14 @@
 layout(location = 0) in vec2 inPosition;
 
 layout(push_constant) uniform constants {
-	int x;
-    int y;
-    int windowWidth;
-    int windowHeight;
+	mat4 model;
 } PushConstants;
 
-// Convert from freetype 1/64 pixel unit to pixels
-vec2 toPixelUnits(vec2 vertex) {
-    return vertex / 64.0;
-}
-
-vec2 toVulkanNDC(vec2 vertex) {
-    return vec2(
-        2.0 * (vertex.x / float(PushConstants.windowWidth)) - 1.0,
-        -2.0 * (vertex.y / float(PushConstants.windowHeight)) + 1.0
-    );
-}
+layout(binding = 0) uniform UniformBufferObject {
+    mat4 view;
+    mat4 projection;
+} ubo;
 
 void main() {
-    vec2 ndcPosition = toVulkanNDC(toPixelUnits(inPosition));
-    float x = ndcPosition.x + 2.0 * float(PushConstants.x) / float(PushConstants.windowWidth);
-    float y = ndcPosition.y + 2.0 * float(PushConstants.y) / float(PushConstants.windowHeight) - 2.0;
-
-    gl_Position = vec4(x, y, 0.0, 1.0);
+    gl_Position = ubo.projection * ubo.view * PushConstants.model * vec4(inPosition, 0.0, 1.0);
 }

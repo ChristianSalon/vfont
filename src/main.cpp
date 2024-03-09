@@ -17,10 +17,12 @@
 #include <cstring>
 
 #include <vulkan/vulkan.h>
+#include <glm/mat4x4.hpp>
 
 #include "window.h"
 #include "text_renderer.h"
 #include "text_renderer_utils.h"
+#include "orto_camera.h"
 
 std::string DEFAULT_FONT_FILE = "arial.ttf";
 
@@ -55,6 +57,11 @@ private:
         VkCompositeAlphaFlagBitsKHR compositeAlphaMode;
     };
 
+    struct UniformBufferObject {
+        glm::mat4 view;
+        glm::mat4 projection;
+    };
+
     const int MAX_FRAMES_IN_FLIGHT = 2;
 
     /**
@@ -87,11 +94,18 @@ private:
         "VK_LAYER_KHRONOS_validation"
     };
 
-    std::string _fontFilePath;
-    int _fontSize;
+    std::string _fontFilePath;                              /**< Path to .ttf file used for rendering text */
+    int _fontSize;                                          /**< Font size used for rendering text */
 
     std::shared_ptr<MainWindow> _window;                    /**< Application window */
     TextRenderer &_tr = TextRenderer::getInstance();        /**< Text Renderer */
+    OrtographicCamera _camera;                              /**< Camera object */
+
+    uint32_t _currentFrameIndex;                            /**< Current frame used for rendering */
+
+    std::vector<VkBuffer> _uniformBuffers;                  /**< Uniform buffers */
+    std::vector<VkDeviceMemory> _uniformBuffersMemory;      /**< Uniform buffers memory */
+    std::vector<void *> _mappedUniformBuffers;              /**< Uniform buffers pointers */
 
     VkInstance _instance;                                   /**< Vulkan instance */
     VkSurfaceKHR _surface;                                  /**< Vulkan surface */
@@ -105,6 +119,9 @@ private:
     VkExtent2D _swapChainExtent;                            /**< Vulkan swap chain extent */
     std::vector<VkImageView> _swapChainImageViews;          /**< Vulkan swap chain image views */
     VkRenderPass _renderPass;                               /**< Vulkan render pass */
+    VkDescriptorSetLayout _descriptorSetLayout;             /**< Vulkan descriptor set layout */
+    VkDescriptorPool _descriptorPool;                       /**< Vulkan descriptor pool */
+    std::vector<VkDescriptorSet> _descriptorSets;           /**< Vulkan descriptor sets */
     VkPipelineLayout _pipelineLayout;                       /**< Vulkan pipeline layout */
     VkPipeline _graphicsPipeline;                           /**< Vulkan graphics pipeline */
     std::vector<VkFramebuffer> _framebuffers;               /**< Vulkan frame buffers */
@@ -124,6 +141,8 @@ public:
     App(std::string fontFilePath) {
         this->_fontFilePath = fontFilePath;
         this->_fontSize = 32;
+
+        this->_currentFrameIndex = 0;
 
         this->_instance = nullptr;
         this->_surface = nullptr;
@@ -148,6 +167,13 @@ public:
         _cleanupSwapChain();
 
         for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            vkDestroyBuffer(this->_logicalDevice, this->_uniformBuffers.at(i), nullptr);
+            vkFreeMemory(this->_logicalDevice, this->_uniformBuffersMemory.at(i), nullptr);
+        }
+        vkDestroyDescriptorPool(this->_logicalDevice, this->_descriptorPool, nullptr);
+        vkDestroyDescriptorSetLayout(this->_logicalDevice, this->_descriptorSetLayout, nullptr);
+
+        for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             vkDestroySemaphore(this->_logicalDevice, this->_imageAvailableSemaphores[i], nullptr);
             vkDestroySemaphore(this->_logicalDevice, this->_renderFinishedSemaphores[i], nullptr);
             vkDestroyFence(this->_logicalDevice, this->_inFlightFences[i], nullptr);
@@ -169,24 +195,41 @@ public:
      */
     void run() {
         _createWindow();
+
+        this->_camera = {
+            glm::vec3(0.f, 0.f, -1000.f),
+            0.f, static_cast<float>(this->_window.get()->getWidth()),
+            0.f, static_cast<float>(this->_window.get()->getHeight()),
+            0.f, 2000.f
+        };
+
         _initVulkan();
 
         this->_tr.init(
             this->_fontSize,
-            true,
-            true,
             this->_fontFilePath,
             this->_window.get()->getWidth(),
             this->_window.get()->getHeight(),
             this->_physicalDevice,
             this->_logicalDevice,
             this->_commandPool,
-            this->_graphicsQueue
+            this->_graphicsQueue,
+            this->_pipelineLayout
         );
 
         _mainLoop();
 
         this->_tr.destroy();
+    }
+
+    void updateWindowDimensions(int width, int height) {
+        TextRenderer::getInstance().setViewport(width, height);
+
+        this->_camera.setProjection(
+            0.f, static_cast<float>(width),
+            0.f, static_cast<float>(height),
+            0.f, 2000.f
+        );
     }
 
 private:
@@ -202,6 +245,10 @@ private:
         _createSwapChain();
         _createImageViews();
         _createRenderPass();
+        _createUniformBuffers();
+        _createDescriptorSetLayout();
+        _createDescriptorPool();
+        _createDescriptorSets();
         _createGraphicsPipeline();
         _createFramebuffers();
         _createCommandPool();
@@ -214,8 +261,8 @@ private:
      */
     void _createWindow() {
         this->_window.reset(new MainWindow(
-            [](int width, int height) -> void {
-                TextRenderer::getInstance().setWindowDimensions(width, height);
+            [this](int width, int height) -> void {
+                this->updateWindowDimensions(width, height);
             }
         ));
         this->_window->create();
@@ -861,6 +908,172 @@ private:
     }
 
     /**
+     * @brief Creates vulkan descriptor set layout
+     */
+    void _createDescriptorSetLayout() {
+        VkDescriptorSetLayoutBinding layoutBinding{};
+        layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        layoutBinding.binding = 0;
+        layoutBinding.descriptorCount = 1;
+        layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+        VkDescriptorSetLayoutCreateInfo layoutCreateInfo{};
+        layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layoutCreateInfo.bindingCount = 1;
+        layoutCreateInfo.pBindings = &layoutBinding;
+
+        if(vkCreateDescriptorSetLayout(this->_logicalDevice, &layoutCreateInfo, nullptr, &(this->_descriptorSetLayout)) != VK_SUCCESS) {
+            throw std::runtime_error("Error creating vulkan descriptor set layout");
+        }
+
+    }
+
+    /**
+     * @brief Selects the best possible memory to create vulkan buffer
+     *
+     * @param memoryType Required memory type
+     * @param properties Required memory properties
+     *
+     * @return Index of selected memory
+     */
+    uint32_t _selectMemoryType(uint32_t memoryType, VkMemoryPropertyFlags properties) {
+        VkPhysicalDeviceMemoryProperties memoryProperties;
+        vkGetPhysicalDeviceMemoryProperties(this->_physicalDevice, &memoryProperties);
+
+        for(uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++) {
+            if((memoryType & (1 << i)) && (memoryProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+                return i;
+            }
+        }
+
+        throw std::runtime_error("Error selecting memory for vulkan buffer");
+    }
+
+    /**
+     * @brief Creates and allocates memory for vulkan buffer
+     *
+     * @param size Size of buffer
+     * @param usage Usage of buffer
+     * @param properties Memory properties
+     * @param buffer Vulkan buffer
+     * @param bufferMemory Vulkan buffer memory
+     */
+    void _createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory) {
+        VkBufferCreateInfo bufferCreateInfo{};
+        bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferCreateInfo.size = size;
+        bufferCreateInfo.usage = usage;
+        bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        if(vkCreateBuffer(this->_logicalDevice, &bufferCreateInfo, nullptr, &buffer) != VK_SUCCESS) {
+            throw std::runtime_error("Error creating vulkan buffer");
+        }
+
+        VkMemoryRequirements memoryRequirements;
+        vkGetBufferMemoryRequirements(this->_logicalDevice, buffer, &memoryRequirements);
+
+        VkMemoryAllocateInfo memoryAllocateInfo{};
+        memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        memoryAllocateInfo.allocationSize = memoryRequirements.size;
+        memoryAllocateInfo.memoryTypeIndex = this->_selectMemoryType(memoryRequirements.memoryTypeBits, properties);
+
+        if(vkAllocateMemory(this->_logicalDevice, &memoryAllocateInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+            throw std::runtime_error("Error allocating vulkan buffer memory");
+        }
+
+        vkBindBufferMemory(this->_logicalDevice, buffer, bufferMemory, 0);
+    }
+
+    /**
+     * @brief Creates vulkan uniform buffers
+     */
+    void _createUniformBuffers() {
+        VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+        this->_uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+        this->_uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
+        this->_mappedUniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+
+        for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            this->_createBuffer(
+                bufferSize,
+                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                this->_uniformBuffers.at(i),
+                this->_uniformBuffersMemory.at(i)
+            );
+
+            vkMapMemory(this->_logicalDevice, this->_uniformBuffersMemory.at(i), 0, bufferSize, 0, &(this->_mappedUniformBuffers.at(i)));
+        }
+    }
+
+    /**
+     * @brief Creates vulkan descriptor pool
+     */
+    void _createDescriptorPool() {
+        VkDescriptorPoolSize poolSize{};
+        poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+        VkDescriptorPoolCreateInfo poolCreateInfo{};
+        poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        poolCreateInfo.poolSizeCount = 1;
+        poolCreateInfo.pPoolSizes = &poolSize;
+        poolCreateInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+        if(vkCreateDescriptorPool(this->_logicalDevice, &poolCreateInfo, nullptr, &(this->_descriptorPool)) != VK_SUCCESS) {
+            throw std::runtime_error("Error creating vulkan descriptor pool");
+        }
+    }
+
+    /**
+     * @brief Creates vulkan descriptor sets
+     */
+    void _createDescriptorSets() {
+        std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, this->_descriptorSetLayout);
+
+        VkDescriptorSetAllocateInfo allocateInfo{};
+        allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocateInfo.descriptorPool = this->_descriptorPool;
+        allocateInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        allocateInfo.pSetLayouts = layouts.data();
+
+        this->_descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+
+        if(vkAllocateDescriptorSets(this->_logicalDevice, &allocateInfo, this->_descriptorSets.data()) != VK_SUCCESS) {
+            throw std::runtime_error("Error allocating vulkan descriptor sets");
+        }
+
+        for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            VkDescriptorBufferInfo descriptorBufferInfo{};
+            descriptorBufferInfo.buffer = this->_uniformBuffers.at(i);
+            descriptorBufferInfo.offset = 0;
+            descriptorBufferInfo.range = sizeof(UniformBufferObject);
+
+            VkWriteDescriptorSet writeDescriptorSet{};
+            writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            writeDescriptorSet.dstSet = this->_descriptorSets.at(i);
+            writeDescriptorSet.dstBinding = 0;
+            writeDescriptorSet.dstArrayElement = 0;
+            writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            writeDescriptorSet.descriptorCount = 1;
+            writeDescriptorSet.pBufferInfo = &descriptorBufferInfo;
+
+            vkUpdateDescriptorSets(this->_logicalDevice, 1, &writeDescriptorSet, 0, nullptr);
+        }
+    }
+
+    /**
+     * @brief Updates uniform buffer currently used for rendering frame
+     */
+    void _setUniformBuffers() {
+        UniformBufferObject ubo{};
+        ubo.view = this->_camera.getViewMatrix();
+        ubo.projection = this->_camera.getProjectionMatrix();
+
+        memcpy(this->_mappedUniformBuffers.at(this->_currentFrameIndex), &ubo, sizeof(ubo));
+    }
+
+    /**
      * @brief Creates vulkan graphics pipeline
      * Color blending is enabled
      */
@@ -895,8 +1108,8 @@ private:
         dynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
         dynamicStateCreateInfo.pDynamicStates = dynamicStates.data();
 
-        VkVertexInputBindingDescription vertexInputBindingDescription = tr::vertex_t::getVertexInutBindingDescription();
-        VkVertexInputAttributeDescription vertexInputAttributeDescription = tr::vertex_t::getVertexInputAttributeDescription();
+        VkVertexInputBindingDescription vertexInputBindingDescription = tr::getVertexInutBindingDescription();
+        VkVertexInputAttributeDescription vertexInputAttributeDescription = tr::getVertexInputAttributeDescription();
 
         VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo{};
         vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -953,8 +1166,8 @@ private:
 
         VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
         pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutCreateInfo.setLayoutCount = 0;
-        pipelineLayoutCreateInfo.pSetLayouts = nullptr;
+        pipelineLayoutCreateInfo.setLayoutCount = 1;
+        pipelineLayoutCreateInfo.pSetLayouts = &this->_descriptorSetLayout;
         pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
         pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 
@@ -1087,27 +1300,8 @@ private:
         vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-        if(this->_tr.getVertexCount() > 0) {
-            VkBuffer vertexBuffers[] = { this->_tr.getVertexBuffer() };
-            VkDeviceSize offsets[] = { 0 };
-
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-            vkCmdBindIndexBuffer(commandBuffer, this->_tr.getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
-        }
-
-        for(Character &character : this->_tr.getCharacters()) {
-            if(character.glyph.getVertexCount() > 0) {
-                tr::character_push_constants_t pushConstants = {
-                    .x = character.getX(),
-                    .y = character.getY(),
-                    .windowWidth = this->_window.get()->getWidth(),
-                    .windowHeight = this->_window.get()->getHeight(),
-                };
-                vkCmdPushConstants(commandBuffer, this->_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(tr::character_push_constants_t), &pushConstants);
-
-                vkCmdDrawIndexed(commandBuffer, character.glyph.getIndexCount(), 1, character.getIndexBufferOffset(), 0, 0);
-            }
-        }
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_pipelineLayout, 0, 1, &(this->_descriptorSets.at(this->_currentFrameIndex)), 0, nullptr);
+        this->_tr.draw(commandBuffer);
 
         vkCmdEndRenderPass(commandBuffer);
 
@@ -1146,12 +1340,12 @@ private:
      * @brief Records and executes the command buffer, presents output to screen
      */
     void _drawFrame() {
-        uint32_t currentFrameIndex = 0;
+        vkWaitForFences(this->_logicalDevice, 1, &this->_inFlightFences[this->_currentFrameIndex], true, UINT64_MAX);
 
-        vkWaitForFences(this->_logicalDevice, 1, &this->_inFlightFences[currentFrameIndex], true, UINT64_MAX);
+        _setUniformBuffers();
 
         uint32_t imageIndex;
-        VkResult result = vkAcquireNextImageKHR(this->_logicalDevice, this->_swapChain, UINT64_MAX, this->_imageAvailableSemaphores[currentFrameIndex], nullptr, &imageIndex);
+        VkResult result = vkAcquireNextImageKHR(this->_logicalDevice, this->_swapChain, UINT64_MAX, this->_imageAvailableSemaphores[this->_currentFrameIndex], nullptr, &imageIndex);
         if(result == VK_ERROR_OUT_OF_DATE_KHR) {
             _recreateSwapChain();
             return;
@@ -1160,13 +1354,13 @@ private:
             throw std::runtime_error("Error acquiring vulkan swap chain image");
         }
 
-        vkResetFences(this->_logicalDevice, 1, &this->_inFlightFences[currentFrameIndex]);
+        vkResetFences(this->_logicalDevice, 1, &this->_inFlightFences[this->_currentFrameIndex]);
 
-        vkResetCommandBuffer(this->_commandBuffers[currentFrameIndex], 0);
-        _recordCommandBuffer(this->_commandBuffers[currentFrameIndex], imageIndex);
+        vkResetCommandBuffer(this->_commandBuffers[this->_currentFrameIndex], 0);
+        _recordCommandBuffer(this->_commandBuffers[this->_currentFrameIndex], imageIndex);
 
-        VkSemaphore signalSemaphores[] = { this->_renderFinishedSemaphores[currentFrameIndex] };
-        VkSemaphore waitSemaphores[] = { this->_imageAvailableSemaphores[currentFrameIndex] };
+        VkSemaphore signalSemaphores[] = { this->_renderFinishedSemaphores[this->_currentFrameIndex] };
+        VkSemaphore waitSemaphores[] = { this->_imageAvailableSemaphores[this->_currentFrameIndex] };
         VkPipelineStageFlags waitStagees[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
         VkSubmitInfo submitInfo{};
@@ -1177,9 +1371,9 @@ private:
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &this->_commandBuffers[currentFrameIndex];
+        submitInfo.pCommandBuffers = &this->_commandBuffers[this->_currentFrameIndex];
 
-        if(vkQueueSubmit(this->_graphicsQueue, 1, &submitInfo, this->_inFlightFences[currentFrameIndex]) != VK_SUCCESS) {
+        if(vkQueueSubmit(this->_graphicsQueue, 1, &submitInfo, this->_inFlightFences[this->_currentFrameIndex]) != VK_SUCCESS) {
             throw std::runtime_error("Error submiting draw command buffer");
         }
 
@@ -1203,7 +1397,7 @@ private:
             throw std::runtime_error("Error presenting vulkan swap chain image");
         }
 
-        currentFrameIndex = (currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+        this->_currentFrameIndex = (this->_currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 };
 

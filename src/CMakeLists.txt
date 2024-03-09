@@ -13,6 +13,8 @@ set(KIO_SOURCES
     text_renderer_utils.h
     character.h
     character.cpp
+    orto_camera.h
+    orto_camera.cpp
 )
 
 # Setup xdg-shell and xdg-decoration on Wayland
