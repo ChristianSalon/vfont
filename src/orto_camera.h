@@ -8,25 +8,31 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 
+/**
+ * @class OrtographicCamera
+ * 
+ * @brief Camera using ortographic projection
+ */
 class OrtographicCamera {
 
 private:
 
-    glm::vec3 _position;
+    // In pixels
+    glm::vec3 _position;            /**< Camera position */
 
     // In degrees
-    glm::vec3 _rotation;
+    glm::vec3 _rotation;            /**< Camera rotation */
 
     // In pixels
-    float _left;
-    float _right;
-    float _bottom;
-    float _top;
-    float _nearPlane;
-    float _farPlane;
+    float _left;                    /**< Left clipping plane */
+    float _right;                   /**< Right clipping plane */
+    float _bottom;                  /**< Bottom clipping plane */
+    float _top;                     /**< Top clipping plane */
+    float _nearPlane;               /**< Near clipping plane */
+    float _farPlane;                /**< Far clipping plane */
 
-    glm::mat4 _viewMatrix;
-    glm::mat4 _projectionMatrix;
+    glm::mat4 _viewMatrix;          /**< View matrix */
+    glm::mat4 _projectionMatrix;    /**< Projection matrix */
 
 public:
 
