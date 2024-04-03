@@ -1,5 +1,5 @@
 /**
- * @file orto_camera.h
+ * @file perspective_camera.h
  * @author Christian Saloň
  */
 
@@ -9,46 +9,38 @@
 
 #include "base_camera.h"
 
-class OrtographicCamera : public BaseCamera {
+class PerspectiveCamera : public BaseCamera {
 
 private:
 
+    float _fov; // In degrees
+    float _aspectRatio;
+
     // In pixels
-    float _left;
-    float _right;
-    float _bottom;
-    float _top;
     float _nearPlane;
     float _farPlane;
 
 public:
 
-    OrtographicCamera(
+    PerspectiveCamera(
         glm::vec3 position,
         glm::vec3 rotation,
-        float left,
-        float right,
-        float bottom,
-        float top,
+        float fov,
+        float aspectRatio,
         float nearPlane,
         float farPlane
     );
-    OrtographicCamera(
+    PerspectiveCamera(
         glm::vec3 position,
-        float left,
-        float right,
-        float bottom,
-        float top,
+        float fov,
+        float aspectRatio,
         float nearPlane,
         float farPlane
     );
-    OrtographicCamera();
 
     void setProjection(
-        float left,
-        float right,
-        float bottom,
-        float top,
+        float fov,
+        float aspectRatio,
         float nearPlane,
         float farPlane
     );

@@ -22,6 +22,8 @@
 #include "window.h"
 #include "text_renderer.h"
 #include "text_renderer_utils.h"
+#include "base_camera.h"
+#include "perspective_camera.h"
 #include "orto_camera.h"
 
 std::string DEFAULT_FONT_FILE = "arial.ttf";
@@ -99,7 +101,8 @@ private:
 
     std::shared_ptr<MainWindow> _window;                    /**< Application window */
     TextRenderer &_tr = TextRenderer::getInstance();        /**< Text Renderer */
-    OrtographicCamera _camera;                              /**< Camera object */
+    std::unique_ptr<BaseCamera> _camera;                    /**< Camera object */
+    CameraType _cameraType;                                 /**< Type of camera used for rendering */
 
     uint32_t _currentFrameIndex;                            /**< Current frame used for rendering */
 
@@ -138,8 +141,9 @@ public:
     /**
      * @brief Sets attributes to default values
      */
-    App(std::string fontFilePath) {
+    App(std::string fontFilePath, CameraType cameraType) {
         this->_fontFilePath = fontFilePath;
+        this->_cameraType = cameraType;
         this->_fontSize = 32;
 
         this->_currentFrameIndex = 0;
@@ -196,12 +200,22 @@ public:
     void run() {
         _createWindow();
 
-        this->_camera = {
-            glm::vec3(0.f, 0.f, -1000.f),
-            0.f, static_cast<float>(this->_window.get()->getWidth()),
-            0.f, static_cast<float>(this->_window.get()->getHeight()),
-            0.f, 2000.f
-        };
+        if(this->_cameraType == CameraType::ORTOGRAPHIC) {
+            this->_camera.reset(new OrtographicCamera{
+                glm::vec3(0.f, 0.f, -1000.f),
+                0.f, static_cast<float>(this->_window.get()->getWidth()),
+                0.f, static_cast<float>(this->_window.get()->getHeight()),
+                0.f, 2000.f
+            });
+        }
+        else {
+            this->_camera.reset(new PerspectiveCamera{
+                glm::vec3(0.f, 0.f, -500.f),
+                80.f,
+                static_cast<float>(this->_window.get()->getWidth()) / static_cast<float>(this->_window.get()->getHeight()),
+                0.f, 2000.f
+            });
+        }
 
         _initVulkan();
 
@@ -225,11 +239,20 @@ public:
     void updateWindowDimensions(int width, int height) {
         TextRenderer::getInstance().setViewport(width, height);
 
-        this->_camera.setProjection(
-            0.f, static_cast<float>(width),
-            0.f, static_cast<float>(height),
-            0.f, 2000.f
-        );
+        if(this->_cameraType == CameraType::ORTOGRAPHIC) {
+            reinterpret_cast<OrtographicCamera *>(this->_camera.get())->setProjection(
+                0.f, static_cast<float>(width),
+                0.f, static_cast<float>(height),
+                0.f, 2000.f
+            );
+        }
+        else {
+            reinterpret_cast<PerspectiveCamera *>(this->_camera.get())->setProjection(
+                50.f,
+                static_cast<float>(width) / static_cast<float>(height),
+                0.f, 2000.f
+            );
+        }
     }
 
 private:
@@ -1067,8 +1090,8 @@ private:
      */
     void _setUniformBuffers() {
         UniformBufferObject ubo{};
-        ubo.view = this->_camera.getViewMatrix();
-        ubo.projection = this->_camera.getProjectionMatrix();
+        ubo.view = this->_camera.get()->getViewMatrix();
+        ubo.projection = this->_camera.get()->getProjectionMatrix();
 
         memcpy(this->_mappedUniformBuffers.at(this->_currentFrameIndex), &ubo, sizeof(ubo));
     }
@@ -1408,15 +1431,46 @@ int main(int argc, char **argv) {
     std::cout << "App started" << std::endl;
 
     try {
-        std::string filePathName;
-        if(argc < 2) {
-            filePathName = DEFAULT_FONT_FILE;
-        }
-        else {
-            filePathName = argv[1];
+        std::string filePathName = DEFAULT_FONT_FILE;
+        CameraType cameraType = CameraType::ORTOGRAPHIC;
+        float fov = 50.f;
+
+        for(int i = 1; i < argc; i++) {
+            if(argv[i] == "-h") {
+                // Show help message
+                std::cout << "./kio [-h] [-c <perspective/ortographic>] [-p <fontFilePath>] [-f <fov>]" << std::endl;
+                return EXIT_SUCCESS;
+            }
+            else if(argv[i] == "-c") {
+                // Set camera type
+                std::string type = argv[++i];
+
+                if(type == "perspective") {
+                    cameraType = CameraType::PERSPECTIVE;
+                }
+                else if(type == "ortographic") {
+                    cameraType = CameraType::ORTOGRAPHIC;
+                }
+                else {
+                    std::cerr << "Camera type must be perspective or ortographic" << std::endl;
+                    return EXIT_FAILURE;
+                }
+            }
+            else if(argv[i] == "-p") {
+                // Set font file
+                filePathName = argv[++i];
+            }
+            else if(argv[i] == "-f") {
+                // Set camera fov
+                fov = std::stof(argv[++i]);
+            }
+            else {
+                std::cerr << "Invalid argument at position " << i << std::endl;
+                return EXIT_FAILURE;
+            }
         }
 
-        App app(static_cast<std::string>(filePathName));
+        App app(filePathName, cameraType);
         app.run();
     } catch(const std::exception &e) {
         std::cerr << e.what() << std::endl;
