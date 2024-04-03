@@ -8,6 +8,18 @@
 
 #include "orto_camera.h"
 
+/**
+ * @brief Ortographic camera constructor
+ * 
+ * @param position Camera position
+ * @param rotation Camera rotation
+ * @param left Left clipping plane
+ * @param right Right clipping plane
+ * @param bottom Bottom clipping plane
+ * @param top Top clipping plane
+ * @param nearPalne Near clipping plane
+ * @param farPlane Far clipping plane
+ */
 OrtographicCamera::OrtographicCamera(
     glm::vec3 position,
     glm::vec3 rotation,
@@ -21,6 +33,17 @@ OrtographicCamera::OrtographicCamera(
     this->setProjection(left, right, bottom, top, nearPlane, farPlane);
 }
 
+/**
+ * @brief Ortographic camera constructor with no rotation applied
+ * 
+ * @param position Camera position
+ * @param left Left clipping plane
+ * @param right Right clipping plane
+ * @param bottom Bottom clipping plane
+ * @param top Top clipping plane
+ * @param nearPalne Near clipping plane
+ * @param farPlane Far clipping plane
+ */
 OrtographicCamera::OrtographicCamera(
     glm::vec3 position,
     float left,
@@ -33,10 +56,12 @@ OrtographicCamera::OrtographicCamera(
     this->setProjection(left, right, bottom, top, nearPlane, farPlane);
 }
 
+/**
+ * @brief Ortographic camera constructor
+ */
 OrtographicCamera::OrtographicCamera() : BaseCamera{ glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f) } {
     this->setProjection(-1.f, 1.f, -1.f, 1.f, 0.f, 1.f);
 }
-
 void OrtographicCamera::setProjection(
     float left,
     float right,
