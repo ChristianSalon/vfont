@@ -40,15 +40,23 @@ const int MainWindow::DEFAULT_HEIGHT = 512;                     /**< Default win
 /**
  * @brief Sets window attributes to default values
  */
-MainWindow::MainWindow(std::function<void(int, int)> resizeCallback) {
+MainWindow::MainWindow(
+    std::function<void(int, int)> resizeCallback,
+    std::function<void(float, float, bool)> dragCallback,
+    std::function<void(float)> scrollCallback
+) {
     this->_hwnd = NULL;
     this->_hInstance = GetModuleHandle(NULL);
 
     this->_resizeCallback = resizeCallback;
+    this->_dragCallback = dragCallback;
+    this->_scrollCallback = scrollCallback;
+
     this->_isActive = false;
     this->_resized = false;
     this->_width = DEFAULT_WIDTH;
     this->_height = DEFAULT_HEIGHT;
+    this->_dragging = false;
 }
 
 /**
@@ -69,7 +77,7 @@ MainWindow::~MainWindow() {
 LRESULT CALLBACK MainWindow::_wndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     MainWindow *pThis;
 
-    switch (uMsg) {
+    switch(uMsg) {
         case WM_CREATE: {
             pThis = static_cast<MainWindow *>(reinterpret_cast<CREATESTRUCT *>(lParam)->lpCreateParams);
             pThis->_isActive = true;
@@ -80,7 +88,7 @@ LRESULT CALLBACK MainWindow::_wndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARA
 
         case WM_CLOSE: {
             pThis = reinterpret_cast<MainWindow *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-            if (!pThis) {
+            if(!pThis) {
                 throw std::runtime_error("Error getting window data");
             }
 
@@ -91,15 +99,15 @@ LRESULT CALLBACK MainWindow::_wndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARA
             return 0;
         }
 
-        // Handle window resize
+                     // Handle window resize
         case WM_SIZE: {
             pThis = reinterpret_cast<MainWindow *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-            if (!pThis) {
+            if(!pThis) {
                 throw std::runtime_error("Error getting window data");
             }
 
             // Window minimization
-            if (LOWORD(lParam) == 0 || HIWORD(lParam) == 0) {
+            if(LOWORD(lParam) == 0 || HIWORD(lParam) == 0) {
                 break;
             }
 
@@ -110,7 +118,7 @@ LRESULT CALLBACK MainWindow::_wndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARA
             break;
         }
 
-        // End of window resizing or window repositioning
+                    // End of window resizing or window repositioning
         case WM_EXITSIZEMOVE: {
             pThis = reinterpret_cast<MainWindow *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
             if(!pThis) {
@@ -118,6 +126,64 @@ LRESULT CALLBACK MainWindow::_wndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARA
             }
 
             pThis->_resizeCallback(pThis->_width, pThis->_height);
+
+            break;
+        }
+
+        case WM_LBUTTONDOWN: {
+            pThis = reinterpret_cast<MainWindow *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+            if(!pThis) {
+                throw std::runtime_error("Error getting window data");
+            }
+
+            SetCapture(hwnd);
+            pThis->_dragging = true;
+            GetCursorPos(&pThis->_lastMousePosition);
+
+            break;
+        }
+
+        case WM_LBUTTONUP: {
+            pThis = reinterpret_cast<MainWindow *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+            if(!pThis) {
+                throw std::runtime_error("Error getting window data");
+            }
+
+            ReleaseCapture();
+            pThis->_dragging = false;
+
+            break;
+        }
+
+        case WM_MOUSEMOVE: {
+            pThis = reinterpret_cast<MainWindow *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+            if(!pThis) {
+                throw std::runtime_error("Error getting window data");
+            }
+
+            if(pThis->_dragging) {
+                POINT currentMousePos;
+                GetCursorPos(&currentMousePos);
+
+                int dx = currentMousePos.x - pThis->_lastMousePosition.x;
+                int dy = currentMousePos.y - pThis->_lastMousePosition.y;
+                bool shiftPressed = wParam & MK_SHIFT;
+
+                pThis->_dragCallback(dx, dy, shiftPressed);
+                pThis->_lastMousePosition = currentMousePos;
+            }
+
+            break;
+        }
+
+        case WM_MOUSEWHEEL: {
+            pThis = reinterpret_cast<MainWindow *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+            if(!pThis) {
+                throw std::runtime_error("Error getting window data");
+            }
+
+            float z = GET_WHEEL_DELTA_WPARAM(wParam);
+            pThis->_scrollCallback(z);
 
             break;
         }

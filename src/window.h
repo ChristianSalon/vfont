@@ -42,12 +42,19 @@ private:
     bool _resized;
     int _width;
     int _height;
+    bool _dragging;
 
     std::function<void(int, int)> _resizeCallback;
+    std::function<void(float, float, bool)> _dragCallback;
+    std::function<void(float)> _scrollCallback;
 
 public:
 
-    MainWindow(std::function<void(int, int)> _resizeCallback);
+    MainWindow(
+        std::function<void(int, int)> _resizeCallback,
+        std::function<void(float, float, bool)> _dragCallback,
+        std::function<void(float)> _scrollCallback
+    );
     ~MainWindow();
 
     void create();
@@ -74,6 +81,8 @@ private:
     HWND _hwnd;
     HINSTANCE _hInstance;
     static LRESULT CALLBACK _wndProc(HWND hwndMain, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+    POINT _lastMousePosition;
 
 #elif defined(USE_X11)
 

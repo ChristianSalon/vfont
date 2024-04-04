@@ -52,14 +52,14 @@ OrtographicCamera::OrtographicCamera(
     float top, 
     float nearPlane,
     float farPlane
-) : BaseCamera{ position, glm::vec3(0.f, 0.f, 0.f) } {
+) : BaseCamera{ position, glm::vec3(0.f, -90.f, 0.f) } {
     this->setProjection(left, right, bottom, top, nearPlane, farPlane);
 }
 
 /**
  * @brief Ortographic camera constructor
  */
-OrtographicCamera::OrtographicCamera() : BaseCamera{ glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f) } {
+OrtographicCamera::OrtographicCamera() : BaseCamera{ glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, -90.f, 0.f) } {
     this->setProjection(-1.f, 1.f, -1.f, 1.f, 0.f, 1.f);
 }
 void OrtographicCamera::setProjection(

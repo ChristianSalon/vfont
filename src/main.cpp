@@ -255,6 +255,24 @@ public:
         }
     }
 
+    void updateCameraRotation(float x, float y) {
+        static const float rotateFactor = 0.4;
+
+        glm::vec3 rotation;
+        rotation.x = (y / this->_window.get()->getHeight()) * 360.f;
+        rotation.y = (x / this->_window.get()->getWidth()) * 360.f;
+        rotation.z = 0;
+        rotation *= rotateFactor;
+
+        this->_camera.get()->rotate(rotation);
+    }
+
+    void updateCameraPosition(float x, float y, float z) {
+        static const float translateFactor = 0.4;
+
+        this->_camera.get()->translate(glm::vec3(x, y, z) * translateFactor);
+    }
+
 private:
 
     /**
@@ -284,8 +302,22 @@ private:
      */
     void _createWindow() {
         this->_window.reset(new MainWindow(
+            // Resize callback
             [this](int width, int height) -> void {
                 this->updateWindowDimensions(width, height);
+            },
+            // Drag callback
+            [this](float x, float y, bool shiftPressed) -> void {
+                if(shiftPressed) {
+                    this->updateCameraPosition(x, y, 0.f);
+                }
+                else {
+                    this->updateCameraRotation(x, y);
+                }
+            },
+            // Scroll callback
+            [this](float z) -> void {
+                this->updateCameraPosition(0.f, 0.f, z);
             }
         ));
         this->_window->create();
@@ -1432,7 +1464,7 @@ int main(int argc, char **argv) {
 
     try {
         std::string filePathName = DEFAULT_FONT_FILE;
-        CameraType cameraType = CameraType::ORTOGRAPHIC;
+        CameraType cameraType = CameraType::PERSPECTIVE;
         float fov = 50.f;
 
         for(int i = 1; i < argc; i++) {

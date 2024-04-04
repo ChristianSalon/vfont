@@ -25,7 +25,7 @@ PerspectiveCamera::PerspectiveCamera(
     float aspectRatio,
     float nearPlane,
     float farPlane
-) : BaseCamera{ position, glm::vec3(0.f, 0.f, 0.f) } {
+) : BaseCamera{ position, glm::vec3(0.f, -90.f, 0.f) } {
     this->setProjection(fov, aspectRatio, nearPlane, farPlane);
 }
 
