@@ -19,7 +19,7 @@ class Character {
 
 public:
 
-    Glyph &glyph;                   /**< Reference to glyph data */
+    const Glyph &glyph;             /**< Reference to glyph data */
 
 private:
 
@@ -34,17 +34,18 @@ private:
 
 public:
 
-    Character(uint32_t codePoint, Glyph &glyph, glm::vec3 position, glm::mat4 transform);
+    Character(uint32_t codePoint, const Glyph &glyph, glm::vec3 position, glm::mat4 transform);
 
     void setUnicodeCodePoint(uint32_t unicodeCodePoint);
     void setVertexBufferOffset(uint32_t vertexBufferOffset);
     void setIndexBufferOffset(uint32_t indexBufferOffset);
     void setModelMatrix(glm::mat4 modelMatrix);
+    void transform(glm::mat4 transform);
 
-    uint32_t getUnicodeCodePoint();
-    uint32_t getVertexBufferOffset();
-    uint32_t getIndexBufferOffset();
-    glm::vec3 getPosition();
-    glm::mat4 getModelMatrix();
+    uint32_t getUnicodeCodePoint() const;
+    uint32_t getVertexBufferOffset() const;
+    uint32_t getIndexBufferOffset() const;
+    glm::vec3 getPosition() const;
+    glm::mat4 getModelMatrix() const;
 
 };

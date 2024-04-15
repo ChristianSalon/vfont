@@ -6,6 +6,7 @@
 #pragma once
 
 #include <vector>
+#include <array>
 #include <memory>
 #include <unordered_map>
 #include <map>
@@ -19,6 +20,7 @@
 #include "glyph.h"
 #include "character.h"
 #include "text_renderer_utils.h"
+#include "text_block.h"
 
 /**
  * @class TextRenderer
@@ -41,22 +43,8 @@ private:
     std::vector<glm::vec2> _vertices;               /**< Vertex buffer */
     std::vector<uint32_t> _indices;                 /**< Index buffer */
 
-    /**
-     * @brief Map containing glyph information.
-     * Key: unicode code point, Value: Glyph vertex data and metrics
-     */
-    std::unordered_map<uint32_t, Glyph> _glyphInfo;
-    std::vector<Character> _characters;             /**< Vector of characters to render */
+    std::vector<std::shared_ptr<TextBlock>> _blocks;
 
-    unsigned int _fontSize;                         /**< Character size used for rendering */
-    bool _useKerning;                               /**< Indicates whether to use kerning */
-    bool _useWrapping;                              /**< Indicates whether to use word wrapping (line breaking), works only in 2D */
-    glm::mat4 _transformMatrix;                     /**< User specified transforms, resets after every add() call */
-    int _penX;                                      /**< X coordinate of current pen position (indicates where to render next characters) */
-    int _penY;                                      /**< Y coordinate of current pen position (indicates where to render next characters) */
-
-    FT_Library _ft;                                 /**< Freetype library */
-    FT_Face _face;                                  /**< Freetype face */
     Glyph _currentGlyph;                            /**< Currently processed glyph */
     uint32_t _vertexId;                             /**< Currently processed glyph's vertex id counter */
     uint32_t _contourStartVertexId;                 /**< Vertex id for the starting vertex of a contour */
@@ -66,9 +54,6 @@ private:
     static FT_Outline_LineToFunc _lineToFunc;
     static FT_Outline_ConicToFunc _conicToFunc;
     static FT_Outline_CubicToFunc _cubicToFunc;
-
-    unsigned int _viewportWidth;                    /**< Target window's width */
-    unsigned int _viewportHeight;                   /**< Target window's height */
 
     VkPhysicalDevice _physicalDevice;               /**< Vulkan physical device */
     VkDevice _logicalDevice;                        /**< Vulkan logical device */
@@ -84,38 +69,23 @@ public:
 
     static TextRenderer &getInstance();
     void init(
-        unsigned int fontSize,
-        std::string fontFilePath,
-        unsigned int viewportWidth,
-        unsigned int viewportHeight,
         VkPhysicalDevice physicalDevice,
         VkDevice logicalDevice,
         VkCommandPool commandPool,
         VkQueue graphicsQueue,
-        VkPipelineLayout pipelineLayout,
-        bool useKerning = true,
-        bool useWrapping = false
-    );
+        VkPipelineLayout pipelineLayout);
     void draw(VkCommandBuffer commandBuffer);
     void destroy();
 
-    void add(std::vector<uint32_t> codePoints);
-    void add(std::vector<uint32_t> codePoints, int x, int y);
-    void add(std::vector<uint32_t> codePoints, std::vector<glm::mat4> transforms);
-    void remove(unsigned int count = 1);
+    void add(std::shared_ptr<TextBlock> text);
+    void renderGlyph(uint32_t codePoint, std::shared_ptr<Font> font);
+    void recreateBuffers();
 
-    void useKerning(bool kerning);
-    void useWrapping(bool wrapping);
-    void scale(float x, float y, float z);
-    void translate(float x, float y, float z);
-    void rotate(float x, float y, float z);
-    void setViewport(unsigned int width, unsigned int height);
-
-    std::vector<Character> getCharacters();
     uint32_t getVertexCount();
     uint32_t getIndexCount();
     VkBuffer getVertexBuffer();
     VkBuffer getIndexBuffer();
+
 
 private:
 
@@ -129,14 +99,18 @@ private:
         glm::vec2 endPoint,
         float t,
         float delta,
-        std::map<float, glm::vec2> &vertices
-    );
-    void _initializeGlyphInfo();
+        std::map<float, glm::vec2> &vertices);
+    double _determinant(double a, double b, double c, double d);
+    bool _isPointOnLineSegment(double x1, double y1, double x2, double y2, double x, double y);
+    bool _intersect(
+        const std::vector<glm::vec2> &vertices,
+        tr::edge_t first,
+        tr::edge_t second,
+        glm::vec2 &intersection);
+    void _checkIntersectingEdges(std::vector<glm::vec2> &vertices, std::vector<tr::edge_t> &edges);
 
-    void _renderGlyph(uint32_t codePoint);
-    void _decomposeGlyph(uint32_t codePoint);
+    void _decomposeGlyph(uint32_t codePoint, std::shared_ptr<Font> font);
     void _triangulate();
-    void _recreateBuffers();
 
     void _createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
     void _copyBuffer(VkBuffer sourceBuffer, VkBuffer destinationBuffer, VkDeviceSize size);

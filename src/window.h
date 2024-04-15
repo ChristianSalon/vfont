@@ -47,20 +47,22 @@ private:
     std::function<void(int, int)> _resizeCallback;
     std::function<void(float, float, bool)> _dragCallback;
     std::function<void(float)> _scrollCallback;
+    std::function<void(uint32_t)> _keypressCallback;
 
 public:
 
-    MainWindow(
-        std::function<void(int, int)> _resizeCallback,
-        std::function<void(float, float, bool)> _dragCallback,
-        std::function<void(float)> _scrollCallback
-    );
+    MainWindow();
     ~MainWindow();
 
     void create();
     void show();
     void pollEvents();
     void wait();
+
+    void setResizeCallback(std::function<void(int, int)> resizeCallback);
+    void setDragCallback(std::function<void(float, float, bool)> dragCallback);
+    void setScrollCallback(std::function<void(float)> scrollCallback);
+    void setKeypressCallback(std::function<void(uint32_t)> keypressCallback);
 
     bool isActive();
     bool isMinimized();

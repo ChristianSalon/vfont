@@ -43,34 +43,46 @@ void Glyph::setAdvanceY(int advanceY) {
     this->_advanceY = advanceY;
 }
 
-int Glyph::getAdvanceX() {
+void Glyph::setVertices(const std::vector<glm::vec2> &vertices) {
+    this->_vertices = vertices;
+}
+
+void Glyph::setIndices(const std::vector<uint32_t> &indices) {
+    this->_indices = indices;
+}
+
+void Glyph::setEdges(const std::vector<tr::edge_t> &edges) {
+    this->_edges = edges;
+}
+
+int Glyph::getAdvanceX() const {
     return this->_advanceX;
 }
 
-int Glyph::getAdvanceY() {
+int Glyph::getAdvanceY() const {
     return this->_advanceY;
 }
 
-std::vector<glm::vec2> &Glyph::getVertices() {
+const std::vector<glm::vec2> &Glyph::getVertices() const {
     return this->_vertices;
 }
 
-std::vector<uint32_t> &Glyph::getIndices() {
+const std::vector<uint32_t> &Glyph::getIndices() const {
     return this->_indices;
 }
 
-std::vector<tr::edge_t> &Glyph::getEdges() {
+const std::vector<tr::edge_t> &Glyph::getEdges() const {
     return this->_edges;
 }
 
-int Glyph::getVertexCount() {
+int Glyph::getVertexCount() const {
     return this->_vertices.size();
 }
 
-int Glyph::getIndexCount() {
+int Glyph::getIndexCount() const {
     return this->_indices.size();
 }
 
-int Glyph::getEdgeCount() {
+int Glyph::getEdgeCount() const {
     return this->_edges.size();
 }

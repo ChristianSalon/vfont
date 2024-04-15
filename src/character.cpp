@@ -16,7 +16,7 @@
  * @param position Position of character
  * @param transform Character transform matrix
  */
-Character::Character(uint32_t codePoint, Glyph &glyph, glm::vec3 position, glm::mat4 transform) : glyph(glyph) {
+Character::Character(uint32_t codePoint, const Glyph &glyph, glm::vec3 position, glm::mat4 transform) : glyph(glyph) {
     this->_unicodeCodePoint = codePoint;
     this->_position = position;
     this->_indexBufferOffset = 0;
@@ -43,7 +43,7 @@ void Character::setUnicodeCodePoint(uint32_t unicodeCodePoint) {
  *
  * @return Unicode code point of character
  */
-uint32_t Character::getUnicodeCodePoint() {
+uint32_t Character::getUnicodeCodePoint() const {
     return this->_unicodeCodePoint;
 }
 
@@ -61,7 +61,7 @@ void Character::setVertexBufferOffset(uint32_t vertexBufferOffset) {
  *
  * @return Offset in vertex buffer
  */
-uint32_t Character::getVertexBufferOffset() {
+uint32_t Character::getVertexBufferOffset() const {
     return this->_vertexBufferOffset;
 }
 
@@ -83,12 +83,20 @@ void Character::setModelMatrix(glm::mat4 modelMatrix) {
     this->_modelMatrix = modelMatrix;
 }
 
+void Character::transform(glm::mat4 transform) {
+    this->_modelMatrix =
+        transform *
+        glm::translate(glm::mat4(1.f), this->_position) *
+        glm::rotate(glm::mat4(1.f), glm::radians(180.f), glm::vec3(1.f, 0.f, 0.f)) *
+        glm::scale(glm::mat4(1.f), glm::vec3(1.f / 64.f, 1.f / 64.f, 0.f));
+}
+
 /**
  * @brief Getter for index buffer offset
  *
  * @return Offset in index buffer
  */
-uint32_t Character::getIndexBufferOffset() {
+uint32_t Character::getIndexBufferOffset() const {
     return this->_indexBufferOffset;
 }
 
@@ -97,7 +105,7 @@ uint32_t Character::getIndexBufferOffset() {
  *
  * @return (X, Y, Z) coordinates of character
  */
-glm::vec3 Character::getPosition() {
+glm::vec3 Character::getPosition() const {
     return this->_position;
 }
 
@@ -106,6 +114,6 @@ glm::vec3 Character::getPosition() {
  *
  * @return Model matrix
  */
-glm::mat4 Character::getModelMatrix() {
+glm::mat4 Character::getModelMatrix() const {
     return this->_modelMatrix;
 }

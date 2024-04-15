@@ -2,6 +2,12 @@
 add_executable(kio)
 set(KIO_SOURCES
     main.cpp
+    scene.h
+    scene.cpp
+    demo_scene.h
+    demo_scene.cpp
+    editor_scene.h
+    editor_scene.cpp
     window.h
     window.cpp
     kb_input.h
@@ -19,6 +25,10 @@ set(KIO_SOURCES
     orto_camera.cpp
     perspective_camera.h
     perspective_camera.cpp
+    font.h
+    font.cpp
+    text_block.h
+    text_block.cpp
 )
 
 # Setup xdg-shell and xdg-decoration on Wayland
@@ -52,8 +62,13 @@ add_custom_target(shaders
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shader.vert" "${CMAKE_CURRENT_SOURCE_DIR}/shader.frag"
 )
 
+# Add font files to executable directory
 add_custom_command(TARGET kio POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/arial.ttf" "$<TARGET_FILE_DIR:kio>"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/Arial-Regular.ttf" "$<TARGET_FILE_DIR:kio>"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/Jersey10-Regular.ttf" "$<TARGET_FILE_DIR:kio>"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/CrimsonText-Italic.ttf" "$<TARGET_FILE_DIR:kio>"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/RobotoMono-Bold.ttf" "$<TARGET_FILE_DIR:kio>"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/NotoSansJP-Regular.ttf" "$<TARGET_FILE_DIR:kio>"
 )
 
 target_sources(kio PRIVATE ${KIO_SOURCES} "base_camera.cpp")

@@ -250,11 +250,11 @@ void KbInput::_drawCharacter(uint32_t codePoint) {
     if(codePoint == TextRenderer::U_BACKSPACE) {
         if(_input.size() > 0) {
             _input.pop_back();
-            renderer.remove();
+            //renderer.remove();
         }
     }
     else {
         _input.push_back(codePoint);
-        renderer.add({ codePoint });
+        //renderer.add({ codePoint });
     }
 }

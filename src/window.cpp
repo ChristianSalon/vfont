@@ -40,31 +40,26 @@ const int MainWindow::DEFAULT_HEIGHT = 512;                     /**< Default win
 /**
  * @brief Sets window attributes to default values
  */
-MainWindow::MainWindow(
-    std::function<void(int, int)> resizeCallback,
-    std::function<void(float, float, bool)> dragCallback,
-    std::function<void(float)> scrollCallback
-) {
+MainWindow::MainWindow() {
     this->_hwnd = NULL;
     this->_hInstance = GetModuleHandle(NULL);
-
-    this->_resizeCallback = resizeCallback;
-    this->_dragCallback = dragCallback;
-    this->_scrollCallback = scrollCallback;
 
     this->_isActive = false;
     this->_resized = false;
     this->_width = DEFAULT_WIDTH;
     this->_height = DEFAULT_HEIGHT;
     this->_dragging = false;
+
+    this->setResizeCallback([](int, int) -> void {});
+    this->setDragCallback([](float, float, bool) -> void {});
+    this->setScrollCallback([](float) -> void {});
+    this->setKeypressCallback([](uint32_t) -> void {});
 }
 
 /**
  * @brief MainWindow destructor
  */
-MainWindow::~MainWindow() {
-   
-}
+MainWindow::~MainWindow() {}
 
 /**
  * @brief Proccesses messages sent to WIN32 window
@@ -190,6 +185,11 @@ LRESULT CALLBACK MainWindow::_wndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARA
 
         // Handle UTF-16 input
         case WM_CHAR: {
+            pThis = reinterpret_cast<MainWindow *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+            if(!pThis) {
+                throw std::runtime_error("Error getting window data");
+            }
+
             if (IS_HIGH_SURROGATE(wParam)) {
                 // Utf-16 encoded character is 2 code units long, high code unit is being processed
                 KbInput::currentCharacter.type = KbInput::Utf16Type::TWO_CODE_UNITS;
@@ -198,14 +198,14 @@ LRESULT CALLBACK MainWindow::_wndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARA
             else if (IS_LOW_SURROGATE(wParam)) {
                 // Utf-16 encoded character is 2 code units long, low code unit is being processed
                 KbInput::currentCharacter.bytes_4[1] = wParam;
-                KbInput::registerCharacter(KbInput::currentCharacter);
+                pThis->_keypressCallback(KbInput::utf16ToCodePoint(KbInput::currentCharacter));
             }
             else {
                 // Utf-16 encoded character is 1 code unit long
-                KbInput::utf16_t c;
-                c.type = KbInput::Utf16Type::ONE_CODE_UNIT;
-                c.bytes_2 = wParam;
-                KbInput::registerCharacter(c);
+                KbInput::utf16_t character;
+                character.type = KbInput::Utf16Type::ONE_CODE_UNIT;
+                character.bytes_2 = wParam;
+                pThis->_keypressCallback(KbInput::utf16ToCodePoint(character));
             }
 
             break;
@@ -918,6 +918,22 @@ wl_compositor* MainWindow::getCompositor() {
 }
 
 #endif
+
+void MainWindow::setResizeCallback(std::function<void(int, int)> resizeCallback) {
+    this->_resizeCallback = resizeCallback;
+}
+
+void MainWindow::setDragCallback(std::function<void(float, float, bool)> dragCallback) {
+    this->_dragCallback = dragCallback;
+}
+
+void MainWindow::setScrollCallback(std::function<void(float)> scrollCallback) {
+    this->_scrollCallback = scrollCallback;
+}
+
+void MainWindow::setKeypressCallback(std::function<void(uint32_t)> keypressCallback) {
+    this->_keypressCallback = keypressCallback;
+}
 
 /**
  * @brief Checks if window is still being used

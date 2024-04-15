@@ -49,18 +49,19 @@ public:
 
     void addIndex(uint32_t index);
 
+    void setVertices(const std::vector<glm::vec2> &vertices);
+    void setIndices(const std::vector<uint32_t> &indices);
+    void setEdges(const std::vector<tr::edge_t> &edges);
     void setAdvanceX(int advanceX);
     void setAdvanceY(int advanceY);
 
-    int getAdvanceX();
-    int getAdvanceY();
-
-    std::vector<glm::vec2> &getVertices();
-    std::vector<uint32_t> &getIndices();
-    std::vector<tr::edge_t> &getEdges();
-
-    int getVertexCount();
-    int getIndexCount();
-    int getEdgeCount();
+    int getAdvanceX() const;
+    int getAdvanceY() const;
+    const std::vector<glm::vec2> &getVertices() const;
+    const std::vector<uint32_t> &getIndices() const;
+    const std::vector<tr::edge_t> &getEdges() const;
+    int getVertexCount() const;
+    int getIndexCount() const;
+    int getEdgeCount() const;
 
 };

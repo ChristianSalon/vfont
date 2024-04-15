@@ -33,16 +33,25 @@ static VkVertexInputAttributeDescription getVertexInputAttributeDescription() {
 /**
  * @brief Represents an edge between two vertices
  */
-typedef struct edge {
+class edge_t {
+
+public:
+
     uint32_t first;     /**< First vertex index */
     uint32_t second;    /**< Second vertex index */
-} edge_t;
+
+    inline edge_t(uint32_t first, uint32_t second) : first{first}, second{second} {};
+
+    inline bool operator==(const edge_t &edge) { return this->first == edge.first && this->second == edge.second; };
+
+};
 
 /**
  * @brief Push constants used by Vulkan for rendering
  */
 typedef struct character_push_constants {
     glm::mat4 model;
+    glm::vec3 color;
 } character_push_constants_t;
 
 }
