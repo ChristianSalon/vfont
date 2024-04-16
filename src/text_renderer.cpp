@@ -17,6 +17,8 @@
 #include "text_renderer.h"
 #include "text_renderer_utils.h"
 
+namespace vft {
+
 const uint32_t TextRenderer::U_BACKSPACE = 0x00000008;
 const uint32_t TextRenderer::U_ENTER = 0x0000000d;
 const uint32_t TextRenderer::U_SPACE = 0x00000020;
@@ -188,11 +190,11 @@ void TextRenderer::draw(VkCommandBuffer commandBuffer) {
     for(int i = 0; i < this->_blocks.size(); i++) {
         for(Character &character : this->_blocks[i]->getCharacters()) {
             if(character.glyph.getVertexCount() > 0) {
-                tr::character_push_constants_t pushConstants = {
+                character_push_constants_t pushConstants = {
                     .model = character.getModelMatrix(),
                     .color = this->_blocks[i]->getColor()
                 };
-                vkCmdPushConstants(commandBuffer, this->_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(tr::character_push_constants_t), &pushConstants);
+                vkCmdPushConstants(commandBuffer, this->_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(character_push_constants_t), &pushConstants);
                 vkCmdDrawIndexed(commandBuffer, character.glyph.getIndexCount(), 1, character.getIndexBufferOffset(), 0, 0);
             }
         }
@@ -261,7 +263,7 @@ void TextRenderer::_decomposeGlyph(uint32_t codePoint, std::shared_ptr<Font> fon
  */
 void TextRenderer::_triangulate() {
     std::vector<glm::vec2> vertices = this->_currentGlyph.getVertices();
-    std::vector<tr::edge_t> edges = this->_currentGlyph.getEdges();
+    std::vector<vft::edge_t> edges = this->_currentGlyph.getEdges();
 
     //this->_checkIntersectingEdges(vertices, edges);
     CDT::RemoveDuplicatesAndRemapEdges<float>(
@@ -270,9 +272,9 @@ void TextRenderer::_triangulate() {
         [](const glm::vec2 &p) { return p.y; },
         edges.begin(),
         edges.end(),
-        [](const tr::edge_t &e) { return e.first; },
-        [](const tr::edge_t &e) { return e.second; },
-        [](uint32_t i1, uint32_t i2) -> tr::edge_t { return tr::edge_t{i1, i2}; });
+        [](const vft::edge_t &e) { return e.first; },
+        [](const vft::edge_t &e) { return e.second; },
+        [](uint32_t i1, uint32_t i2) -> vft::edge_t { return vft::edge_t{i1, i2}; });
 
     this->_currentGlyph.setVertices(vertices);
     this->_currentGlyph.setEdges(edges);
@@ -291,8 +293,8 @@ void TextRenderer::_triangulate() {
     cdt.insertEdges(
         this->_currentGlyph.getEdges().begin(),
         this->_currentGlyph.getEdges().end(),
-        [](const tr::edge_t &e) { return e.first; },
-        [](const tr::edge_t &e) { return e.second; });
+        [](const vft::edge_t &e) { return e.first; },
+        [](const vft::edge_t &e) { return e.second; });
     cdt.eraseOuterTrianglesAndHoles();
 
     // Create index buffer from triangulation
@@ -373,7 +375,7 @@ double TextRenderer::_determinant(double a, double b, double c, double d) {
     return (a * d) - (b * c);
 }
 
-bool TextRenderer::_intersect(const std::vector<glm::vec2> &vertices, tr::edge_t first, tr::edge_t second, glm::vec2 &intersection) {
+bool TextRenderer::_intersect(const std::vector<glm::vec2> &vertices, vft::edge_t first, vft::edge_t second, glm::vec2 &intersection) {
     static double epsilon = 1e-6;
 
     double x1 = vertices.at(first.first).x;
@@ -406,13 +408,13 @@ bool TextRenderer::_isPointOnLineSegment(double x1, double y1, double x2, double
     return fabs(this->_determinant(x - x1, y - y1, x2 - x1, y2 - y1)) < epsilon && (x - x1) * (x - x2) + (y - y1) * (y - y2) <= 0;
 }
 
-void TextRenderer::_checkIntersectingEdges(std::vector<glm::vec2> &vertices, std::vector<tr::edge_t> &edges) {
+void TextRenderer::_checkIntersectingEdges(std::vector<glm::vec2> &vertices, std::vector<vft::edge_t> &edges) {
     // Remove duplicate edges
     uint32_t deletedVerticesCount = 0;
     for(uint32_t i = 0; i < vertices.size(); i++) {
         for(uint32_t j = i + 1; j < vertices.size(); j++) {
             if(fabs(vertices.at(i).x - vertices.at(j).x) <= 1.0e-6 && fabs(vertices.at(i).y - vertices.at(j).y) <= 1.0e-6) {
-                std::for_each(edges.begin(), edges.end(), [&](tr::edge_t &edge) {
+                std::for_each(edges.begin(), edges.end(), [&](vft::edge_t &edge) {
                     if(edge.first == j) {
                         edge.first = i;
                     }
@@ -427,8 +429,8 @@ void TextRenderer::_checkIntersectingEdges(std::vector<glm::vec2> &vertices, std
     // Resolve intersecting edges
     for(int i = 0; i < edges.size(); i++) {
         for(int j = i + 1; j < edges.size(); j++) {
-            tr::edge_t &firstEdge = edges.at(i);
-            tr::edge_t &secondEdge = edges.at(j);
+            vft::edge_t &firstEdge = edges.at(i);
+            vft::edge_t &secondEdge = edges.at(j);
 
             if(
                 firstEdge == secondEdge ||
@@ -812,4 +814,6 @@ void TextRenderer::_setPipelineLayout(VkPipelineLayout pipelineLayout) {
         throw std::runtime_error("Vulkan pipeline layout is not initialized");
 
     this->_pipelineLayout = pipelineLayout;
+}
+
 }

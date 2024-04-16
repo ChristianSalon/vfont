@@ -25,8 +25,8 @@ public:
 
 private:
 
-    std::shared_ptr<Font> _arial32;
-    std::shared_ptr<TextBlock> _textBlock;
+    std::shared_ptr<vft::Font> _arial32;
+    std::shared_ptr<vft::TextBlock> _textBlock;
 
 public:
 

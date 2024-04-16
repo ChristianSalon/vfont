@@ -8,6 +8,8 @@
 #include "character.h"
 #include "glyph.h"
 
+namespace vft {
+
 /**
  * @brief Character constructor
  * 
@@ -116,4 +118,6 @@ glm::vec3 Character::getPosition() const {
  */
 glm::mat4 Character::getModelMatrix() const {
     return this->_modelMatrix;
+}
+
 }

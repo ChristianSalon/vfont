@@ -245,9 +245,9 @@ KbInput::utf16_t KbInput::codePointToUtf16(uint32_t codePoint) {
  * @param codePoint Unicode code point of character
  */
 void KbInput::_drawCharacter(uint32_t codePoint) {
-    TextRenderer &renderer = TextRenderer::getInstance();
+    vft::TextRenderer &renderer = vft::TextRenderer::getInstance();
 
-    if(codePoint == TextRenderer::U_BACKSPACE) {
+    if(codePoint == vft::TextRenderer::U_BACKSPACE) {
         if(_input.size() > 0) {
             _input.pop_back();
             //renderer.remove();

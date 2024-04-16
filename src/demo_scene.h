@@ -34,19 +34,19 @@ public:
 
 private:
 
-    std::shared_ptr<Font> _arial32;
-    std::shared_ptr<Font> _arial64;
-    std::shared_ptr<Font> _jersey32;
-    std::shared_ptr<Font> _crimsontext32;
-    std::shared_ptr<Font> _robotomono32;
-    std::shared_ptr<Font> _notosansjp32;
+    std::shared_ptr<vft::Font> _arial32;
+    std::shared_ptr<vft::Font> _arial64;
+    std::shared_ptr<vft::Font> _jersey32;
+    std::shared_ptr<vft::Font> _crimsontext32;
+    std::shared_ptr<vft::Font> _robotomono32;
+    std::shared_ptr<vft::Font> _notosansjp32;
 
-    std::shared_ptr<TextBlock> _block1;
-    std::shared_ptr<TextBlock> _block2;
-    std::shared_ptr<TextBlock> _block3;
-    std::shared_ptr<TextBlock> _block4;
-    std::shared_ptr<TextBlock> _block5;
-    std::shared_ptr<TextBlock> _block6;
+    std::shared_ptr<vft::TextBlock> _block1;
+    std::shared_ptr<vft::TextBlock> _block2;
+    std::shared_ptr<vft::TextBlock> _block3;
+    std::shared_ptr<vft::TextBlock> _block4;
+    std::shared_ptr<vft::TextBlock> _block5;
+    std::shared_ptr<vft::TextBlock> _block6;
 
 public:
 

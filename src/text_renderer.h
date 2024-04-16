@@ -22,6 +22,8 @@
 #include "text_renderer_utils.h"
 #include "text_block.h"
 
+namespace vft {
+
 /**
  * @class TextRenderer
  * 
@@ -104,10 +106,10 @@ private:
     bool _isPointOnLineSegment(double x1, double y1, double x2, double y2, double x, double y);
     bool _intersect(
         const std::vector<glm::vec2> &vertices,
-        tr::edge_t first,
-        tr::edge_t second,
+        vft::edge_t first,
+        vft::edge_t second,
         glm::vec2 &intersection);
-    void _checkIntersectingEdges(std::vector<glm::vec2> &vertices, std::vector<tr::edge_t> &edges);
+    void _checkIntersectingEdges(std::vector<glm::vec2> &vertices, std::vector<vft::edge_t> &edges);
 
     void _decomposeGlyph(uint32_t codePoint, std::shared_ptr<Font> font);
     void _triangulate();
@@ -128,3 +130,5 @@ private:
     TextRenderer(const TextRenderer &) = delete;
     TextRenderer &operator=(const TextRenderer &) = delete;
 };
+
+}

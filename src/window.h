@@ -99,6 +99,8 @@ private:
 #elif defined(USE_WAYLAND)
 
     bool _isMinimized;
+    bool _isLeftMouseButtonPressed;
+    bool _isShiftPressed;
 
     wl_display *_display;
     wl_registry *_registry;
@@ -106,6 +108,7 @@ private:
     wl_surface *_surface;
     wl_seat *_kbSeat;
     wl_keyboard *_wlKeyboard;
+    wl_pointer *_wlPointer;
 
     xdg_wm_base *_xdgWmBase;
     xdg_surface *_xdgSurface;
@@ -122,6 +125,7 @@ private:
     static struct wl_registry_listener _registryListener;
     static struct wl_seat_listener _kbSeatListener;
     static struct wl_keyboard_listener _wlKeyboardListener;
+    static struct wl_pointer_listener _wlPointerListener;
     static struct xdg_wm_base_listener _xdgWmBaseListener;
     static struct xdg_surface_listener _xdgSurfaceListener;
     static struct xdg_toplevel_listener _xdgToplevelListener;

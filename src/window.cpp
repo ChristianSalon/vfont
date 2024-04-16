@@ -314,12 +314,16 @@ bool MainWindow::isMinimized() {
 /**
  * @brief Sets window attributes to default values
  */
-MainWindow::MainWindow(std::function<void(int, int)> resizeCallback) {
+MainWindow::MainWindow() {
     this->_isActive = false;
     this->_resized = false;
     this->_width = DEFAULT_WIDTH;
     this->_height = DEFAULT_HEIGHT;
-    this->_resizeCallback = resizeCallback;
+
+    this->setResizeCallback([](int, int) -> void {});
+    this->setDragCallback([](float, float, bool) -> void {});
+    this->setScrollCallback([](float) -> void {});
+    this->setKeypressCallback([](uint32_t) -> void {});
 
     this->_display = nullptr;
     this->_inputMethod = nullptr;
@@ -371,7 +375,7 @@ void MainWindow::create() {
         nullptr
     );
     XStoreName(this->_display, this->_window, this->DEFAULT_WINDOW_TITLE.c_str());
-    XSelectInput(this->_display, this->_window, StructureNotifyMask | ExposureMask | KeyPressMask);
+    XSelectInput(this->_display, this->_window, StructureNotifyMask | ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask);
     XSetWMProtocols(this->_display, this->_window, &(this->_wmDeleteMessage), 1);
 
     this->_inputMethod = XOpenIM(this->_display, nullptr, nullptr, nullptr);
@@ -427,6 +431,51 @@ void MainWindow::pollEvents() {
             break;
         }
 
+        case MotionNotify: {
+            static int lastMouseX = -1;
+            static int lastMouseY = -1;
+
+            XMotionEvent motionEvent = ev.xmotion;
+
+            if(lastMouseX == -1 && lastMouseY == -1) {
+                lastMouseX = motionEvent.x;
+                lastMouseY = motionEvent.y;
+                break;
+            }
+
+            // Check if left button of mouse is pressed
+            if(motionEvent.state & Button1Mask) {
+                int deltaX = motionEvent.x - lastMouseX;
+                int deltaY = motionEvent.y - lastMouseY;
+
+                // Check if shift key is pressed
+                if(motionEvent.state & ShiftMask) {
+                    this->_dragCallback(deltaX, deltaY, true);
+                }
+                else {
+                    this->_dragCallback(deltaX, deltaY, false);
+                }
+            }
+
+            lastMouseX = motionEvent.x;
+            lastMouseY = motionEvent.y;
+
+            break;
+        }
+
+        case ButtonPress: {
+            static float scrollFactor = 40;
+
+            // Check if user scrolled up
+            if(ev.xbutton.button == Button4) {
+                this->_scrollCallback(-scrollFactor);
+            }
+            // Check if user scrolled down
+            else if(ev.xbutton.button == Button5) {
+                this->_scrollCallback(scrollFactor);
+            }
+        }
+
         case KeyPress: {
             int maxBufferBytes = 8;
             char buffer[maxBufferBytes];
@@ -478,7 +527,7 @@ void MainWindow::pollEvents() {
                         throw std::runtime_error("Error processing character");
                 }
 
-                KbInput::registerCharacter(character);
+                this->_keypressCallback(KbInput::utf8ToCodePoint(character));
 
                 break;
             }
@@ -628,6 +677,11 @@ struct wl_seat_listener MainWindow::_kbSeatListener = {
             pThis->_wlKeyboard = wl_seat_get_keyboard(seat);
             wl_keyboard_add_listener(pThis->_wlKeyboard, &(pThis->_wlKeyboardListener), pThis);
         }
+
+        if(capabilities & WL_SEAT_CAPABILITY_POINTER) {
+            pThis->_wlPointer = wl_seat_get_pointer(seat);
+            wl_pointer_add_listener(pThis->_wlPointer, &(pThis->_wlPointerListener), pThis);
+        }
     }
 };
 
@@ -659,7 +713,17 @@ struct wl_keyboard_listener MainWindow::_wlKeyboardListener = {
     .key = [](void *data, struct wl_keyboard *wl_keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state) {
         MainWindow *pThis = reinterpret_cast<MainWindow *>(data);
 
-        if (state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+        // Check if left shift was pressed
+        if(key == 0x2A) {
+            if(state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+                pThis->_isShiftPressed = true;
+            }
+            else {
+                pThis->_isShiftPressed = false;
+            }
+        }
+
+        if(state == WL_KEYBOARD_KEY_STATE_PRESSED) {
             int maxBufferSize = 8;
             char buffer[maxBufferSize];
             int nOfCodeUnits = 0; // Size of utf-8 character in bytes
@@ -721,7 +785,7 @@ struct wl_keyboard_listener MainWindow::_wlKeyboardListener = {
                 }
             }
 
-            KbInput::registerCharacter(character);
+            pThis->_keypressCallback(KbInput::utf8ToCodePoint(character));
         }
     },
     .modifiers = [](void *data, struct wl_keyboard *wl_keyboard, uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked, uint32_t group) {
@@ -737,16 +801,87 @@ struct wl_keyboard_listener MainWindow::_wlKeyboardListener = {
     }
 };
 
+struct wl_pointer_listener MainWindow::_wlPointerListener = {
+    .enter = [](void *data, wl_pointer *pointer, uint32_t serial, wl_surface *surface, wl_fixed_t x, wl_fixed_t y) {},
+    .leave = [](void *data, wl_pointer *pointer, uint32_t serial, wl_surface *surface) {},
+    .motion = [](void *data, wl_pointer *pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y) {
+        static int lastMouseX = -1;
+        static int lastMouseY = -1;
+
+        MainWindow *pThis = reinterpret_cast<MainWindow *>(data);
+
+        int newX = wl_fixed_to_int(x);
+        int newY = wl_fixed_to_int(y);
+
+        if(lastMouseX == -1 && lastMouseY == -1) {
+            lastMouseX = newX;
+            lastMouseY = newY;
+            return;
+        }
+
+        // Check if left button of mouse is pressed
+        if(pThis->_isLeftMouseButtonPressed) {
+            int deltaX = newX - lastMouseX;
+            int deltaY = newY - lastMouseY;
+
+            // Check if shift key is pressed
+            if(pThis->_isShiftPressed) {
+                pThis->_dragCallback(deltaX, deltaY, true);
+            }
+            else {
+                pThis->_dragCallback(deltaX, deltaY, false);
+            }
+        }
+
+        lastMouseX = newX;
+        lastMouseY = newY;
+    },
+    .button = [](void *data, wl_pointer *pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state) {
+        MainWindow *pThis = reinterpret_cast<MainWindow *>(data);
+
+        if(button == 0x0110 && state == WL_POINTER_BUTTON_STATE_PRESSED) {
+            pThis->_isLeftMouseButtonPressed = true;
+        }
+        else if(button == 0x0110 && state == WL_POINTER_BUTTON_STATE_RELEASED) {
+            pThis->_isLeftMouseButtonPressed = false;
+        }
+    },
+    .axis = [](void *data, wl_pointer *pointer, uint32_t time, uint32_t axis, wl_fixed_t value) {
+        static float scrollFactor = 40;
+        
+        MainWindow *pThis = reinterpret_cast<MainWindow *>(data);
+
+        if(axis == WL_POINTER_AXIS_VERTICAL_SCROLL) {
+            int direction = wl_fixed_to_int(value);
+
+            // Check if user scrolled up
+            if(direction > 0) {
+                pThis->_scrollCallback(scrollFactor);
+            }
+            // Check if user scrolled down
+            else if(direction < 0) {
+                pThis->_scrollCallback(-scrollFactor);
+            }
+        }
+    }
+};
+
 /**
  * @brief Sets window attributes to default values
  */
-MainWindow::MainWindow(std::function<void(int, int)> resizeCallback) {
+MainWindow::MainWindow() {
     this->_isActive = false;
     this->_isMinimized = false;
     this->_resized = false;
     this->_width = DEFAULT_WIDTH;
     this->_height = DEFAULT_HEIGHT;
-    this->_resizeCallback = resizeCallback;
+    this->_isLeftMouseButtonPressed = false;
+    this->_isShiftPressed = false;
+
+    this->setResizeCallback([](int, int) -> void {});
+    this->setDragCallback([](float, float, bool) -> void {});
+    this->setScrollCallback([](float) -> void {});
+    this->setKeypressCallback([](uint32_t) -> void {});
 
     this->_display = nullptr;
     this->_registry = nullptr;
@@ -754,6 +889,7 @@ MainWindow::MainWindow(std::function<void(int, int)> resizeCallback) {
     this->_surface = nullptr;
     this->_kbSeat = nullptr;
     this->_wlKeyboard = nullptr;
+    this->_wlPointer = nullptr;
 
     this->_xkbContext = nullptr;
     this->_xkbKeymap = nullptr;

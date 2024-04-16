@@ -11,6 +11,8 @@
 
 #include "text_renderer_utils.h"
 
+namespace vft {
+
 /**
  * @class Glyph
  *
@@ -22,7 +24,7 @@ private:
 
     std::vector<glm::vec2> _vertices;       /**< Glyph vertices */
     std::vector<uint32_t> _indices;         /**< Glyph vertex indices */
-    std::vector<tr::edge_t> _edges;         /**< Glyph edges */
+    std::vector<vft::edge_t> _edges;         /**< Glyph edges */
 
     /**
      * Indicates by how much to increment the X coordinate of pen position.
@@ -44,14 +46,14 @@ public:
     void addVertex(glm::vec2 vertex);
     void updateVertex(int index, glm::vec2 vertex);
 
-    void addEdge(tr::edge_t edge);
-    void updateEdge(int index, tr::edge_t edge);
+    void addEdge(vft::edge_t edge);
+    void updateEdge(int index, vft::edge_t edge);
 
     void addIndex(uint32_t index);
 
     void setVertices(const std::vector<glm::vec2> &vertices);
     void setIndices(const std::vector<uint32_t> &indices);
-    void setEdges(const std::vector<tr::edge_t> &edges);
+    void setEdges(const std::vector<vft::edge_t> &edges);
     void setAdvanceX(int advanceX);
     void setAdvanceY(int advanceY);
 
@@ -59,9 +61,11 @@ public:
     int getAdvanceY() const;
     const std::vector<glm::vec2> &getVertices() const;
     const std::vector<uint32_t> &getIndices() const;
-    const std::vector<tr::edge_t> &getEdges() const;
+    const std::vector<vft::edge_t> &getEdges() const;
     int getVertexCount() const;
     int getIndexCount() const;
     int getEdgeCount() const;
 
 };
+
+}

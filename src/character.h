@@ -10,6 +10,8 @@
 
 #include "glyph.h"
 
+namespace vft {
+
  /**
   * @class Character
   *
@@ -49,3 +51,5 @@ public:
     glm::mat4 getModelMatrix() const;
 
 };
+
+}

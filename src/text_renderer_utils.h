@@ -9,7 +9,7 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
 
-namespace tr {
+namespace vft {
 
 static VkVertexInputBindingDescription getVertexInutBindingDescription() {
     VkVertexInputBindingDescription bindingDescription{};

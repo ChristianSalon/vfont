@@ -72,7 +72,7 @@ Scene::Scene(CameraType cameraType) {
     }
 
     this->_initVulkan();
-    TextRenderer::getInstance().init(
+    vft::TextRenderer::getInstance().init(
         this->_physicalDevice,
         this->_logicalDevice,
         this->_commandPool,
@@ -116,7 +116,7 @@ Scene::~Scene() {
  */
 void Scene::run() {
     this->_mainLoop();
-    TextRenderer::getInstance().destroy();
+    vft::TextRenderer::getInstance().destroy();
 }
 
 void Scene::updateWindowDimensions(int width, int height) {
@@ -1040,8 +1040,8 @@ void Scene::_createGraphicsPipeline() {
     dynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicStateCreateInfo.pDynamicStates = dynamicStates.data();
 
-    VkVertexInputBindingDescription vertexInputBindingDescription = tr::getVertexInutBindingDescription();
-    VkVertexInputAttributeDescription vertexInputAttributeDescription = tr::getVertexInputAttributeDescription();
+    VkVertexInputBindingDescription vertexInputBindingDescription = vft::getVertexInutBindingDescription();
+    VkVertexInputAttributeDescription vertexInputAttributeDescription = vft::getVertexInputAttributeDescription();
 
     VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo{};
     vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -1092,7 +1092,7 @@ void Scene::_createGraphicsPipeline() {
     colorBlendStateCreateInfo.pAttachments = &colorBlendAttachmentState;
 
     VkPushConstantRange pushConstantRange{};
-    pushConstantRange.size = sizeof(tr::character_push_constants_t);
+    pushConstantRange.size = sizeof(vft::character_push_constants_t);
     pushConstantRange.offset = 0;
     pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
@@ -1233,7 +1233,7 @@ void Scene::_recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIn
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_pipelineLayout, 0, 1, &(this->_descriptorSets.at(this->_currentFrameIndex)), 0, nullptr);
-    TextRenderer::getInstance().draw(commandBuffer);
+    vft::TextRenderer::getInstance().draw(commandBuffer);
 
     vkCmdEndRenderPass(commandBuffer);
 

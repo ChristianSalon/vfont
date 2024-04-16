@@ -14,6 +14,8 @@
 #include "character.h"
 #include "font.h"
 
+namespace vft {
+
 class TextBlock {
 
 protected:
@@ -68,3 +70,5 @@ protected:
     void _updateTransform();
 
 };
+
+}

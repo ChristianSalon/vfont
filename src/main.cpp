@@ -14,19 +14,17 @@
  * @brief Entry point for app
  */
 int main(int argc, char **argv) {
-    std::cout << "App started" << std::endl;
-
     try {
         CameraType cameraType = CameraType::PERSPECTIVE;
         std::string sceneType = "demo";
 
         for(int i = 1; i < argc; i++) {
-            if(argv[i] == "-h") {
+            if(strcmp(argv[i], "-h") == 0) {
                 // Show help message
                 std::cout << "./kio [-h] [-c <perspective/ortographic>] [-s <demo/editor>]" << std::endl;
                 return EXIT_SUCCESS;
             }
-            else if(argv[i] == "-c") {
+            else if(strcmp(argv[i], "-c") == 0) {
                 // Set camera type
                 std::string type = argv[++i];
 
@@ -41,7 +39,7 @@ int main(int argc, char **argv) {
                     return EXIT_FAILURE;
                 }
             }
-            else if(argv[i] == "-s") {
+            else if(strcmp(argv[i], "-s") == 0) {
                 // Set scene type
                 std::string type = argv[++i];
 
@@ -59,6 +57,7 @@ int main(int argc, char **argv) {
             }
         }
 
+        std::cout << "App started" << std::endl;
         if(sceneType == "editor") {
             EditorScene scene{cameraType};
             scene.run();

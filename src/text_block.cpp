@@ -10,6 +10,8 @@
 
 #include <glm/ext/matrix_transform.hpp>
 
+namespace vft {
+
 TextBlock::TextBlock(
     std::shared_ptr<Font> font,
     glm::vec3 color,
@@ -213,4 +215,6 @@ void TextBlock::_updateTransform() {
     for(Character &character : this->_characters) {
         character.transform(this->getTransform());
     }
+}
+
 }

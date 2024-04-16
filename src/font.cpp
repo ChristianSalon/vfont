@@ -8,6 +8,8 @@
 #include "font.h"
 #include "text_renderer.h"
 
+namespace vft {
+
 Font::Font(std::string fontFile, int fontSize) : _fontFile{fontFile}, _fontSize{fontSize} {
     if(this->_fontFile.empty()) {
         throw std::runtime_error("Path to .ttf file was not entered");
@@ -72,4 +74,6 @@ void Font::_initializeGlyphInfo() {
     this->_glyphInfo.insert({TextRenderer::U_ENTER, Glyph{}});
     this->_glyphInfo.at(TextRenderer::U_ENTER).setAdvanceX(0);
     this->_glyphInfo.at(TextRenderer::U_ENTER).setAdvanceY(this->_fontSize);
+}
+
 }

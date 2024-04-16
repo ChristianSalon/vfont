@@ -13,6 +13,8 @@
 
 #include "glyph.h"
 
+namespace vft {
+
 class Font {
 
 private:
@@ -47,3 +49,5 @@ private:
     void _initializeGlyphInfo();
 
 };
+
+}

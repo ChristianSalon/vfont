@@ -7,6 +7,8 @@
 
 #include "glyph.h"
 
+namespace vft {
+
 /**
  * @brief Glyph constructor
  */
@@ -23,11 +25,11 @@ void Glyph::updateVertex(int index, glm::vec2 vertex) {
     this->_vertices.at(index) = vertex;
 }
 
-void Glyph::addEdge(tr::edge_t edge) {
+void Glyph::addEdge(vft::edge_t edge) {
     this->_edges.push_back(edge);
 }
 
-void Glyph::updateEdge(int index, tr::edge_t edge) {
+void Glyph::updateEdge(int index, vft::edge_t edge) {
     this->_edges.at(index) = edge;
 }
 
@@ -51,7 +53,7 @@ void Glyph::setIndices(const std::vector<uint32_t> &indices) {
     this->_indices = indices;
 }
 
-void Glyph::setEdges(const std::vector<tr::edge_t> &edges) {
+void Glyph::setEdges(const std::vector<vft::edge_t> &edges) {
     this->_edges = edges;
 }
 
@@ -71,7 +73,7 @@ const std::vector<uint32_t> &Glyph::getIndices() const {
     return this->_indices;
 }
 
-const std::vector<tr::edge_t> &Glyph::getEdges() const {
+const std::vector<vft::edge_t> &Glyph::getEdges() const {
     return this->_edges;
 }
 
@@ -85,4 +87,6 @@ int Glyph::getIndexCount() const {
 
 int Glyph::getEdgeCount() const {
     return this->_edges.size();
+}
+
 }
