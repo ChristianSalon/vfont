@@ -7,6 +7,7 @@
 
 #include <string>
 #include <functional>
+#include <cstdint>
 
 #if defined(USE_WIN32)
 

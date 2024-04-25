@@ -59,10 +59,4 @@ void BaseCamera::_setViewMatrix() {
     this->_target = this->_position - this->_direction;
 
     this->_viewMatrix = glm::lookAt(this->_position, this->_target, this->_up);
-
-    /* std::cout << "Position = (" << this->_position.x << ", " << this->_position.y << ", " << this->_position.z << ")" << std::endl
-        << "Direction = (" << this->_direction.x << ", " << this->_direction.y << ", " << this->_direction.z << ")" << std::endl
-        << "Target = (" << this->_target.x << ", " << this->_target.y << ", " << this->_target.z << ")" << std::endl
-        << "Right = (" << this->_right.x << ", " << this->_right.y << ", " << this->_right.z << ")" << std::endl
-        << "Up = (" << this->_up.x << ", " << this->_up.y << ", " << this->_up.z << ")" << std::endl; */
 }

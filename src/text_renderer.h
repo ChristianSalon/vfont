@@ -10,6 +10,7 @@
 #include <memory>
 #include <unordered_map>
 #include <map>
+#include <cstdint>
 
 #include <vulkan/vulkan.h>
 #include <ft2build.h>

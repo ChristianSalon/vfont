@@ -6,6 +6,7 @@
 #pragma once
 
 #include <vector>
+#include <cstdint>
 
 #include <glm/vec2.hpp>
 

@@ -7,6 +7,8 @@
 
 #include <memory>
 #include <string>
+#include <vector>
+#include <cstdint>
 
 #include "scene.h"
 #include "base_camera.h"

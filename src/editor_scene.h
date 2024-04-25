@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <string>
+#include <cstdint>
 
 #include "scene.h"
 #include "text_renderer.h"
