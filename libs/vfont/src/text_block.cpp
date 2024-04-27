@@ -20,12 +20,14 @@ TextBlock::TextBlock(
     glm::vec3 color,
     glm::vec3 position,
     int width,
-    bool kerning) : _font{font},
+    bool kerning,
+    bool wrapping) : _font{font},
                     _penX{0},
                     _penY{this->_font->getFontSize()},
                     _transform{glm::mat4(1.f)},
                     _position{glm::vec3(0, 0, 0)} {
     this->setKerning(kerning);
+    this->setWrapping(wrapping);
     this->setWidth(width);
     this->setColor(color);
     this->setPosition(position);
@@ -183,6 +185,13 @@ void TextBlock::setKerning(bool kerning) {
     }
 }
 
+void TextBlock::setWrapping(bool wrapping) {
+    if(this->getWrapping() != wrapping) {
+        this->_wrapping = wrapping;
+        this->_updateCharacters();
+    }
+}
+
 std::vector<Character> &TextBlock::getCharacters() {
     return this->_characters;
 }
@@ -209,6 +218,10 @@ glm::mat4 TextBlock::getTransform() const {
 
 bool TextBlock::getKerning() const {
     return this->_kerning;
+}
+
+bool TextBlock::getWrapping() const {
+    return this->_wrapping;
 }
 
 void TextBlock::_updateCharacters() {

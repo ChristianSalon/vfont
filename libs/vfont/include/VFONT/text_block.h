@@ -29,6 +29,7 @@ protected:
     std::shared_ptr<Font> _font;
 
     bool _kerning;
+    bool _wrapping;
     int _width;
     int _penX;
     int _penY;
@@ -45,7 +46,8 @@ public:
               glm::vec3 color,
               glm::vec3 position,
               int width = -1,
-              bool kerning = true);
+              bool kerning = true,
+              bool wrapping = false);
 
     void scale(float x, float y, float z);
     void translate(float x, float y, float z);
@@ -61,6 +63,7 @@ public:
     void setTransform(glm::mat4 transform);
     void setWidth(int width);
     void setKerning(bool kerning);
+    void setWrapping(bool wrapping);
 
     std::vector<Character> &getCharacters();
     std::shared_ptr<Font> getFont() const;
@@ -69,6 +72,7 @@ public:
     glm::mat4 getTransform() const;
     int getWidth() const;
     bool getKerning() const;
+    bool getWrapping() const;
 
 protected:
 
