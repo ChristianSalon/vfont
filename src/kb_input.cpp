@@ -8,7 +8,6 @@
 #include <stdexcept>
 
 #include "kb_input.h"
-#include "text_renderer.h"
 
 /**
  * @brief Buffer of unicode code points for user input
@@ -58,8 +57,6 @@ void KbInput::registerCharacter(KbInput::utf8_t character) {
         }
     }
     std::cout << std::dec;
-
-    KbInput::_drawCharacter(codePoint);
 }
 
 /**
@@ -78,8 +75,6 @@ void KbInput::registerCharacter(KbInput::utf16_t character) {
         std::cout << character.bytes_4[0] << character.bytes_4[1] << std::endl;
     }
     std::cout << std::dec;
-
-    KbInput::_drawCharacter(codePoint);
 }
 
 /**
@@ -237,24 +232,4 @@ KbInput::utf16_t KbInput::codePointToUtf16(uint32_t codePoint) {
     }
 
     return character;
-}
-
-/**
- * @brief Draw character using TextRenderer
- *
- * @param codePoint Unicode code point of character
- */
-void KbInput::_drawCharacter(uint32_t codePoint) {
-    vft::TextRenderer &renderer = vft::TextRenderer::getInstance();
-
-    if(codePoint == vft::TextRenderer::U_BACKSPACE) {
-        if(_input.size() > 0) {
-            _input.pop_back();
-            //renderer.remove();
-        }
-    }
-    else {
-        _input.push_back(codePoint);
-        //renderer.add({ codePoint });
-    }
 }

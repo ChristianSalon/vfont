@@ -87,30 +87,6 @@ find_package(Vulkan REQUIRED COMPONENTS glslc)
 set(INCLUDES ${INCLUDES} ${Vulkan_INCLUDE_DIRS})
 set(LIBS ${LIBS} Vulkan::Vulkan)
 
-# Freetype initialization
-set(FT_DISABLE_ZLIB ON CACHE BOOL "a" FORCE)
-set(FT_DISABLE_BZIP2 ON CACHE BOOL "a" FORCE)
-set(FT_DISABLE_PNG ON CACHE BOOL "a" FORCE)
-set(FT_DISABLE_HARFBUZZ ON CACHE BOOL "a" FORCE)
-set(FT_DISABLE_BROTLI ON CACHE BOOL "a" FORCE)
-
-add_subdirectory("libs/freetype")
-set(LIBS ${LIBS} freetype)
-
-# CDT library initialization
-add_subdirectory("libs/CDT")
-set(LIBS ${LIBS} CDT::CDT)
-
-# glm initialization
-FetchContent_Declare(
-	glm
-	GIT_REPOSITORY https://github.com/g-truc/glm.git
-	GIT_TAG bf71a834948186f4097caa076cd2663c69a10e1e
-)
-FetchContent_MakeAvailable(glm)
-set(LIBS ${LIBS} glm::glm)
-set(DEFINES ${DEFINES} GLM_FORCE_DEPTH_ZERO_TO_ONE)
-
 add_compile_definitions(${DEFINES})
 
 add_subdirectory("src")

@@ -12,23 +12,12 @@ set(KIO_SOURCES
     window.cpp
     kb_input.h
     kb_input.cpp
-    text_renderer.h
-    text_renderer.cpp
-    glyph.h
-    glyph.cpp
-    text_renderer_utils.h
-    character.h
-    character.cpp
     base_camera.h
     base_camera.cpp
     orto_camera.h
     orto_camera.cpp
     perspective_camera.h
     perspective_camera.cpp
-    font.h
-    font.cpp
-    text_block.h
-    text_block.cpp
 )
 
 # Setup xdg-shell and xdg-decoration on Wayland
@@ -71,5 +60,5 @@ add_custom_command(TARGET kio POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/NotoSansJP-Regular.ttf" "$<TARGET_FILE_DIR:kio>"
 )
 
-target_sources(kio PRIVATE ${KIO_SOURCES} "base_camera.cpp")
+target_sources(kio PRIVATE ${KIO_SOURCES})
 add_dependencies(kio shaders)

@@ -57,8 +57,8 @@ Scene::Scene(CameraType cameraType) {
     if(this->_cameraType == CameraType::ORTOGRAPHIC) {
         this->_camera.reset(new OrtographicCamera{
             glm::vec3(0.f, 0.f, -1000.f),
-            0.f, static_cast<float>(this->_window.get()->getWidth()),
-            0.f, static_cast<float>(this->_window.get()->getHeight()),
+            0.f, static_cast<float>(this->_window->getWidth()),
+            0.f, static_cast<float>(this->_window->getHeight()),
             0.f, 2000.f
         });
     }
@@ -66,25 +66,26 @@ Scene::Scene(CameraType cameraType) {
         this->_camera.reset(new PerspectiveCamera{
             glm::vec3(0.f, 0.f, -500.f),
             80.f,
-            static_cast<float>(this->_window.get()->getWidth()) / static_cast<float>(this->_window.get()->getHeight()),
+            static_cast<float>(this->_window->getWidth()) / static_cast<float>(this->_window->getHeight()),
             0.f, 2000.f
         });
     }
 
     this->_initVulkan();
-    vft::TextRenderer::getInstance().init(
+    this->renderer.init(
         this->_physicalDevice,
         this->_logicalDevice,
         this->_commandPool,
         this->_graphicsQueue,
-        this->_pipelineLayout
-    );
+        this->_pipelineLayout);
 }
 
 /**
  * @brief Scene destructor
  */
 Scene::~Scene() {
+    this->renderer.destroy();
+
     this->_cleanupSwapChain();
 
     for(int i = 0; i < Scene::MAX_FRAMES_IN_FLIGHT; i++) {
@@ -116,7 +117,6 @@ Scene::~Scene() {
  */
 void Scene::run() {
     this->_mainLoop();
-    vft::TextRenderer::getInstance().destroy();
 }
 
 void Scene::updateWindowDimensions(int width, int height) {
@@ -142,18 +142,18 @@ void Scene::updateCameraRotation(float x, float y) {
     static const float rotateFactor = 0.4;
 
     glm::vec3 rotation;
-    rotation.x = (y / this->_window.get()->getHeight()) * 360.f;
-    rotation.y = (x / this->_window.get()->getWidth()) * 360.f;
+    rotation.x = (y / this->_window->getHeight()) * 360.f;
+    rotation.y = (x / this->_window->getWidth()) * 360.f;
     rotation.z = 0;
     rotation *= rotateFactor;
 
-    this->_camera.get()->rotate(rotation);
+    this->_camera->rotate(rotation);
 }
 
 void Scene::updateCameraPosition(float x, float y, float z) {
     static const float translateFactor = 0.4;
 
-    this->_camera.get()->translate(glm::vec3(x, y, z) * translateFactor);
+    this->_camera->translate(glm::vec3(x, y, z) * translateFactor);
 }
 
 /**
@@ -999,8 +999,8 @@ void Scene::_createDescriptorSets() {
  */
 void Scene::_setUniformBuffers() {
     UniformBufferObject ubo{};
-    ubo.view = this->_camera.get()->getViewMatrix();
-    ubo.projection = this->_camera.get()->getProjectionMatrix();
+    ubo.view = this->_camera->getViewMatrix();
+    ubo.projection = this->_camera->getProjectionMatrix();
 
     memcpy(this->_mappedUniformBuffers.at(this->_currentFrameIndex), &ubo, sizeof(ubo));
 }
@@ -1092,7 +1092,7 @@ void Scene::_createGraphicsPipeline() {
     colorBlendStateCreateInfo.pAttachments = &colorBlendAttachmentState;
 
     VkPushConstantRange pushConstantRange{};
-    pushConstantRange.size = sizeof(vft::character_push_constants_t);
+    pushConstantRange.size = sizeof(vft::CharacterPushConstants);
     pushConstantRange.offset = 0;
     pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
@@ -1233,7 +1233,7 @@ void Scene::_recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIn
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_pipelineLayout, 0, 1, &(this->_descriptorSets.at(this->_currentFrameIndex)), 0, nullptr);
-    vft::TextRenderer::getInstance().draw(commandBuffer);
+    this->renderer.draw(commandBuffer);
 
     vkCmdEndRenderPass(commandBuffer);
 

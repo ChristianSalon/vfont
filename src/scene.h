@@ -21,14 +21,16 @@
 #include <vulkan/vulkan.h>
 #include <glm/mat4x4.hpp>
 
+#include <VFONT/text_renderer.h>
+#include <VFONT/text_renderer_utils.h>
+#include <VFONT/font.h>
+#include <VFONT/text_block.h>
+
 #include "window.h"
-#include "text_renderer.h"
-#include "text_renderer_utils.h"
 #include "base_camera.h"
 #include "perspective_camera.h"
 #include "orto_camera.h"
-#include "text_block.h"
-#include "font.h"
+#include <VFONT/text_renderer.h>
 
 /**
  * @class Scene
@@ -74,6 +76,7 @@ protected:
     std::vector<const char *> deviceExtensions;             /**< Selected vulkan device extensions */
     std::vector<const char *> validationLayers;             /**< Selected vulkan validation layers */
 
+    vft::TextRenderer renderer;
     std::shared_ptr<MainWindow> _window;                    /**< Application window */
     std::unique_ptr<BaseCamera> _camera;                    /**< Camera object */
     CameraType _cameraType;                                 /**< Type of camera used for rendering */

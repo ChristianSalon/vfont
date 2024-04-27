@@ -11,11 +11,6 @@
 #include <cstdint>
 
 #include "scene.h"
-#include "base_camera.h"
-#include "text_renderer.h"
-#include "text_renderer_utils.h"
-#include "text_block.h"
-#include "font.h"
 
  /**
   * @class DemoScene
