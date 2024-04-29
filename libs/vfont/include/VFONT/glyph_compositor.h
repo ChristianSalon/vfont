@@ -8,6 +8,7 @@
 #include <vector>
 #include <memory>
 #include <map>
+#include <set>
 #include <cstdint>
 
 #include <ft2build.h>
@@ -41,6 +42,7 @@ protected:
     void _composeGlyph(uint32_t codePoint, std::shared_ptr<Font> font);
     void _triangulate();
 
+    int _getVertexIndex(const std::vector<glm::vec2> &vertices, glm::vec2 vertex);
     void _detailBezier(glm::vec2 startPoint, glm::vec2 controlPoint, glm::vec2 endPoint);
     void _subdivide(
         glm::vec2 startPoint,
@@ -57,7 +59,13 @@ protected:
         vft::Edge first,
         vft::Edge second,
         glm::vec2 &intersection);
-    void _checkIntersectingEdges(std::vector<glm::vec2> &vertices, std::vector<vft::Edge> &edges);
+    void _resolveIntersectingEdges(std::vector<glm::vec2> &vertices, std::vector<vft::Edge> &edges);
+    void _checkIntersectingEdges(std::vector<glm::vec2> &vertices, std::vector<vft::Edge> &edges, vft::Edge &edge);
+
+    void _removeDuplicateEdges(std::vector<vft::Edge> &edges);
+    void _walkContours(const std::vector<glm::vec2> &vertices, std::vector<vft::Edge> &edges);
+    std::vector<uint32_t> _findAllEdgesContainingVertex(uint32_t vertexId, const std::vector<vft::Edge> &edges);
+    void _updateVisitedEdgesUntilNextIntersection(std::vector<vft::Edge> &edges, std::set<uint32_t> &visited, uint32_t startEdgeIndex);
 
 };
 

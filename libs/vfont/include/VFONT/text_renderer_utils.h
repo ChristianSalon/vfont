@@ -52,6 +52,7 @@ public:
     Edge(uint32_t first, uint32_t second) : first{first}, second{second} {};
 
     inline bool operator==(const Edge &edge) { return this->first == edge.first && this->second == edge.second; };
+    inline bool isInverse(const Edge &edge) { return this->first == edge.second && this->second == edge.first; };
 
 };
 

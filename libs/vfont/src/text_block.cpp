@@ -53,7 +53,7 @@ void TextBlock::rotate(float x, float y, float z) {
 void TextBlock::add(std::vector<uint32_t> codePoints) {
     for(uint32_t codePoint : codePoints) {
         // Creates glyph info if not set
-        GlyphCompositor compositor;
+        GlyphCompositor compositor{};
         compositor.compose(codePoint, this->_font);
 
         if(codePoint == vft::U_ENTER) {

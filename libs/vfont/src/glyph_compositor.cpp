@@ -3,12 +3,16 @@
  * @author Christian Saloň
  */
 
+#include <iostream>
 #include <stdexcept>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_OUTLINE_H
 #include "CDT.h"
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/vector_angle.hpp>
 
 #include "glyph_compositor.h"
 
@@ -26,7 +30,6 @@ namespace vft {
 FT_Outline_MoveToFunc GlyphCompositor::_moveToFunc = [](const FT_Vector *to, void *user) {
     GlyphCompositor *pThis = reinterpret_cast<GlyphCompositor *>(user);
 
-    pThis->_currentGlyphData.lastVertex = glm::vec2(static_cast<float>(to->x), static_cast<float>(to->y));
     if(!pThis->_currentGlyphData.isFirstContour) {
         // Makes the contour closed
         pThis->_currentGlyph.updateEdge(
@@ -36,7 +39,20 @@ FT_Outline_MoveToFunc GlyphCompositor::_moveToFunc = [](const FT_Vector *to, voi
     else {
         pThis->_currentGlyphData.isFirstContour = false;
     }
-    pThis->_currentGlyphData.contourStartVertexId = pThis->_currentGlyphData.vertexId;
+
+    glm::vec2 newVertex = glm::vec2(static_cast<float>(to->x), static_cast<float>(to->y));
+    int newVertexIndex = pThis->_getVertexIndex(pThis->_currentGlyph.getVertices(), newVertex);
+
+    if(newVertexIndex == -1) {
+        pThis->_currentGlyph.addVertex(newVertex);
+        pThis->_currentGlyphData.contourStartVertexId = pThis->_currentGlyphData.vertexId;
+        pThis->_currentGlyphData.vertexId++;
+    }
+    else {
+        pThis->_currentGlyphData.contourStartVertexId = newVertexIndex;
+    }
+
+    pThis->_currentGlyphData.lastVertex = newVertex;
 
     return 0;
 };
@@ -53,9 +69,21 @@ FT_Outline_MoveToFunc GlyphCompositor::_moveToFunc = [](const FT_Vector *to, voi
 FT_Outline_LineToFunc GlyphCompositor::_lineToFunc = [](const FT_Vector *to, void *user) {
     GlyphCompositor *pThis = reinterpret_cast<GlyphCompositor *>(user);
 
-    pThis->_currentGlyphData.lastVertex = glm::vec2(static_cast<float>(to->x), static_cast<float>(to->y));
-    pThis->_currentGlyph.addVertex(pThis->_currentGlyphData.lastVertex);
-    pThis->_currentGlyph.addEdge(vft::Edge{pThis->_currentGlyphData.vertexId, ++(pThis->_currentGlyphData.vertexId)});
+    uint32_t lastVertexIndex = pThis->_getVertexIndex(pThis->_currentGlyph.getVertices(), pThis->_currentGlyphData.lastVertex);
+
+    glm::vec2 newVertex = glm::vec2(static_cast<float>(to->x), static_cast<float>(to->y));
+    int newVertexIndex = pThis->_getVertexIndex(pThis->_currentGlyph.getVertices(), newVertex);
+
+    if(newVertexIndex == -1) {
+        pThis->_currentGlyph.addVertex(newVertex);
+        pThis->_currentGlyph.addEdge(vft::Edge{lastVertexIndex, pThis->_currentGlyphData.vertexId});
+        pThis->_currentGlyphData.vertexId++;
+    }
+    else {
+        pThis->_currentGlyph.addEdge(vft::Edge{lastVertexIndex, static_cast<uint32_t>(newVertexIndex)});
+    }
+
+    pThis->_currentGlyphData.lastVertex = newVertex;
 
     return 0;
 };
@@ -97,6 +125,80 @@ FT_Outline_CubicToFunc GlyphCompositor::_cubicToFunc = [](const FT_Vector *contr
     throw std::runtime_error("Fonts with cubic bezier curves are not supported");
     return 0;
 };
+
+int GlyphCompositor::_getVertexIndex(const std::vector<glm::vec2> &vertices, glm::vec2 vertex) {
+    for(int i = 0; i < vertices.size(); i++) {
+        if(glm::distance(vertex, vertices.at(i)) <= 64.f) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+/**
+ * @brief Computes vertices of a quadratic bezier curve with adaptive level of detail
+ *
+ * @param startPoint Bezier curve starting point
+ * @param controlPoint Bezier curve control point
+ * @param endPoint Bezier curve ending point
+ */
+void GlyphCompositor::_detailBezier(glm::vec2 startPoint, glm::vec2 controlPoint, glm::vec2 endPoint) {
+    std::map<float, glm::vec2> vertices{{ 1.f, glm::vec2(endPoint) }};
+    this->_subdivide(startPoint, controlPoint, endPoint, 0.5f, 0.5f, vertices);
+
+    for(std::map<float, glm::vec2>::iterator i = vertices.begin(); i != vertices.end(); i++) {
+        uint32_t lastVertexIndex = this->_getVertexIndex(this->_currentGlyph.getVertices(), this->_currentGlyphData.lastVertex);
+
+        glm::vec2 newVertex = i->second;
+        int newVertexIndex = this->_getVertexIndex(this->_currentGlyph.getVertices(), newVertex);
+
+        if(newVertexIndex == -1) {
+            this->_currentGlyph.addVertex(newVertex);
+            this->_currentGlyph.addEdge(vft::Edge{lastVertexIndex, this->_currentGlyphData.vertexId});
+            this->_currentGlyphData.vertexId++;
+        }
+        else if(lastVertexIndex != newVertexIndex) {
+            this->_currentGlyph.addEdge(vft::Edge{lastVertexIndex, static_cast<uint32_t>(newVertexIndex)});
+        }
+
+        this->_currentGlyphData.lastVertex = newVertex;
+    }
+}
+
+/**
+ * @brief Subdivides a quadratic bezier curve until there is no loss of quality
+ *
+ * @param startPoint Bezier curve starting point
+ * @param controlPoint Bezier curve control point
+ * @param endPoint Bezier curve ending point
+ * @param t Parameter for the position on the bezier curve (t = <0, 1>)
+ * @param delta Indicates distance between current point and computed points in the previous step
+ * @param vertices Created vertices by dividing bezier curve into line segments
+ */
+void GlyphCompositor::_subdivide(glm::vec2 startPoint, glm::vec2 controlPoint, glm::vec2 endPoint, float t, float delta, std::map<float, glm::vec2> &vertices) {
+    // Add current point
+    glm::vec2 newVertex{(1 - t) * (1 - t) * startPoint + 2 * (1 - t) * t * controlPoint + (t * t) * endPoint};
+    vertices.insert({t, newVertex});
+
+    // Compute points around the current point with the given delta
+    glm::vec2 left{(1 - (t - delta)) * (1 - (t - delta)) * startPoint + 2 * (1 - (t - delta)) * (t - delta) * controlPoint + (t - delta) * (t - delta) * endPoint};
+    glm::vec2 right{(1 - (t + delta)) * (1 - (t + delta)) * startPoint + 2 * (1 - (t + delta)) * (t + delta) * controlPoint + (t + delta) * (t + delta) * endPoint};
+
+    // Check if distance between curve(t - delta) and curve(t) is less than one pixel
+    // or if points can be connected by a line without losing quality
+    if(glm::length(newVertex - left) >= 64.f && newVertex.x != left.x && newVertex.y != left.y) {
+        // The segment curve(t - delta) and curve(t) should be subdivided
+        this->_subdivide(startPoint, controlPoint, endPoint, t - delta / 2.f, delta / 2.f, vertices);
+    }
+
+    // Check if distance between curve(t) and curve(t + delta) is less than one pixel
+    // or if points can be connected by a line without losing quality
+    if(glm::length(newVertex - right) >= 64.f && newVertex.x != right.x && newVertex.y != right.y) {
+        // The segment curve(t) and curve(t + delta) should be subdivided
+        this->_subdivide(startPoint, controlPoint, endPoint, t + delta / 2.f, delta / 2.f, vertices);
+    }
+}
 
 void GlyphCompositor::compose(uint32_t codePoint, std::shared_ptr<Font> font) {
     this->_currentGlyphData = vft::ComposedGlyphData{};
@@ -153,7 +255,7 @@ void GlyphCompositor::_triangulate() {
     std::vector<glm::vec2> vertices = this->_currentGlyph.getVertices();
     std::vector<vft::Edge> edges = this->_currentGlyph.getEdges();
 
-    //this->_checkIntersectingEdges(vertices, edges);
+    // Remove duplicate vertices
     CDT::RemoveDuplicatesAndRemapEdges<float>(
         vertices,
         [](const glm::vec2 &p) { return p.x; },
@@ -163,6 +265,10 @@ void GlyphCompositor::_triangulate() {
         [](const vft::Edge &e) { return e.first; },
         [](const vft::Edge &e) { return e.second; },
         [](uint32_t i1, uint32_t i2) -> vft::Edge { return vft::Edge{i1, i2}; });
+    this->_removeDuplicateEdges(edges);
+    this->_resolveIntersectingEdges(vertices, edges);
+    // Combine intersecting contours into one
+    this->_walkContours(vertices, edges);
 
     this->_currentGlyph.setVertices(vertices);
     this->_currentGlyph.setEdges(edges);
@@ -191,58 +297,6 @@ void GlyphCompositor::_triangulate() {
         this->_currentGlyph.addIndex(cdtTriangles.at(i).vertices.at(0));
         this->_currentGlyph.addIndex(cdtTriangles.at(i).vertices.at(1));
         this->_currentGlyph.addIndex(cdtTriangles.at(i).vertices.at(2));
-    }
-}
-
-
-/**
- * @brief Computes vertices of a quadratic bezier curve with adaptive level of detail
- *
- * @param startPoint Bezier curve starting point
- * @param controlPoint Bezier curve control point
- * @param endPoint Bezier curve ending point
- */
-void GlyphCompositor::_detailBezier(glm::vec2 startPoint, glm::vec2 controlPoint, glm::vec2 endPoint) {
-    std::map<float, glm::vec2> vertices{{ 1.f, glm::vec2(endPoint) }};
-    this->_subdivide(startPoint, controlPoint, endPoint, 0.5f, 0.5f, vertices);
-
-    for(std::map<float, glm::vec2>::iterator i = vertices.begin(); i != vertices.end(); i++) {
-        this->_currentGlyph.addVertex(i->second);
-        this->_currentGlyph.addEdge(vft::Edge{this->_currentGlyphData.vertexId, ++(this->_currentGlyphData.vertexId)});
-    }
-}
-
-/**
- * @brief Subdivides a quadratic bezier curve until there is no loss of quality
- *
- * @param startPoint Bezier curve starting point
- * @param controlPoint Bezier curve control point
- * @param endPoint Bezier curve ending point
- * @param t Parameter for the position on the bezier curve (t = <0, 1>)
- * @param delta Indicates distance between current point and computed points in the previous step
- * @param vertices Created vertices by dividing bezier curve into line segments
- */
-void GlyphCompositor::_subdivide(glm::vec2 startPoint, glm::vec2 controlPoint, glm::vec2 endPoint, float t, float delta, std::map<float, glm::vec2> &vertices) {
-    // Add current point
-    glm::vec2 newVertex{(1 - t) * (1 - t) * startPoint + 2 * (1 - t) * t * controlPoint + (t * t) * endPoint};
-    vertices.insert({t, newVertex});
-
-    // Compute points around the current point with the given delta
-    glm::vec2 left{(1 - (t - delta)) * (1 - (t - delta)) * startPoint + 2 * (1 - (t - delta)) * (t - delta) * controlPoint + (t - delta) * (t - delta) * endPoint};
-    glm::vec2 right{(1 - (t + delta)) * (1 - (t + delta)) * startPoint + 2 * (1 - (t + delta)) * (t + delta) * controlPoint + (t + delta) * (t + delta) * endPoint};
-
-    // Check if distance between curve(t - delta) and curve(t) is less than one pixel
-    // or if points can be connected by a line without losing quality
-    if(glm::length(newVertex - left) >= 64.f && newVertex.x != left.x && newVertex.y != left.y) {
-        // The segment curve(t - delta) and curve(t) should be subdivided
-        this->_subdivide(startPoint, controlPoint, endPoint, t - delta / 2.f, delta / 2.f, vertices);
-    }
-
-    // Check if distance between curve(t) and curve(t + delta) is less than one pixel
-    // or if points can be connected by a line without losing quality
-    if(glm::length(newVertex - right) >= 64.f && newVertex.x != right.x && newVertex.y != right.y) {
-        // The segment curve(t) and curve(t + delta) should be subdivided
-        this->_subdivide(startPoint, controlPoint, endPoint, t + delta / 2.f, delta / 2.f, vertices);
     }
 }
 
@@ -283,25 +337,72 @@ bool GlyphCompositor::_isPointOnLineSegment(double x1, double y1, double x2, dou
     return fabs(this->_determinant(x - x1, y - y1, x2 - x1, y2 - y1)) < epsilon && (x - x1) * (x - x2) + (y - y1) * (y - y2) <= 0;
 }
 
-void GlyphCompositor::_checkIntersectingEdges(std::vector<glm::vec2> &vertices, std::vector<vft::Edge> &edges) {
-    // Remove duplicate edges
-    uint32_t deletedVerticesCount = 0;
-    for(uint32_t i = 0; i < vertices.size(); i++) {
-        for(uint32_t j = i + 1; j < vertices.size(); j++) {
-            if(fabs(vertices.at(i).x - vertices.at(j).x) <= 1.0e-6 && fabs(vertices.at(i).y - vertices.at(j).y) <= 1.0e-6) {
-                std::for_each(edges.begin(), edges.end(), [&](vft::Edge &edge) {
-                    if(edge.first == j) {
-                        edge.first = i;
-                    }
-                    if(edge.second == j) {
-                        edge.second = i;
-                    }
-                });
+void GlyphCompositor::_checkIntersectingEdges(std::vector<glm::vec2> &vertices, std::vector<vft::Edge> &edges, vft::Edge &edge) {
+    for(int i = 0; i < edges.size(); i++) {
+        vft::Edge &firstEdge = edge;
+        vft::Edge &secondEdge = edges.at(i);
+
+        if(
+            firstEdge == secondEdge ||
+            firstEdge.second == secondEdge.first ||
+            firstEdge.first == secondEdge.second ||
+            firstEdge.first == secondEdge.first ||
+            firstEdge.second == secondEdge.second) {
+            continue;
+        }
+
+        glm::vec2 intersection = glm::vec2(0.f, 0.f);
+        bool intersect = this->_intersect(vertices, firstEdge, secondEdge, intersection);
+        if(intersect) {
+            if(intersection == vertices.at(firstEdge.first)) {
+                uint32_t oldSecondEdgeSecondIndex = secondEdge.second;
+                secondEdge.second = firstEdge.first;
+                auto secondEdgeIterator = std::find(edges.begin(), edges.end(), secondEdge);
+                edges.insert(secondEdgeIterator + 1, vft::Edge{firstEdge.first, oldSecondEdgeSecondIndex});
             }
+            else if(intersection == vertices.at(firstEdge.second)) {
+                uint32_t oldSecondEdgeSecondIndex = secondEdge.second;
+                secondEdge.second = firstEdge.second;
+                auto secondEdgeIterator = std::find(edges.begin(), edges.end(), secondEdge);
+                edges.insert(secondEdgeIterator + 1, vft::Edge{firstEdge.second, oldSecondEdgeSecondIndex});
+            }
+            else if(intersection == vertices.at(secondEdge.first)) {
+                uint32_t oldFirstEdgeSecondIndex = firstEdge.second;
+                firstEdge.second = secondEdge.first;
+                auto firstEdgeIterator = std::find(edges.begin(), edges.end(), firstEdge);
+                edges.insert(firstEdgeIterator + 1, vft::Edge{secondEdge.first, oldFirstEdgeSecondIndex});
+            }
+            else if(intersection == vertices.at(secondEdge.second)) {
+                uint32_t oldFirstEdgeSecondIndex = firstEdge.second;
+                firstEdge.second = secondEdge.second;
+                auto firstEdgeIterator = std::find(edges.begin(), edges.end(), firstEdge);
+                edges.insert(firstEdgeIterator + 1, vft::Edge{secondEdge.second, oldFirstEdgeSecondIndex});
+            }
+            else {
+                uint32_t intersectionIndex = vertices.size();
+                vertices.push_back(intersection);
+
+                uint32_t oldFirstEdgeSecondIndex = firstEdge.second;
+                uint32_t oldSecondEdgeSecondIndex = secondEdge.second;
+                firstEdge.second = intersectionIndex;
+                secondEdge.second = intersectionIndex;
+
+                auto firstEdgeIterator = std::find(edges.begin(), edges.end(), firstEdge);
+                edges.insert(firstEdgeIterator + 1, vft::Edge{intersectionIndex, oldFirstEdgeSecondIndex});
+
+                secondEdge = edges.at(i + 1);
+                auto secondEdgeIterator = std::find(edges.begin(), edges.end(), secondEdge);
+                edges.insert(secondEdgeIterator + 1, vft::Edge{intersectionIndex, oldSecondEdgeSecondIndex});
+
+                i++;
+            }
+
+            i++;
         }
     }
+}
 
-    // Resolve intersecting edges
+void GlyphCompositor::_resolveIntersectingEdges(std::vector<glm::vec2> &vertices, std::vector<vft::Edge> &edges) {
     for(int i = 0; i < edges.size(); i++) {
         for(int j = i + 1; j < edges.size(); j++) {
             vft::Edge &firstEdge = edges.at(i);
@@ -309,9 +410,10 @@ void GlyphCompositor::_checkIntersectingEdges(std::vector<glm::vec2> &vertices, 
 
             if(
                 firstEdge == secondEdge ||
-                firstEdge.second == secondEdge.first ||
-                firstEdge.first == secondEdge.second ||
+                firstEdge.isInverse(secondEdge) ||
                 firstEdge.first == secondEdge.first ||
+                firstEdge.first == secondEdge.second ||
+                firstEdge.second == secondEdge.first ||
                 firstEdge.second == secondEdge.second) {
                 continue;
             }
@@ -366,6 +468,134 @@ void GlyphCompositor::_checkIntersectingEdges(std::vector<glm::vec2> &vertices, 
             }
         }
     }
+}
+
+void GlyphCompositor::_removeDuplicateEdges(std::vector<vft::Edge> &edges) {
+    for(int i = 0; i < edges.size(); i++) {
+        for(int j = i + 1; j < edges.size(); j++) {
+            if(edges.at(i).isInverse(edges.at(j))) {
+                edges.erase(std::find(edges.begin(), edges.end(), edges.at(i)));
+                edges.erase(std::find(edges.begin(), edges.end(), edges.at(j - 1)));
+
+                i--;
+                break;
+            }
+        }
+    }
+}
+
+void GlyphCompositor::_walkContours(const std::vector<glm::vec2> &vertices, std::vector<vft::Edge> &edges) {
+    if(edges.size() == 0) {
+        return;
+    }
+
+    std::vector<vft::Edge> newEdges = {edges.at(0)};
+    std::set<uint32_t> visitedEdgesIndices = {0};
+
+    while(visitedEdgesIndices.size() < edges.size()) {
+        uint32_t currentVertexId = newEdges.at(newEdges.size() - 1).second;
+        std::vector<uint32_t> edgeIndices = this->_findAllEdgesContainingVertex(currentVertexId, edges);
+        if(edgeIndices.size() == 2) {
+            // Switch contour
+            if(edges.at(edgeIndices.at(0) - 1) == newEdges.at(newEdges.size() - 1)) {
+                // Edge at index edgeIndices[0] is next edge of contour without switch
+                // Edge at index edgeIndices[1] is next edge of contour after switch
+                newEdges.push_back(edges.at(edgeIndices.at(1)));
+                visitedEdgesIndices.insert(edgeIndices.at(1));
+                this->_updateVisitedEdgesUntilNextIntersection(edges, visitedEdgesIndices, edgeIndices.at(0));
+            }
+            else {
+                // Edge at index edgeIndices[0] is next edge of contour after switch
+                // Edge at index edgeIndices[1] is next edge of contour without switch
+                newEdges.push_back(edges.at(edgeIndices.at(0)));
+                visitedEdgesIndices.insert(edgeIndices.at(0));
+                this->_updateVisitedEdgesUntilNextIntersection(edges, visitedEdgesIndices, edgeIndices.at(1));
+            }
+        }
+        else if(edgeIndices.size() == 1) {
+            // Stay on same contour
+            if(visitedEdgesIndices.contains(edgeIndices.at(0))) {
+                uint32_t newEdgeIndex = *(visitedEdgesIndices.rbegin()) + 1;
+                newEdges.push_back(edges.at(newEdgeIndex));
+                visitedEdgesIndices.insert(newEdgeIndex);
+                continue;
+            }
+
+            newEdges.push_back(edges.at(edgeIndices.at(0)));
+            visitedEdgesIndices.insert(edgeIndices.at(0));
+        }
+        else {
+            /*float maxAngle = 0.f;
+            int maxIndex = 0;
+            glm::vec2 lastEdgeVector = glm::normalize(glm::vec2(vertices.at(newEdges.at(newEdges.size() - 1).first), vertices.at(newEdges.at(newEdges.size() - 1).second)));
+            for(int i = 0; i < edgeIndices.size(); i++) {
+                uint32_t edgeIndex = edgeIndices.at(i);
+                if(!(edges.at(edgeIndex - 1) == newEdges.at(newEdges.size() - 1))) {
+                    newEdges.push_back(edges.at(edgeIndex));
+                    visitedEdgesIndices.insert(edgeIndex);
+
+                    glm::vec2 nextEdgeVector = glm::normalize(glm::vec2(vertices.at(edges.at(edgeIndex).first), vertices.at(edges.at(edgeIndex).second)));
+                    float angle = glm::angle(lastEdgeVector, nextEdgeVector);
+                    if(angle > maxAngle) {
+                        maxAngle = angle;
+                        maxIndex = i;
+                    }
+                }
+            }
+
+            for(int i = 0; i < edgeIndices.size(); i++) {
+                if(i == maxIndex) {
+                    newEdges.push_back(edges.at(maxIndex));
+                    visitedEdgesIndices.insert(maxIndex);
+                }
+                else {
+                    this->_updateVisitedEdgesUntilNextIntersection(edges, visitedEdgesIndices, i);
+                }
+            }
+            */
+        }
+
+        // Visited last edge and is closed
+        /*uint32_t maxVisitedIndex = *(visitedEdgesIndices.rbegin());
+        if(maxVisitedIndex == edges.size() - 1) {
+            break;
+        }*/
+    }
+
+    edges = newEdges;
+}
+
+void GlyphCompositor::_updateVisitedEdgesUntilNextIntersection(std::vector<vft::Edge> &edges, std::set<uint32_t> &visited, uint32_t startEdgeIndex) {
+    visited.insert(startEdgeIndex);
+    uint32_t currentVertexId = edges.at(startEdgeIndex).second;
+
+    std::vector<uint32_t> edgeIndices = this->_findAllEdgesContainingVertex(currentVertexId, edges);
+    while(true) {
+        if(edgeIndices.size() == 1) {
+            // Stay on same contour
+            visited.insert(edgeIndices.at(0));
+            currentVertexId = edges.at(edgeIndices.at(0)).second;
+        }
+        else if(edgeIndices.size() >= 2) {
+            return;
+        }
+        else {
+            throw std::runtime_error("Invalid edges.");
+        }
+
+        edgeIndices = this->_findAllEdgesContainingVertex(currentVertexId, edges);
+    }
+}
+
+std::vector<uint32_t> GlyphCompositor::_findAllEdgesContainingVertex(uint32_t vertexId, const std::vector<vft::Edge> &edges) {
+    std::vector<uint32_t> indices;
+    for(int i = 0; i < edges.size(); i++) {
+        if(edges.at(i).first == vertexId) {
+            indices.push_back(i);
+        }
+    }
+
+    return indices;
 }
 
 }

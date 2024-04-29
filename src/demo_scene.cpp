@@ -21,7 +21,7 @@ const std::vector<uint32_t> DemoScene::JAPANESE_CODE_POINTS =
 DemoScene::DemoScene(CameraType cameraType) : Scene{cameraType} {
     this->_arial32 = std::make_shared<vft::Font>(DemoScene::ARIAL_PATH, 32);
     this->_arial64 = std::make_shared<vft::Font>(DemoScene::ARIAL_PATH, 64);
-    this->_jersey32 = std::make_shared<vft::Font>(DemoScene::JERSEY_PATH, 32);
+    this->_jersey32 = std::make_shared<vft::Font>(DemoScene::JERSEY_PATH, 128);
     this->_crimsontext32 = std::make_shared<vft::Font>(DemoScene::CRIMSON_TEXT_PATH, 32);
     this->_robotomono32 = std::make_shared<vft::Font>(DemoScene::ROBOTO_MONO_PATH, 32);
     this->_notosansjp32 = std::make_shared<vft::Font>(DemoScene::NOTO_SANS_JP_PATH, 32);
@@ -32,24 +32,24 @@ DemoScene::DemoScene(CameraType cameraType) : Scene{cameraType} {
     this->_block2 = std::make_shared<vft::TextBlock>(this->_arial32, glm::vec3(1.f, 0.f, 0.f), glm::vec3(0.f, 64.f, 0.f), -1);
     this->_block2->add(DemoScene::ENGLISH_CODE_POINTS);
 
-    this->_block3 = std::make_shared<vft::TextBlock>(this->_robotomono32, glm::vec3(0.f, 1.f, 0.f), glm::vec3(0.f, 96.f, 0.f), -1, false, false);
+    this->_block5 = std::make_shared<vft::TextBlock>(this->_jersey32, glm::vec3(1.f, 1.f, 0.f), glm::vec3(0.f, 160.f, 0.f), -1);
+    this->_block5->add(DemoScene::ENGLISH_CODE_POINTS);
+
+    /*this->_block3 = std::make_shared<vft::TextBlock>(this->_robotomono32, glm::vec3(0.f, 1.f, 0.f), glm::vec3(0.f, 96.f, 0.f), -1, false, false);
     this->_block3->add(DemoScene::ENGLISH_CODE_POINTS);
 
     this->_block4 = std::make_shared<vft::TextBlock>(this->_crimsontext32, glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 128.f, 0.f), -1);
     this->_block4->add(DemoScene::ENGLISH_CODE_POINTS);
 
-    this->_block5 = std::make_shared<vft::TextBlock>(this->_jersey32, glm::vec3(1.f, 1.f, 0.f), glm::vec3(0.f, 160.f, 0.f), -1);
-    this->_block5->add(DemoScene::ENGLISH_CODE_POINTS);
-
     this->_block6 = std::make_shared<vft::TextBlock>(this->_notosansjp32, glm::vec3(1.f, 1.f, 1.f), glm::vec3(0.f, 192.f, 0.f), -1);
-    this->_block6->add(DemoScene::JAPANESE_CODE_POINTS);
+    this->_block6->add({0x308C});*/
 
     this->renderer.add(this->_block1);
     this->renderer.add(this->_block2);
-    this->renderer.add(this->_block3);
-    this->renderer.add(this->_block4);
     this->renderer.add(this->_block5);
-    this->renderer.add(this->_block6);
+    /*this->renderer.add(this->_block3);
+    this->renderer.add(this->_block4);
+    this->renderer.add(this->_block6);*/
 }
 
 DemoScene::~DemoScene() {}
