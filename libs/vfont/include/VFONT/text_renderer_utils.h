@@ -10,6 +10,7 @@
 #include <vulkan/vulkan.h>
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
+#include <glm/vec4.hpp>
 
 #include "glyph.h"
 
@@ -64,9 +65,9 @@ class CharacterPushConstants {
 public:
 
     glm::mat4 model;    /**< Model matrix of character */
-    glm::vec3 color;    /**< Color of character */
+    glm::vec4 color;    /**< Color of character */
 
-    CharacterPushConstants(glm::mat4 model, glm::vec3 color) : model{model}, color{color} {};
+    CharacterPushConstants(glm::mat4 model, glm::vec4 color) : model{model}, color{color} {};
 
 };
 

@@ -5,6 +5,8 @@
 
 #include "demo_scene.h"
 
+#include <glm/vec4.hpp>
+
 const std::string DemoScene::ARIAL_PATH = "Arial-Regular.ttf";
 const std::string DemoScene::JERSEY_PATH = "Jersey10-Regular.ttf";
 const std::string DemoScene::CRIMSON_TEXT_PATH = "CrimsonText-Italic.ttf";
@@ -29,25 +31,25 @@ DemoScene::DemoScene(CameraType cameraType) : Scene{cameraType} {
     this->_notosansjp = std::make_shared<vft::Font>(DemoScene::NOTO_SANS_JP_PATH);
     this->_notoemoji = std::make_shared<vft::Font>(DemoScene::NOTO_EMOJI_PATH);
 
-    this->_block1 = std::make_shared<vft::TextBlock>(this->_arial, 64, glm::vec3(1.f, 1.f, 1.f), glm::vec3(0.f, 0.f, 0.f), -1);
+    this->_block1 = std::make_shared<vft::TextBlock>(this->_arial, 64, glm::vec4(1.f, 1.f, 1.f, 1.f), glm::vec3(0.f, 0.f, 0.f), -1);
     this->_block1->add(DemoScene::SLOVAK_CODE_POINTS);
 
-    this->_block2 = std::make_shared<vft::TextBlock>(this->_arial, 32, glm::vec3(1.f, 0.f, 0.f), glm::vec3(0.f, 64.f, 0.f), -1);
+    this->_block2 = std::make_shared<vft::TextBlock>(this->_arial, 32, glm::vec4(1.f, 0.f, 0.f, 1.f), glm::vec3(0.f, 64.f, 0.f), -1);
     this->_block2->add(DemoScene::ENGLISH_CODE_POINTS);
 
-    this->_block3 = std::make_shared<vft::TextBlock>(this->_robotomono, 32, glm::vec3(0.f, 1.f, 0.f), glm::vec3(0.f, 96.f, 0.f), -1, false, false);
+    this->_block3 = std::make_shared<vft::TextBlock>(this->_robotomono, 32, glm::vec4(0.f, 1.f, 0.f, 1.f), glm::vec3(0.f, 96.f, 0.f), -1, false, false);
     this->_block3->add(DemoScene::ENGLISH_CODE_POINTS);
 
-    this->_block4 = std::make_shared<vft::TextBlock>(this->_crimsontext, 32, glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 128.f, 0.f), -1, false, false);
+    this->_block4 = std::make_shared<vft::TextBlock>(this->_crimsontext, 32, glm::vec4(0.f, 0.f, 1.f, 0.5f), glm::vec3(0.f, 128.f, 0.f), -1, false, false);
     this->_block4->add(DemoScene::ENGLISH_CODE_POINTS);
 
-    this->_block5 = std::make_shared<vft::TextBlock>(this->_jersey, 32, glm::vec3(1.f, 1.f, 0.f), glm::vec3(0.f, 160.f, 0.f), -1);
+    this->_block5 = std::make_shared<vft::TextBlock>(this->_jersey, 32, glm::vec4(1.f, 1.f, 0.f, 1.f), glm::vec3(0.f, 160.f, 0.f), -1);
     this->_block5->add(DemoScene::ENGLISH_CODE_POINTS);
 
-    this->_block6 = std::make_shared<vft::TextBlock>(this->_notosansjp, 32, glm::vec3(1.f, 1.f, 1.f), glm::vec3(0.f, 192.f, 0.f), -1, false, false);
+    this->_block6 = std::make_shared<vft::TextBlock>(this->_notosansjp, 32, glm::vec4(1.f, 1.f, 1.f, 1.f), glm::vec3(0.f, 192.f, 0.f), -1, false, false);
     this->_block6->add(DemoScene::JAPANESE_CODE_POINTS);
 
-    this->_block7 = std::make_shared<vft::TextBlock>(this->_notoemoji, 32, glm::vec3(1.f, 1.f, 1.f), glm::vec3(0.f, 224.f, 0.f), -1, false, false);
+    this->_block7 = std::make_shared<vft::TextBlock>(this->_notoemoji, 32, glm::vec4(0.f, 1.f, 1.f, 1.f), glm::vec3(0.f, 224.f, 0.f), -1, false, false);
     this->_block7->add(DemoScene::EMOJI_CODE_POINTS);
 
     this->renderer.add(this->_block1);

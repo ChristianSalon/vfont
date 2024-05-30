@@ -29,7 +29,7 @@ namespace vft {
 TextBlock::TextBlock(
     std::shared_ptr<Font> font,
     unsigned int fontSize,
-    glm::vec3 color,
+    glm::vec4 color,
     glm::vec3 position,
     int width,
     bool kerning,
@@ -226,7 +226,7 @@ void TextBlock::setFontSize(unsigned int fontSize) {
  * 
  * @param color Color
  */
-void TextBlock::setColor(glm::vec3 color) {
+void TextBlock::setColor(glm::vec4 color) {
     this->_color = color;
 }
 
@@ -322,7 +322,7 @@ unsigned int TextBlock::getFontSize() const {
  *
  * @return Font color used in text block
  */
-glm::vec3 TextBlock::getColor() const {
+glm::vec4 TextBlock::getColor() const {
     return this->_color;
 }
 

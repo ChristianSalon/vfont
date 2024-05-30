@@ -12,6 +12,7 @@
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 
 #include "character.h"
 #include "font.h"
@@ -41,7 +42,7 @@ protected:
     int _penY;                          /**< Y coordinate of current pen position */
 
     glm::mat4 _transform;               /**< Transform matrix of text block */
-    glm::vec3 _color;                   /**< Color of text */
+    glm::vec4 _color;                   /**< Color of text */
     glm::vec3 _position;                /**< Position of text block */
 
     std::vector<Character> _characters; /**< Characters to render */
@@ -50,7 +51,7 @@ public:
 
     TextBlock(std::shared_ptr<Font> font,
               unsigned int fontSize,
-              glm::vec3 color,
+              glm::vec4 color,
               glm::vec3 position,
               int width = -1,
               bool kerning = true,
@@ -65,7 +66,7 @@ public:
     void clear();
 
     void setFont(std::shared_ptr<Font> font);
-    void setColor(glm::vec3 color);
+    void setColor(glm::vec4 color);
     void setPosition(glm::vec3 position);
     void setTransform(glm::mat4 transform);
     void setWidth(int width);
@@ -75,7 +76,7 @@ public:
 
     std::vector<Character> &getCharacters();
     std::shared_ptr<Font> getFont() const;
-    glm::vec3 getColor() const;
+    glm::vec4 getColor() const;
     glm::vec3 getPosition() const;
     glm::mat4 getTransform() const;
     int getWidth() const;

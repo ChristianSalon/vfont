@@ -1,11 +1,11 @@
 #version 450
 
 layout(location = 0) in vec2 inPosition;
-layout(location = 0) out vec3 fragColor;
+layout(location = 0) out vec4 fragColor;
 
 layout(push_constant) uniform constants {
 	mat4 model;
-    vec3 color;
+    vec4 color;
 } PushConstants;
 
 layout(binding = 0) uniform UniformBufferObject {
