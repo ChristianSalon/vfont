@@ -400,19 +400,6 @@ bool GlyphCompositor::_intersect(const std::vector<glm::vec2> &vertices, vft::Ed
         return true;
     }
 
-    /*if(
-        (
-            ((intersection.x > x1 && intersection.x < x2) || (intersection.x < x1 && intersection.x > x2)) &&
-            ((intersection.y > y1 && intersection.y < y2) || (intersection.y < y1 && intersection.y > y2))
-        ) &&
-        (
-            ((intersection.x > x3 && intersection.x < x4) || (intersection.x < x3 && intersection.x > x4)) &&
-            ((intersection.y > y3 && intersection.y < y4) || (intersection.y < y3 && intersection.y > y4))
-        )
-    ) {
-        return true;
-    }*/
-
     return false;
 }
 
@@ -542,7 +529,7 @@ void GlyphCompositor::_resolveSharedVertices(std::vector<glm::vec2> &vertices, s
                 uint32_t intersectionIndex = firstEdge.second;
 
                 // Check if it is only one point of intersection
-                std::vector<uint32_t> edgeIndices = this->_findAllEdgesContainingVertex(intersectionIndex, edges);
+                std::vector<uint32_t> edgeIndices = this->_getEdgesStartingAt(intersectionIndex, edges);
                 if(edgeIndices.size() == 1) {
                     continue;
                 }
@@ -558,46 +545,16 @@ void GlyphCompositor::_resolveSharedVertices(std::vector<glm::vec2> &vertices, s
                     continue;
                 }
 
-                /*edgeIndices = this->_findAllEdgesContainingVertex(firstVertexAfterIntersection, edges);
-                while(edgeIndices.size() == 1) {
-                    edgeIndices = this->_findAllEdgesContainingVertex(edges.at(edgeIndices.at(0)).second, edges);
-                }
-                if(edges.at(edgeIndices.at(0)).first != intersectionIndex) {
-                    continue;
-                }
-
-                edgeIndices = this->_findAllEdgesContainingVertex(secondVertexAfterIntersection, edges);
-                while(edgeIndices.size() == 1) {
-                    edgeIndices = this->_findAllEdgesContainingVertex(edges.at(edgeIndices.at(0)).second, edges);
-                }
-                if(edges.at(edgeIndices.at(1)).first != intersectionIndex) {
-                    continue;
-                }*/
-
                 // Create second vertex which is identical to intersection
                 uint32_t duplicateIntersectionIndex = this->_currentGlyphData.vertexId++;
                 vertices.push_back(vertices.at(intersectionIndex));
 
                 // Update starting vertex of edge that comes after intersected edge in first polygon
-                edgeIndices = this->_findAllEdgesContainingVertex(intersectionIndex, edges);
+                edgeIndices = this->_getEdgesStartingAt(intersectionIndex, edges);
                 edges.at(edgeIndices.at(0)).first = duplicateIntersectionIndex;
 
                 // Update ending vertex of intersected edge in second polygon
                 secondEdge.second = duplicateIntersectionIndex;
-
-                // Intersecting edges
-                //vft::Edge fe = edges.at(i); // First polygon
-                //vft::Edge se = edges.at(j); // Second polygon
-
-                // Insert edge of length zero after intersecting edge in first polygon
-                //auto firstEdgeIterator = std::find(edges.begin(), edges.end(), fe);
-                //edges.insert(firstEdgeIterator + 1, vft::Edge{intersectionIndex, duplicateIntersectionIndex});
-
-                // Insert edge of length zero after intersecting edge in second polygon with opposite orientation
-                //auto secondEdgeIterator = std::find(edges.begin(), edges.end(), se);
-                //edges.insert(secondEdgeIterator + 1, vft::Edge{duplicateIntersectionIndex, intersectionIndex});
-
-                //continue;
             }
         }
     }
@@ -653,7 +610,7 @@ void GlyphCompositor::_removeInverseEdges(std::vector<vft::Edge> &edges, std::se
  * 
  * @return True if vertex is on the left side of edge, else false
  */
-bool isInPositiveRegion(glm::vec2 startVertex, glm::vec2 endVertex, glm::vec2 vertex) {
+bool GlyphCompositor::_isInPositiveRegion(glm::vec2 startVertex, glm::vec2 endVertex, glm::vec2 vertex) {
     float a = endVertex.y - startVertex.y;
     float b = startVertex.x - endVertex.x;
     float c = endVertex.x * startVertex.y - startVertex.x * endVertex.y;
@@ -691,23 +648,23 @@ void GlyphCompositor::_walkContours(const std::vector<glm::vec2> &vertices, std:
         visitedIntersections.insert(currentVertexIndex);
 
         // Get all edges starting at currentVertex
-        std::vector<uint32_t> edgeIndices = this->_findAllEdgesContainingVertex(currentVertexIndex, edges);
+        std::vector<uint32_t> edgeIndices = this->_getEdgesStartingAt(currentVertexIndex, edges);
 
-        if(isInPositiveRegion(vertices.at(edges.at(edgeIndices.at(0)).first), vertices.at(edges.at(edgeIndices.at(0)).second), vertices.at(edges.at(edgeIndices.at(1)).second))) {
+        if(this->_isInPositiveRegion(vertices.at(edges.at(edgeIndices.at(0)).first), vertices.at(edges.at(edgeIndices.at(0)).second), vertices.at(edges.at(edgeIndices.at(1)).second))) {
             newEdges.push_back(edges.at(edgeIndices.at(1)));
             visitedEdges.insert(edgeIndices.at(1));
             currentVertexIndex = edges.at(edgeIndices.at(1)).second;
-            this->_updateVisitedEdgesUntilNextIntersection(edges, visitedEdges, edgeIndices.at(0));
+            this->_visitEdgesUntilIntersection(edges, visitedEdges, edgeIndices.at(0));
         }
         else {
             newEdges.push_back(edges.at(edgeIndices.at(0)));
             visitedEdges.insert(edgeIndices.at(0));
             currentVertexIndex = edges.at(edgeIndices.at(0)).second;
-            this->_updateVisitedEdgesUntilNextIntersection(edges, visitedEdges, edgeIndices.at(1));
+            this->_visitEdgesUntilIntersection(edges, visitedEdges, edgeIndices.at(1));
         }
 
         while(true) {
-            edgeIndices = this->_findAllEdgesContainingVertex(currentVertexIndex, edges);
+            edgeIndices = this->_getEdgesStartingAt(currentVertexIndex, edges);
             if(edgeIndices.size() == 1) {
                 if(visitedEdges.contains(edgeIndices.at(0))) {
                     break;
@@ -720,7 +677,7 @@ void GlyphCompositor::_walkContours(const std::vector<glm::vec2> &vertices, std:
             else if(edgeIndices.size() == 2) {
                 visitedIntersections.insert(currentVertexIndex);
 
-                if(isInPositiveRegion(vertices.at(edges.at(edgeIndices.at(0)).first), vertices.at(edges.at(edgeIndices.at(0)).second), vertices.at(edges.at(edgeIndices.at(1)).second))) {
+                if(this->_isInPositiveRegion(vertices.at(edges.at(edgeIndices.at(0)).first), vertices.at(edges.at(edgeIndices.at(0)).second), vertices.at(edges.at(edgeIndices.at(1)).second))) {
                     if(visitedEdges.contains(edgeIndices.at(1))) {
                         break;
                     }
@@ -728,7 +685,7 @@ void GlyphCompositor::_walkContours(const std::vector<glm::vec2> &vertices, std:
                     newEdges.push_back(edges.at(edgeIndices.at(1)));
                     visitedEdges.insert(edgeIndices.at(1));
                     currentVertexIndex = edges.at(edgeIndices.at(1)).second;
-                    this->_updateVisitedEdgesUntilNextIntersection(edges, visitedEdges, edgeIndices.at(0));
+                    this->_visitEdgesUntilIntersection(edges, visitedEdges, edgeIndices.at(0));
                 }
                 else {
                     if(visitedEdges.contains(edgeIndices.at(0))) {
@@ -738,7 +695,7 @@ void GlyphCompositor::_walkContours(const std::vector<glm::vec2> &vertices, std:
                     newEdges.push_back(edges.at(edgeIndices.at(0)));
                     visitedEdges.insert(edgeIndices.at(0));
                     currentVertexIndex = edges.at(edgeIndices.at(0)).second;
-                    this->_updateVisitedEdgesUntilNextIntersection(edges, visitedEdges, edgeIndices.at(1));
+                    this->_visitEdgesUntilIntersection(edges, visitedEdges, edgeIndices.at(1));
                 }
             }
             else {
@@ -757,7 +714,7 @@ void GlyphCompositor::_walkContours(const std::vector<glm::vec2> &vertices, std:
 
         // Add unvisited edges to output
         while(visitedEdges.size() < edges.size()) {
-            std::vector<uint32_t> edgeIndices = this->_findAllEdgesContainingVertex(currentVertexIndex, edges);
+            std::vector<uint32_t> edgeIndices = this->_getEdgesStartingAt(currentVertexIndex, edges);
 
             // Stay on same contour
             if(edgeIndices.size() == 1) {
@@ -792,240 +749,6 @@ void GlyphCompositor::_walkContours(const std::vector<glm::vec2> &vertices, std:
     edges = newEdges;
 }
 
-/*void GlyphCompositor::_walkContours(const std::vector<glm::vec2> &vertices, std::vector<vft::Edge> &edges) {
-    if(edges.size() == 0) {
-        return;
-    }
-
-    bool isOnFirstContour = true;
-    std::vector<vft::Edge> newEdges = {edges.at(0)};
-    std::set<uint32_t> visitedEdgesIndices = {0};
-
-    uint32_t firstIntersectionVertexId = 0;
-    uint32_t secondIntersectionVertexId = 0;
-    uint32_t firstIntersectionEdgeIndex = 0;
-    uint32_t secondIntersectionEdgeIndex = 0;
-    bool firstIntersection = false;
-    bool secondIntersection = false;
-
-    while(visitedEdgesIndices.size() < edges.size()) {
-        uint32_t currentVertexId = newEdges.at(newEdges.size() - 1).second;
-        std::vector<uint32_t> edgeIndices = this->_findAllEdgesContainingVertex(currentVertexId, edges);
-
-        if(edgeIndices.size() == 2) {
-            if(edges.at(edgeIndices.at(0)) == edges.at(edgeIndices.at(1))) {
-                // Do not switch contour, edges are identical
-                newEdges.push_back(edges.at(edgeIndices.at(0)));
-                visitedEdgesIndices.insert(edgeIndices.at(0));
-                visitedEdgesIndices.insert(edgeIndices.at(1));
-            }
-            else {
-                // Switch contour
-                if(isOnFirstContour) {
-                    // Edge at index edgeIndices[0] is next edge of contour without switch
-                    // Edge at index edgeIndices[1] is next edge of contour after switch
-                    newEdges.push_back(edges.at(edgeIndices.at(1)));
-                    visitedEdgesIndices.insert(edgeIndices.at(1));
-
-                    if(!firstIntersection) {
-                        firstIntersectionVertexId = edges.at(edgeIndices.at(0)).first;
-                        firstIntersectionEdgeIndex = edgeIndices.at(0);
-                        firstIntersection = true;
-                    }
-                    else {
-                        secondIntersectionVertexId = edges.at(edgeIndices.at(0)).first;
-                        secondIntersectionEdgeIndex = edgeIndices.at(0);
-                        secondIntersection = true;
-                    }
-
-                    //this->_updateVisitedEdgesUntilNextIntersection(edges, visitedEdgesIndices, edgeIndices.at(0));
-                    //isOnFirstContour = !isOnFirstContour;
-                }
-                else {
-                    // Edge at index edgeIndices[0] is next edge of contour after switch
-                    // Edge at index edgeIndices[1] is next edge of contour without switch
-                    newEdges.push_back(edges.at(edgeIndices.at(0)));
-                    visitedEdgesIndices.insert(edgeIndices.at(0));
-
-                    if(!firstIntersection) {
-                        firstIntersectionVertexId = edges.at(edgeIndices.at(0)).first;
-                        firstIntersectionEdgeIndex = edgeIndices.at(1);
-                        firstIntersection = true;
-                    }
-                    else {
-                        secondIntersectionVertexId = edges.at(edgeIndices.at(0)).first;
-                        secondIntersectionEdgeIndex = edgeIndices.at(1);
-                        secondIntersection = true;
-                    }
-
-                    //this->_updateVisitedEdgesUntilNextIntersection(edges, visitedEdgesIndices, edgeIndices.at(1));
-                    //isOnFirstContour = !isOnFirstContour;
-                }
-
-                isOnFirstContour = !isOnFirstContour;
-            }
-        }
-        else if(edgeIndices.size() == 1) {
-            // Stay on same contour
-            if(visitedEdgesIndices.contains(edgeIndices.at(0))) {
-                // Find minimum edge index which was not visited
-                for(int i = 0; i < edges.size(); i++) {
-                    if(!visitedEdgesIndices.contains(i)) {
-                        newEdges.push_back(edges.at(i));
-                        visitedEdgesIndices.insert(i);
-                        break;
-                    }
-                }
-                continue;
-            }
-
-            newEdges.push_back(edges.at(edgeIndices.at(0)));
-            visitedEdgesIndices.insert(edgeIndices.at(0));
-        }
-        else {
-            throw std::runtime_error("Invalid edges.");
-        }
-
-        if(secondIntersection) {
-            this->_updateVisitedEdgesUntilNextIntersection(edges, visitedEdgesIndices, firstIntersectionEdgeIndex, secondIntersectionVertexId);
-            this->_updateVisitedEdgesUntilNextIntersection(edges, visitedEdgesIndices, secondIntersectionEdgeIndex, firstIntersectionVertexId);
-            firstIntersection = false;
-            secondIntersection = false;
-        }
-    }
-
-    while(visitedEdgesIndices.size() < edges.size()) {
-        uint32_t currentVertexId = newEdges.at(newEdges.size() - 1).second;
-        std::vector<uint32_t> edgeIndices = this->_findAllEdgesContainingVertex(currentVertexId, edges);
-        if(edgeIndices.size() == 2) {
-
-            if(edges.at(edgeIndices.at(0)) == edges.at(edgeIndices.at(1))) {
-                // Do not switch contour, edges are identical
-                newEdges.push_back(edges.at(edgeIndices.at(0)));
-                visitedEdgesIndices.insert(edgeIndices.at(0));
-                visitedEdgesIndices.insert(edgeIndices.at(1));
-            }
-            else {
-                // Switch contour
-                if(isOnFirstContour) {
-                    // Edge at index edgeIndices[0] is next edge of contour without switch
-                    // Edge at index edgeIndices[1] is next edge of contour after switch
-                    newEdges.push_back(edges.at(edgeIndices.at(1)));
-                    visitedEdgesIndices.insert(edgeIndices.at(1));
-
-                    if(!firstIntersection) {
-                        firstIntersectionVertexId = edges.at(edgeIndices.at(0)).first;
-                        firstIntersectionEdgeIndex = edgeIndices.at(0);
-                        firstIntersection = true;
-                    }
-                    else {
-                        secondIntersectionVertexId = edges.at(edgeIndices.at(0)).first;
-                        secondIntersectionEdgeIndex = edgeIndices.at(0);
-                        secondIntersection = true;
-                    }
-                }
-                else {
-                    // Edge at index edgeIndices[0] is next edge of contour after switch
-                    // Edge at index edgeIndices[1] is next edge of contour without switch
-                    newEdges.push_back(edges.at(edgeIndices.at(0)));
-                    visitedEdgesIndices.insert(edgeIndices.at(0));
-
-                    if(!firstIntersection) {
-                        firstIntersectionVertexId = edges.at(edgeIndices.at(0)).first;
-                        firstIntersectionEdgeIndex = edgeIndices.at(1);
-                        firstIntersection = true;
-                    }
-                    else {
-                        secondIntersectionVertexId = edges.at(edgeIndices.at(0)).first;
-                        secondIntersectionEdgeIndex = edgeIndices.at(1);
-                        secondIntersection = true;
-                    }
-                }
-
-                isOnFirstContour = !isOnFirstContour;
-            }
-        }
-        else if(edgeIndices.size() == 1) {
-            // Stay on same contour
-            if(visitedEdgesIndices.contains(edgeIndices.at(0))) {
-                // Find minimum edge index which was not visited
-                for(int i = 0; i < visitedEdgesIndices.size(); i++) {
-                    if(!visitedEdgesIndices.contains(i)) {
-                        newEdges.push_back(edges.at(i));
-                        visitedEdgesIndices.insert(i);
-                        break;
-                    }
-                }
-                continue;
-            }
-
-            newEdges.push_back(edges.at(edgeIndices.at(0)));
-            visitedEdgesIndices.insert(edgeIndices.at(0));
-        }
-        else {
-            throw std::runtime_error("Invalid edges.");
-        }
-
-        if(secondIntersection) {
-            this->_updateVisitedEdges(edges, visitedEdgesIndices, firstIntersectionEdgeIndex, secondIntersectionVertexId);
-            this->_updateVisitedEdges(edges, visitedEdgesIndices, secondIntersectionEdgeIndex, firstIntersectionVertexId);
-            firstIntersection = false;
-            secondIntersection = false;
-        }
-    }
-
-    edges = newEdges;
-}*/
-
-void GlyphCompositor::_updateVisitedEdgesUntilNextIntersection(std::vector<vft::Edge> &edges, std::set<uint32_t> &visited, uint32_t startEdgeIndex, uint32_t endVertexId) {
-    visited.insert(startEdgeIndex);
-    uint32_t currentVertexId = edges.at(startEdgeIndex).second;
-    uint32_t lastEdgeIndex = startEdgeIndex;
-
-    std::vector<uint32_t> edgeIndices = this->_findAllEdgesContainingVertex(currentVertexId, edges);
-    while(currentVertexId != endVertexId) {
-        if(edgeIndices.size() == 1) {
-            // Stay on same contour
-            visited.insert(edgeIndices.at(0));
-            currentVertexId = edges.at(edgeIndices.at(0)).second;
-            lastEdgeIndex = edgeIndices.at(0);
-        }
-        else if(edgeIndices.size() == 2) {
-            if(edges.at(edgeIndices.at(0)) == edges.at(edgeIndices.at(1))) {
-                visited.insert(edgeIndices.at(0));
-                visited.insert(edgeIndices.at(1));
-                currentVertexId = edges.at(edgeIndices.at(0)).second;
-                lastEdgeIndex = edgeIndices.at(0);
-            }
-            else if(edges.at(edgeIndices.at(0)).isInverse(edges.at(lastEdgeIndex))) {
-                // Edge at index edgeIndices[0] is edge of another contour
-                // Edge at index edgeIndices[1] is next edge of contour
-                visited.insert(edgeIndices.at(0));
-                visited.insert(edgeIndices.at(1));
-                currentVertexId = edges.at(edgeIndices.at(1)).second;
-                lastEdgeIndex = edgeIndices.at(1);
-            }
-            else if(edges.at(edgeIndices.at(1)).isInverse(edges.at(lastEdgeIndex))) {
-                // Edge at index edgeIndices[0] is next edge of contour
-                // Edge at index edgeIndices[1] is edge of another contour
-                visited.insert(edgeIndices.at(0));
-                visited.insert(edgeIndices.at(1));
-                currentVertexId = edges.at(edgeIndices.at(0)).second;
-                lastEdgeIndex = edgeIndices.at(0);
-            }
-            else {
-                // Intersection
-                return;
-            }
-        }
-        else {
-            throw std::runtime_error("Invalid edges.");
-        }
-
-        edgeIndices = this->_findAllEdgesContainingVertex(currentVertexId, edges);
-    }
-}
-
 /**
  * @brief Visit edges that are not in final polygon
  *
@@ -1033,12 +756,12 @@ void GlyphCompositor::_updateVisitedEdgesUntilNextIntersection(std::vector<vft::
  * @param visited Set of visited edges
  * @param startEdgeIndex Index of edge where to start
  */
-void GlyphCompositor::_updateVisitedEdgesUntilNextIntersection(std::vector<vft::Edge> &edges, std::set<uint32_t> &visited, uint32_t startEdgeIndex) {
+void GlyphCompositor::_visitEdgesUntilIntersection(std::vector<vft::Edge> &edges, std::set<uint32_t> &visited, uint32_t startEdgeIndex) {
     visited.insert(startEdgeIndex);
     uint32_t currentVertexId = edges.at(startEdgeIndex).second;
     uint32_t lastEdgeIndex = startEdgeIndex;
 
-    std::vector<uint32_t> edgeIndices = this->_findAllEdgesContainingVertex(currentVertexId, edges);
+    std::vector<uint32_t> edgeIndices = this->_getEdgesStartingAt(currentVertexId, edges);
     while(true) {
         if(edgeIndices.size() == 1) {
             // Stay on same contour
@@ -1046,58 +769,12 @@ void GlyphCompositor::_updateVisitedEdgesUntilNextIntersection(std::vector<vft::
             currentVertexId = edges.at(edgeIndices.at(0)).second;
             lastEdgeIndex = edgeIndices.at(0);
         }
-        /*else if(edgeIndices.size() == 2) {
-            if(edges.at(edgeIndices.at(0)) == edges.at(edgeIndices.at(1))) {
-                visited.insert(edgeIndices.at(0));
-                visited.insert(edgeIndices.at(1));
-                currentVertexId = edges.at(edgeIndices.at(0)).second;
-                lastEdgeIndex = edgeIndices.at(0);
-            }
-            else if(edges.at(edgeIndices.at(0)).isInverse(edges.at(lastEdgeIndex))) {
-                // Edge at index edgeIndices[0] is edge of another contour
-                // Edge at index edgeIndices[1] is next edge of contour
-                visited.insert(edgeIndices.at(0));
-                visited.insert(edgeIndices.at(1));
-                currentVertexId = edges.at(edgeIndices.at(1)).second;
-                lastEdgeIndex = edgeIndices.at(1);
-            }
-            else if(edges.at(edgeIndices.at(1)).isInverse(edges.at(lastEdgeIndex))) {
-                // Edge at index edgeIndices[0] is next edge of contour
-                // Edge at index edgeIndices[1] is edge of another contour
-                visited.insert(edgeIndices.at(0));
-                visited.insert(edgeIndices.at(1));
-                currentVertexId = edges.at(edgeIndices.at(0)).second;
-                lastEdgeIndex = edgeIndices.at(0);
-            }
-            else {
-                // Intersection
-                return;
-            }
-        }*/
         else {
             // Intersection
             return;
         }
 
-        edgeIndices = this->_findAllEdgesContainingVertex(currentVertexId, edges);
-    }
-}
-
-void GlyphCompositor::_updateVisitedEdges(std::vector<vft::Edge> &edges, std::set<uint32_t> &visited, uint32_t startEdgeIndex, uint32_t endVertexId) {
-    visited.insert(startEdgeIndex);
-
-    uint32_t currentVertexId = edges.at(startEdgeIndex).second;
-    while(currentVertexId != endVertexId) {
-        std::vector<uint32_t> edgeIndices = this->_findAllEdgesContainingVertex(currentVertexId, edges);
-        if(edgeIndices.size() == 0) {
-            throw std::runtime_error("Invalid edges.");
-        }
-
-        for(uint32_t edgeIndex : edgeIndices) {
-            visited.insert(edgeIndex);
-        }
-
-        currentVertexId = edges.at(edgeIndices.at(0)).second;
+        edgeIndices = this->_getEdgesStartingAt(currentVertexId, edges);
     }
 }
 
@@ -1109,7 +786,7 @@ void GlyphCompositor::_updateVisitedEdges(std::vector<vft::Edge> &edges, std::se
  * 
  * @return Vector of all edges starting at given vertex
  */
-std::vector<uint32_t> GlyphCompositor::_findAllEdgesContainingVertex(uint32_t vertexId, const std::vector<vft::Edge> &edges) {
+std::vector<uint32_t> GlyphCompositor::_getEdgesStartingAt(uint32_t vertexId, const std::vector<vft::Edge> &edges) {
     std::vector<uint32_t> indices;
     for(int i = 0; i < edges.size(); i++) {
         if(edges.at(i).first == vertexId) {

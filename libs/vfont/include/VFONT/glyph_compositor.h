@@ -58,7 +58,6 @@ protected:
         std::map<float, glm::vec2> &vertices);
 
     double _determinant(double a, double b, double c, double d);
-    bool _isPointOnLineSegment(double x1, double y1, double x2, double y2, double x, double y);
     bool _intersect(
         const std::vector<glm::vec2> &vertices,
         vft::Edge first,
@@ -69,12 +68,10 @@ protected:
     void _removeDuplicateEdges(std::vector<vft::Edge> &edges);
     void _removeInverseEdges(std::vector<vft::Edge> &edges, std::set<uint32_t> &intersections);
     void _resolveSharedVertices(std::vector<glm::vec2> &vertices, std::vector<vft::Edge> &edges, std::set<uint32_t> &intersections);
-    //void _walkContours(const std::vector<glm::vec2> &vertices, std::vector<vft::Edge> &edges);
     void _walkContours(const std::vector<glm::vec2> &vertices, std::vector<vft::Edge> &edges, std::set<uint32_t> intersections);
-    std::vector<uint32_t> _findAllEdgesContainingVertex(uint32_t vertexId, const std::vector<vft::Edge> &edges);
-    void _updateVisitedEdgesUntilNextIntersection(std::vector<vft::Edge> &edges, std::set<uint32_t> &visited, uint32_t startEdgeIndex);
-    void _updateVisitedEdgesUntilNextIntersection(std::vector<vft::Edge> &edges, std::set<uint32_t> &visited, uint32_t startEdgeIndex, uint32_t endVertexId);
-    void _updateVisitedEdges(std::vector<vft::Edge> &edges, std::set<uint32_t> &visited, uint32_t startEdgeIndex, uint32_t endVertexId);
+    std::vector<uint32_t> _getEdgesStartingAt(uint32_t vertexId, const std::vector<vft::Edge> &edges);
+    void _visitEdgesUntilIntersection(std::vector<vft::Edge> &edges, std::set<uint32_t> &visited, uint32_t startEdgeIndex);
+    bool _isInPositiveRegion(glm::vec2 startVertex, glm::vec2 endVertex, glm::vec2 vertex);
 
 };
 
