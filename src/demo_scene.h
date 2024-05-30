@@ -24,19 +24,21 @@ public:
     static const std::string CRIMSON_TEXT_PATH;
     static const std::string ROBOTO_MONO_PATH;
     static const std::string NOTO_SANS_JP_PATH;
+    static const std::string NOTO_EMOJI_PATH;
 
     static const std::vector<uint32_t> ENGLISH_CODE_POINTS;
     static const std::vector<uint32_t> SLOVAK_CODE_POINTS;
     static const std::vector<uint32_t> JAPANESE_CODE_POINTS;
+    static const std::vector<uint32_t> EMOJI_CODE_POINTS;
 
 private:
 
-    std::shared_ptr<vft::Font> _arial32;
-    std::shared_ptr<vft::Font> _arial64;
-    std::shared_ptr<vft::Font> _jersey32;
-    std::shared_ptr<vft::Font> _crimsontext32;
-    std::shared_ptr<vft::Font> _robotomono32;
-    std::shared_ptr<vft::Font> _notosansjp32;
+    std::shared_ptr<vft::Font> _arial;
+    std::shared_ptr<vft::Font> _jersey;
+    std::shared_ptr<vft::Font> _crimsontext;
+    std::shared_ptr<vft::Font> _robotomono;
+    std::shared_ptr<vft::Font> _notosansjp;
+    std::shared_ptr<vft::Font> _notoemoji;
 
     std::shared_ptr<vft::TextBlock> _block1;
     std::shared_ptr<vft::TextBlock> _block2;
@@ -44,6 +46,7 @@ private:
     std::shared_ptr<vft::TextBlock> _block4;
     std::shared_ptr<vft::TextBlock> _block5;
     std::shared_ptr<vft::TextBlock> _block6;
+    std::shared_ptr<vft::TextBlock> _block7;
 
 public:
 

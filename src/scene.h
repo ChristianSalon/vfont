@@ -25,12 +25,12 @@
 #include <VFONT/text_renderer_utils.h>
 #include <VFONT/font.h>
 #include <VFONT/text_block.h>
+#include <VFONT/text_renderer.h>
 
 #include "window.h"
 #include "base_camera.h"
 #include "perspective_camera.h"
 #include "orto_camera.h"
-#include <VFONT/text_renderer.h>
 
 /**
  * @class Scene

@@ -17,7 +17,7 @@ namespace vft {
 /**
  * @class Glyph
  *
- * @brief Represents glyph vertex data and metrics
+ * @brief Represents glyph vertex data and metrics expressed in font units
  */
 class Glyph {
 
@@ -25,7 +25,7 @@ protected:
 
     std::vector<glm::vec2> _vertices;       /**< Glyph vertices */
     std::vector<uint32_t> _indices;         /**< Glyph vertex indices */
-    std::vector<vft::Edge> _edges;         /**< Glyph edges */
+    std::vector<vft::Edge> _edges;          /**< Glyph edges */
 
     /**
      * Indicates by how much to increment the X coordinate of pen position.

@@ -19,6 +19,9 @@
 
 namespace vft {
 
+/**
+ * @brief TextRenderer constructor
+ */
 TextRenderer::TextRenderer() {
     this->_physicalDevice = nullptr;
     this->_logicalDevice = nullptr;
@@ -81,7 +84,7 @@ void TextRenderer::init(
 }
 
 /**
- * @brief Destroys vulkan buffers
+ * @brief Must be called to destroy vulkan buffers
  */
 void TextRenderer::destroy() {
     // Destroy vulkan buffers
@@ -117,6 +120,11 @@ void TextRenderer::draw(VkCommandBuffer commandBuffer) {
     }
 }
 
+/**
+ * @brief Add text block for rendering
+ * 
+ * @param text Text block to render
+ */
 void TextRenderer::add(std::shared_ptr<TextBlock> text) {
     this->_blocks.push_back(text);
     text->onTextChange = [this]() {

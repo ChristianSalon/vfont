@@ -63,8 +63,8 @@ class CharacterPushConstants {
 
 public:
 
-    glm::mat4 model;
-    glm::vec3 color;
+    glm::mat4 model;    /**< Model matrix of character */
+    glm::vec3 color;    /**< Color of character */
 
     CharacterPushConstants(glm::mat4 model, glm::vec3 color) : model{model}, color{color} {};
 
@@ -77,14 +77,13 @@ public:
     uint32_t vertexId;              /**< Currently processed glyph's vertex id counter */
     uint32_t contourStartVertexId;  /**< Vertex id for the starting vertex of a contour */
     glm::vec2 lastVertex;           /**< Last vertex processed */
-    bool isFirstContour;            /**< Indicates whether currently processed contour is the first one */
+    int contourCount;               /**< Number of processed contours */
 
-    ComposedGlyphData() {
-        this->vertexId = 0;
-        this->contourStartVertexId = 0;
-        this->lastVertex = {0, 0};
-        this->isFirstContour = true;
-    }
+    ComposedGlyphData() :
+        vertexId{0},
+        contourStartVertexId{0},
+        lastVertex{0,0},
+        contourCount{0} {}
 
 };
 

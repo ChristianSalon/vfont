@@ -14,21 +14,18 @@ namespace vft {
  * @brief Character constructor
  * 
  * @param codePoint Unicode code point
- * @param glyph Glyph data
- * @param position Position of character
+ * @param font Font of character
+ * @param fontSize Font size of character
+ * @param position Position of character relative to text block
  * @param transform Character transform matrix
  */
-Character::Character(uint32_t codePoint, const Glyph &glyph, glm::vec3 position, glm::mat4 transform) : glyph(glyph) {
+Character::Character(uint32_t codePoint, std::shared_ptr<Font> font, unsigned int fontSize, glm::vec2 position, glm::mat4 transform) : glyph{font->getGlyphInfo(codePoint)} {
     this->_unicodeCodePoint = codePoint;
     this->_position = position;
     this->_indexBufferOffset = 0;
     this->_vertexBufferOffset = 0;
 
-    this->_modelMatrix =
-        transform *
-        glm::translate(glm::mat4(1.f), this->_position) *
-        glm::rotate(glm::mat4(1.f), glm::radians(180.f), glm::vec3(1.f, 0.f, 0.f)) *
-        glm::scale(glm::mat4(1.f), glm::vec3(1.f / 64.f, 1.f / 64.f, 0.f));
+    this->transform(transform, font, fontSize);
 }
 
 /**
@@ -85,12 +82,20 @@ void Character::setModelMatrix(glm::mat4 modelMatrix) {
     this->_modelMatrix = modelMatrix;
 }
 
-void Character::transform(glm::mat4 transform) {
+/**
+ * @brief Set model matrix of character
+ * 
+ * @param transform Transform of text block
+ * @param font Font
+ * @param fontSize Font size of character
+*/
+void Character::transform(glm::mat4 transform, std::shared_ptr<Font> font, unsigned int fontSize) {
+    glm::vec2 scale = font->getScalingVector(fontSize);
     this->_modelMatrix =
         transform *
-        glm::translate(glm::mat4(1.f), this->_position) *
+        glm::translate(glm::mat4(1.f), glm::vec3(this->_position, 0.f)) *
         glm::rotate(glm::mat4(1.f), glm::radians(180.f), glm::vec3(1.f, 0.f, 0.f)) *
-        glm::scale(glm::mat4(1.f), glm::vec3(1.f / 64.f, 1.f / 64.f, 0.f));
+        glm::scale(glm::mat4(1.f), glm::vec3(scale.x, scale.y, 0.f));
 }
 
 /**
@@ -103,11 +108,11 @@ uint32_t Character::getIndexBufferOffset() const {
 }
 
 /**
- * @brief Getter for character position
+ * @brief Getter for character position relative to text block
  *
- * @return (X, Y, Z) coordinates of character
+ * @return (X, Y) coordinates of character
  */
-glm::vec3 Character::getPosition() const {
+glm::vec2 Character::getPosition() const {
     return this->_position;
 }
 

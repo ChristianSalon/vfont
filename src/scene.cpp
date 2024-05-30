@@ -77,7 +77,8 @@ Scene::Scene(CameraType cameraType) {
         this->_logicalDevice,
         this->_commandPool,
         this->_graphicsQueue,
-        this->_pipelineLayout);
+        this->_pipelineLayout
+    );
 }
 
 /**

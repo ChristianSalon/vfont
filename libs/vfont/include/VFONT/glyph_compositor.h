@@ -20,7 +20,12 @@
 #include "font.h"
 
 namespace vft {
-    
+
+/**
+ * @class GlyphCompositor
+ *
+ * @brief Composes a triangulated glyph from glyph outlines
+ */
 class GlyphCompositor {
 
 protected:
@@ -59,13 +64,17 @@ protected:
         vft::Edge first,
         vft::Edge second,
         glm::vec2 &intersection);
-    void _resolveIntersectingEdges(std::vector<glm::vec2> &vertices, std::vector<vft::Edge> &edges);
-    void _checkIntersectingEdges(std::vector<glm::vec2> &vertices, std::vector<vft::Edge> &edges, vft::Edge &edge);
+    std::set<uint32_t> _resolveIntersectingEdges(std::vector<glm::vec2> &vertices, std::vector<vft::Edge> &edges);
 
     void _removeDuplicateEdges(std::vector<vft::Edge> &edges);
-    void _walkContours(const std::vector<glm::vec2> &vertices, std::vector<vft::Edge> &edges);
+    void _removeInverseEdges(std::vector<vft::Edge> &edges, std::set<uint32_t> &intersections);
+    void _resolveSharedVertices(std::vector<glm::vec2> &vertices, std::vector<vft::Edge> &edges, std::set<uint32_t> &intersections);
+    //void _walkContours(const std::vector<glm::vec2> &vertices, std::vector<vft::Edge> &edges);
+    void _walkContours(const std::vector<glm::vec2> &vertices, std::vector<vft::Edge> &edges, std::set<uint32_t> intersections);
     std::vector<uint32_t> _findAllEdgesContainingVertex(uint32_t vertexId, const std::vector<vft::Edge> &edges);
     void _updateVisitedEdgesUntilNextIntersection(std::vector<vft::Edge> &edges, std::set<uint32_t> &visited, uint32_t startEdgeIndex);
+    void _updateVisitedEdgesUntilNextIntersection(std::vector<vft::Edge> &edges, std::set<uint32_t> &visited, uint32_t startEdgeIndex, uint32_t endVertexId);
+    void _updateVisitedEdges(std::vector<vft::Edge> &edges, std::set<uint32_t> &visited, uint32_t startEdgeIndex, uint32_t endVertexId);
 
 };
 

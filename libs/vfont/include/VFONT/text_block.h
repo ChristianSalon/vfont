@@ -18,31 +18,38 @@
 
 namespace vft {
 
+/**
+ * @class TextBlock
+ *
+ * @brief Groups together characters which are rendered
+ */
 class TextBlock {
 
 public:
 
-    std::function<void()> onTextChange;
+    std::function<void()> onTextChange; /**< Callback when text in block changes */
 
 protected:
 
-    std::shared_ptr<Font> _font;
+    std::shared_ptr<Font> _font;        /**< Font of text in text block */
 
-    bool _kerning;
-    bool _wrapping;
-    int _width;
-    int _penX;
-    int _penY;
+    bool _kerning;                      /**< Indicates whether to use kerning in text block */
+    bool _wrapping;                     /**< Indicates whether to use wrapping in text block */
+    unsigned int _fontSize;             /**< Font size in text block */
+    int _width;                         /**< Width of text block. -1 indicates unlimited width */
+    int _penX;                          /**< X coordinate of current pen position */
+    int _penY;                          /**< Y coordinate of current pen position */
 
-    glm::mat4 _transform;
-    glm::vec3 _color;
-    glm::vec3 _position;
+    glm::mat4 _transform;               /**< Transform matrix of text block */
+    glm::vec3 _color;                   /**< Color of text */
+    glm::vec3 _position;                /**< Position of text block */
 
-    std::vector<Character> _characters;
+    std::vector<Character> _characters; /**< Characters to render */
 
 public:
 
     TextBlock(std::shared_ptr<Font> font,
+              unsigned int fontSize,
               glm::vec3 color,
               glm::vec3 position,
               int width = -1,
@@ -64,6 +71,7 @@ public:
     void setWidth(int width);
     void setKerning(bool kerning);
     void setWrapping(bool wrapping);
+    void setFontSize(unsigned int fontSize);
 
     std::vector<Character> &getCharacters();
     std::shared_ptr<Font> getFont() const;
@@ -73,6 +81,7 @@ public:
     int getWidth() const;
     bool getKerning() const;
     bool getWrapping() const;
+    unsigned int getFontSize() const;
 
 protected:
 
