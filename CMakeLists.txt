@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.25)
 project(kio VERSION 1.0)
 
-include(FetchContent)
-
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/")
 
@@ -89,8 +87,9 @@ set(LIBS ${LIBS} Vulkan::Vulkan)
 
 add_compile_definitions(${DEFINES})
 
-add_subdirectory("src")
-add_subdirectory("libs/vfont")
+add_subdirectory(thirdparty)
+add_subdirectory(libs/vfont)
+add_subdirectory(src)
 
 target_include_directories(kio PRIVATE ${INCLUDES})
 target_link_libraries(kio PRIVATE ${LIBS})

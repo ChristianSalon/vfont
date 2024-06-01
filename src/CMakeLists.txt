@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.25)
+
 # Create kio executable
 add_executable(kio)
 set(KIO_SOURCES

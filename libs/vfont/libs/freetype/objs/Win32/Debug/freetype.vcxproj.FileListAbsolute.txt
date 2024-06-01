@@ -1,1 +1,0 @@
-C:\Code\kio\libs\freetype\objs\Win32\Debug\freetype.dll
