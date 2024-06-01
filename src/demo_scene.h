@@ -19,9 +19,10 @@ class DemoScene : public Scene {
 
 public:
 
-    static const std::string ARIAL_PATH;
+    static const std::string POPPINS_PATH;
     static const std::string JERSEY_PATH;
     static const std::string CRIMSON_TEXT_PATH;
+    static const std::string BITSTREAM_VERA_PATH;
     static const std::string ROBOTO_MONO_PATH;
     static const std::string NOTO_SANS_JP_PATH;
     static const std::string NOTO_EMOJI_PATH;
@@ -33,9 +34,10 @@ public:
 
 private:
 
-    std::shared_ptr<vft::Font> _arial;
+    std::shared_ptr<vft::Font> _poppins;
     std::shared_ptr<vft::Font> _jersey;
     std::shared_ptr<vft::Font> _crimsontext;
+    std::shared_ptr<vft::Font> _bitstreamvera;
     std::shared_ptr<vft::Font> _robotomono;
     std::shared_ptr<vft::Font> _notosansjp;
     std::shared_ptr<vft::Font> _notoemoji;
