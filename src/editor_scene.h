@@ -18,11 +18,11 @@ class EditorScene : public Scene {
 
 public:
 
-    static const std::string BITSTREAM_VERA_PATH;
+    static const std::string ROBOTO_PATH;
 
 private:
 
-    std::shared_ptr<vft::Font> _bitstreamvera;
+    std::shared_ptr<vft::Font> _roboto;
     std::shared_ptr<vft::TextBlock> _textBlock;
 
 public:

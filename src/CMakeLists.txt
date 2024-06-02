@@ -55,8 +55,7 @@ add_custom_target(shaders
 
 # Add font files to executable directory
 add_custom_command(TARGET kio POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/poppins/Poppins-Regular.ttf" "$<TARGET_FILE_DIR:kio>"
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/bitstreamvera/Vera.ttf" "$<TARGET_FILE_DIR:kio>"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/roboto/Roboto-Regular.ttf" "$<TARGET_FILE_DIR:kio>"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/jersey10/Jersey10-Regular.ttf" "$<TARGET_FILE_DIR:kio>"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/crimsontext/CrimsonText-Italic.ttf" "$<TARGET_FILE_DIR:kio>"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/robotomono/RobotoMono-Bold.ttf" "$<TARGET_FILE_DIR:kio>"
