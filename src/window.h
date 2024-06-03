@@ -39,15 +39,37 @@ public:
 
 private:
 
-    bool _isActive;
-    bool _resized;
-    int _width;
-    int _height;
-    bool _dragging;
+    bool _isActive; /**< Indicates that the window is oppened */
+    bool _resized;  /**< Indicates that the window was resized */
+    int _width;     /**< Width of window */
+    int _height;    /**< Height of window */
+    bool _dragging; /**< Indicates whether the cursor is dragging */
 
+    /**
+     * Resize callback function
+     * First parameter: Window width
+     * Second parameter: Window height
+     */
     std::function<void(int, int)> _resizeCallback;
+
+    /**
+     * Resize callback function
+     * First parameter: Delta x
+     * Second parameter: Delta y
+     * Third parameter: Indicates whether the SHIFT key is pressed
+     */
     std::function<void(float, float, bool)> _dragCallback;
+
+    /**
+     * Resize callback function
+     * First parameter: Delta z
+     */
     std::function<void(float)> _scrollCallback;
+
+    /**
+     * Keypress callback function
+     * First parameter: Composed unicode code point
+     */
     std::function<void(uint32_t)> _keypressCallback;
 
 public:

@@ -8,6 +8,16 @@
 
 #include "perspective_camera.h"
 
+/**
+ * @brief PerspectiveCamera constructor
+ * 
+ * @param position Camera position
+ * @param rotation Camera rotation
+ * @param fov Field of view in y axis direction
+ * @param aspectRatio Aspect ratio (x:y)
+ * @param nearPlane Near clipping plane
+ * @param farPlane Far cipping plane
+ */
 PerspectiveCamera::PerspectiveCamera(
     glm::vec3 position,
     glm::vec3 rotation,
@@ -19,6 +29,15 @@ PerspectiveCamera::PerspectiveCamera(
     this->setProjection(fov, aspectRatio, nearPlane, farPlane);
 }
 
+/**
+ * @brief PerspectiveCamera constructor
+ *
+ * @param position Camera position
+ * @param fov Field of view in y axis direction
+ * @param aspectRatio Aspect ratio (x:y)
+ * @param nearPlane Near clipping plane
+ * @param farPlane Far cipping plane
+ */
 PerspectiveCamera::PerspectiveCamera(
     glm::vec3 position,
     float fov,
@@ -29,6 +48,14 @@ PerspectiveCamera::PerspectiveCamera(
     this->setProjection(fov, aspectRatio, nearPlane, farPlane);
 }
 
+/**
+ * @brief Update projection matrix based on camera properties
+ * 
+ * @param fov Field of view in y axis direction
+ * @param aspectRatio Aspect ratio (x:y)
+ * @param nearPlane Near clipping plane
+ * @param farPlane Far cipping plane
+ */
 void PerspectiveCamera::setProjection(
     float fov,
     float aspectRatio,

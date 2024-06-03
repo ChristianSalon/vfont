@@ -14,10 +14,10 @@
  * 
  * @brief Camera using ortographic projection
  */
-
 class OrtographicCamera : public BaseCamera {
 
 private:
+
     // In pixels
     float _left;                    /**< Left clipping plane */
     float _right;                   /**< Right clipping plane */
@@ -25,6 +25,7 @@ private:
     float _top;                     /**< Top clipping plane */
     float _nearPlane;               /**< Near clipping plane */
     float _farPlane;                /**< Far clipping plane */
+
 public:
 
     OrtographicCamera(

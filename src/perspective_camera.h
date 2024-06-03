@@ -9,16 +9,20 @@
 
 #include "base_camera.h"
 
+ /**
+  * @class PerspectiveCamera
+  *
+  * @brief Camera using perspective projection
+  */
 class PerspectiveCamera : public BaseCamera {
 
 private:
 
-    float _fov; // In degrees
-    float _aspectRatio;
+    float _fov;         /**< Field of view in the y axis direction in degrees */
+    float _aspectRatio; /**< Aspect ratio of camera (x:y) */
 
-    // In pixels
-    float _nearPlane;
-    float _farPlane;
+    float _nearPlane;   /**< Near clipping plane in pixels */
+    float _farPlane;    /**< Far clipping plane in pixels */
 
 public:
 

@@ -52,8 +52,10 @@ Scene::Scene(CameraType cameraType) {
     this->_commandPool = nullptr;
     this->_vertexBuffer = nullptr;
 
+    // Initialize window
     this->_createWindow();
 
+    // Initialize camera
     if(this->_cameraType == CameraType::ORTOGRAPHIC) {
         this->_camera.reset(new OrtographicCamera{
             glm::vec3(0.f, 0.f, -1000.f),
@@ -71,8 +73,11 @@ Scene::Scene(CameraType cameraType) {
         });
     }
 
+    // Initialize vulkan
     this->_initVulkan();
-    this->renderer.init(
+
+    // Initialize text renderer
+    this->_renderer.init(
         this->_physicalDevice,
         this->_logicalDevice,
         this->_commandPool,
@@ -85,7 +90,7 @@ Scene::Scene(CameraType cameraType) {
  * @brief Scene destructor
  */
 Scene::~Scene() {
-    this->renderer.destroy();
+    this->_renderer.destroy();
 
     this->_cleanupSwapChain();
 
@@ -120,9 +125,13 @@ void Scene::run() {
     this->_mainLoop();
 }
 
+/**
+ * @brief This function is called when the window dimensions change
+ * 
+ * @param width New window width
+ * @param height New window height
+ */
 void Scene::updateWindowDimensions(int width, int height) {
-    // TextRenderer::getInstance().setViewport(width, height);
-
     if(this->_cameraType == CameraType::ORTOGRAPHIC) {
         reinterpret_cast<OrtographicCamera *>(this->_camera.get())->setProjection(
             0.f, static_cast<float>(width),
@@ -139,6 +148,12 @@ void Scene::updateWindowDimensions(int width, int height) {
     }
 }
 
+/**
+ * @brief Update the camera position based on window event
+ * 
+ * @param x Delta x
+ * @param y Delta y
+ */
 void Scene::updateCameraRotation(float x, float y) {
     static const float rotateFactor = 0.4;
 
@@ -151,6 +166,13 @@ void Scene::updateCameraRotation(float x, float y) {
     this->_camera->rotate(rotation);
 }
 
+/**
+ * @brief Update the camera rotation based on window event
+ * 
+ * @param x Delta x
+ * @param y Delta y
+ * @param z Delta z
+ */
 void Scene::updateCameraPosition(float x, float y, float z) {
     static const float translateFactor = 0.4;
 
@@ -1234,7 +1256,7 @@ void Scene::_recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIn
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_pipelineLayout, 0, 1, &(this->_descriptorSets.at(this->_currentFrameIndex)), 0, nullptr);
-    this->renderer.draw(commandBuffer);
+    this->_renderer.draw(commandBuffer);
 
     vkCmdEndRenderPass(commandBuffer);
 

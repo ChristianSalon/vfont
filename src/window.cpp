@@ -94,7 +94,7 @@ LRESULT CALLBACK MainWindow::_wndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARA
             return 0;
         }
 
-                     // Handle window resize
+        // Handle window resize
         case WM_SIZE: {
             pThis = reinterpret_cast<MainWindow *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
             if(!pThis) {
@@ -113,7 +113,7 @@ LRESULT CALLBACK MainWindow::_wndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARA
             break;
         }
 
-                    // End of window resizing or window repositioning
+        // End of window resizing or window repositioning
         case WM_EXITSIZEMOVE: {
             pThis = reinterpret_cast<MainWindow *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
             if(!pThis) {
@@ -239,21 +239,20 @@ void MainWindow::create() {
     RECT rect = { 0, 0, DEFAULT_WIDTH, DEFAULT_HEIGHT };
     AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
 
-    this->_hwnd =
-        CreateWindowEx(
-            0,                       // Optional window styles
-            CLASS_NAME,              // Window class
-            L"kio",                  // Window text
-            WS_OVERLAPPEDWINDOW,     // Window style
-            // Size and position
-            CW_USEDEFAULT, CW_USEDEFAULT, rect.right - rect.left, rect.bottom - rect.top,
-            NULL,                    // Parent window
-            NULL,                    // Menu
-            MainWindow::_hInstance,  // Instance handle
-            this                     // Additional application data
-        );
+    this->_hwnd = CreateWindowEx(
+        0,                       // Optional window styles
+        CLASS_NAME,              // Window class
+        L"kio",                  // Window text
+        WS_OVERLAPPEDWINDOW,     // Window style
+        // Size and position
+        CW_USEDEFAULT, CW_USEDEFAULT, rect.right - rect.left, rect.bottom - rect.top,
+        NULL,                    // Parent window
+        NULL,                    // Menu
+        MainWindow::_hInstance,  // Instance handle
+        this                     // Additional application data
+    );
 
-    if (this->_hwnd == NULL) {
+    if(this->_hwnd == NULL) {
         throw std::runtime_error("Error creating WIN32 window");
     }
 }
@@ -796,11 +795,13 @@ struct wl_keyboard_listener MainWindow::_wlKeyboardListener = {
     },
     .repeat_info = [](void *data, struct wl_keyboard *wl_keyboard, int32_t rate, int32_t delay) {
         MainWindow *pThis = reinterpret_cast<MainWindow *>(data);
-
         // TODO
     }
 };
 
+/**
+ * @brief Wayland pointer listener
+ */
 struct wl_pointer_listener MainWindow::_wlPointerListener = {
     .enter = [](void *data, wl_pointer *pointer, uint32_t serial, wl_surface *surface, wl_fixed_t x, wl_fixed_t y) {},
     .leave = [](void *data, wl_pointer *pointer, uint32_t serial, wl_surface *surface) {},
@@ -1055,18 +1056,38 @@ wl_compositor* MainWindow::getCompositor() {
 
 #endif
 
+/**
+ * @brief Set the resize callback
+ * 
+ * @param resizeCallback Callback function
+ */
 void MainWindow::setResizeCallback(std::function<void(int, int)> resizeCallback) {
     this->_resizeCallback = resizeCallback;
 }
 
+/**
+ * @brief Set the drag callback
+ *
+ * @param resizeCallback Callback function
+ */
 void MainWindow::setDragCallback(std::function<void(float, float, bool)> dragCallback) {
     this->_dragCallback = dragCallback;
 }
 
+/**
+ * @brief Set the scroll callback
+ *
+ * @param resizeCallback Callback function
+ */
 void MainWindow::setScrollCallback(std::function<void(float)> scrollCallback) {
     this->_scrollCallback = scrollCallback;
 }
 
+/**
+ * @brief Set the keypress callback
+ *
+ * @param resizeCallback Callback function
+ */
 void MainWindow::setKeypressCallback(std::function<void(uint32_t)> keypressCallback) {
     this->_keypressCallback = keypressCallback;
 }

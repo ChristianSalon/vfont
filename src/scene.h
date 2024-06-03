@@ -34,6 +34,8 @@
 
 /**
  * @class Scene
+ *
+ * @brief Enables 3D rendering with Vulkan
  */
 class Scene {
 
@@ -76,7 +78,7 @@ protected:
     std::vector<const char *> deviceExtensions;             /**< Selected vulkan device extensions */
     std::vector<const char *> validationLayers;             /**< Selected vulkan validation layers */
 
-    vft::TextRenderer renderer;
+    vft::TextRenderer _renderer;                            /**< Default text renderer */
     std::shared_ptr<MainWindow> _window;                    /**< Application window */
     std::unique_ptr<BaseCamera> _camera;                    /**< Camera object */
     CameraType _cameraType;                                 /**< Type of camera used for rendering */

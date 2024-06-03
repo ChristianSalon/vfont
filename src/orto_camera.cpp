@@ -62,6 +62,17 @@ OrtographicCamera::OrtographicCamera(
 OrtographicCamera::OrtographicCamera() : BaseCamera{ glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, -90.f, 0.f) } {
     this->setProjection(-1.f, 1.f, -1.f, 1.f, 0.f, 1.f);
 }
+
+/**
+ * @brief Update projection matrix based on clipping planes
+ * 
+ * @param left Left clipping plane
+ * @param right Right clipping plane
+ * @param bottom Bottom clipping plane
+ * @param top Top clipping plane
+ * @param nearPalne Near clipping plane
+ * @param farPlane Far clipping plane
+ */
 void OrtographicCamera::setProjection(
     float left,
     float right,

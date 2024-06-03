@@ -8,24 +8,32 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 
+/**
+ * @brief Defines all camera types implemented in demo app
+ */
 enum class CameraType {
     PERSPECTIVE,
     ORTOGRAPHIC
 };
 
+/**
+ * @class BaseCamera
+ * 
+ * @brief Base class for all cameras
+ */
 class BaseCamera {
 
 protected:
 
-    glm::vec3 _position; // In pixels
-    glm::vec3 _rotation; // In degrees
+    glm::vec3 _position;            /**< Camera position in pixels */
+    glm::vec3 _rotation;            /**< Camera rotation in degrees */
     glm::vec3 _direction;
     glm::vec3 _target;
     glm::vec3 _up;
     glm::vec3 _right;
 
-    glm::mat4 _viewMatrix;
-    glm::mat4 _projectionMatrix;
+    glm::mat4 _viewMatrix;          /**< Computed view matrix */
+    glm::mat4 _projectionMatrix;    /**< Computed projection matrix */
 
 public:
 
