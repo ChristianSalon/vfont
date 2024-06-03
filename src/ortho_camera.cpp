@@ -1,15 +1,15 @@
 /**
- * @file orto_camera.cpp
+ * @file ortho_camera.cpp
  * @author Christian Saloň
  */
 
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "orto_camera.h"
+#include "ortho_camera.h"
 
 /**
- * @brief Ortographic camera constructor
+ * @brief OrthographicCamera constructor
  * 
  * @param position Camera position
  * @param rotation Camera rotation
@@ -20,7 +20,7 @@
  * @param nearPalne Near clipping plane
  * @param farPlane Far clipping plane
  */
-OrtographicCamera::OrtographicCamera(
+OrthographicCamera::OrthographicCamera(
     glm::vec3 position,
     glm::vec3 rotation,
     float left,
@@ -34,7 +34,7 @@ OrtographicCamera::OrtographicCamera(
 }
 
 /**
- * @brief Ortographic camera constructor with no rotation applied
+ * @brief OrthographicCamera constructor with no rotation applied
  * 
  * @param position Camera position
  * @param left Left clipping plane
@@ -44,7 +44,7 @@ OrtographicCamera::OrtographicCamera(
  * @param nearPalne Near clipping plane
  * @param farPlane Far clipping plane
  */
-OrtographicCamera::OrtographicCamera(
+OrthographicCamera::OrthographicCamera(
     glm::vec3 position,
     float left,
     float right,
@@ -57,9 +57,9 @@ OrtographicCamera::OrtographicCamera(
 }
 
 /**
- * @brief Ortographic camera constructor
+ * @brief OrthographicCamera constructor
  */
-OrtographicCamera::OrtographicCamera() : BaseCamera{ glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, -90.f, 0.f) } {
+OrthographicCamera::OrthographicCamera() : BaseCamera{ glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, -90.f, 0.f) } {
     this->setProjection(-1.f, 1.f, -1.f, 1.f, 0.f, 1.f);
 }
 
@@ -73,7 +73,7 @@ OrtographicCamera::OrtographicCamera() : BaseCamera{ glm::vec3(0.f, 0.f, 0.f), g
  * @param nearPalne Near clipping plane
  * @param farPlane Far clipping plane
  */
-void OrtographicCamera::setProjection(
+void OrthographicCamera::setProjection(
     float left,
     float right,
     float bottom,

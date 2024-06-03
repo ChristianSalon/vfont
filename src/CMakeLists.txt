@@ -16,8 +16,8 @@ set(KIO_SOURCES
     kb_input.cpp
     base_camera.h
     base_camera.cpp
-    orto_camera.h
-    orto_camera.cpp
+    ortho_camera.h
+    ortho_camera.cpp
     perspective_camera.h
     perspective_camera.cpp
 )

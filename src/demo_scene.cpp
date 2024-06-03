@@ -52,13 +52,13 @@ DemoScene::DemoScene(CameraType cameraType) : Scene{cameraType} {
     this->_block7 = std::make_shared<vft::TextBlock>(this->_notoemoji, 32, glm::vec4(0.f, 1.f, 1.f, 1.f), glm::vec3(0.f, 224.f, 0.f), -1, false, false);
     this->_block7->add(DemoScene::EMOJI_CODE_POINTS);
 
-    this->renderer.add(this->_block1);
-    this->renderer.add(this->_block2);
-    this->renderer.add(this->_block3);
-    this->renderer.add(this->_block4);
-    this->renderer.add(this->_block5);
-    this->renderer.add(this->_block6);
-    this->renderer.add(this->_block7);
+    this->_renderer.add(this->_block1);
+    this->_renderer.add(this->_block2);
+    this->_renderer.add(this->_block3);
+    this->_renderer.add(this->_block4);
+    this->_renderer.add(this->_block5);
+    this->_renderer.add(this->_block6);
+    this->_renderer.add(this->_block7);
 }
 
 DemoScene::~DemoScene() {}

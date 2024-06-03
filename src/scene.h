@@ -30,7 +30,7 @@
 #include "window.h"
 #include "base_camera.h"
 #include "perspective_camera.h"
-#include "orto_camera.h"
+#include "ortho_camera.h"
 
 /**
  * @class Scene

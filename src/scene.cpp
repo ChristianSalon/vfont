@@ -56,8 +56,8 @@ Scene::Scene(CameraType cameraType) {
     this->_createWindow();
 
     // Initialize camera
-    if(this->_cameraType == CameraType::ORTOGRAPHIC) {
-        this->_camera.reset(new OrtographicCamera{
+    if(this->_cameraType == CameraType::ORTHOGRAPHIC) {
+        this->_camera.reset(new OrthographicCamera{
             glm::vec3(0.f, 0.f, -1000.f),
             0.f, static_cast<float>(this->_window->getWidth()),
             0.f, static_cast<float>(this->_window->getHeight()),
@@ -132,8 +132,8 @@ void Scene::run() {
  * @param height New window height
  */
 void Scene::updateWindowDimensions(int width, int height) {
-    if(this->_cameraType == CameraType::ORTOGRAPHIC) {
-        reinterpret_cast<OrtographicCamera *>(this->_camera.get())->setProjection(
+    if(this->_cameraType == CameraType::ORTHOGRAPHIC) {
+        reinterpret_cast<OrthographicCamera *>(this->_camera.get())->setProjection(
             0.f, static_cast<float>(width),
             0.f, static_cast<float>(height),
             0.f, 2000.f

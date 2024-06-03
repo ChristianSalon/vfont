@@ -13,7 +13,7 @@
  */
 enum class CameraType {
     PERSPECTIVE,
-    ORTOGRAPHIC
+    ORTHOGRAPHIC
 };
 
 /**

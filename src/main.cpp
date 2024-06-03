@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
         for(int i = 1; i < argc; i++) {
             if(strcmp(argv[i], "-h") == 0) {
                 // Show help message
-                std::cout << "./kio [-h] [-c <perspective/ortographic>] [-s <demo/editor>]" << std::endl;
+                std::cout << "./kio [-h] [-c <perspective/orthographic>] [-s <demo/editor>]" << std::endl;
                 return EXIT_SUCCESS;
             }
             else if(strcmp(argv[i], "-c") == 0) {
@@ -31,11 +31,11 @@ int main(int argc, char **argv) {
                 if(type == "perspective") {
                     cameraType = CameraType::PERSPECTIVE;
                 }
-                else if(type == "ortographic") {
-                    cameraType = CameraType::ORTOGRAPHIC;
+                else if(type == "orthographic") {
+                    cameraType = CameraType::ORTHOGRAPHIC;
                 }
                 else {
-                    std::cerr << "Camera type must be perspective or ortographic" << std::endl;
+                    std::cerr << "Camera type must be perspective or orthographic" << std::endl;
                     return EXIT_FAILURE;
                 }
             }

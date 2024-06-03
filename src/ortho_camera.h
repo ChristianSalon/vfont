@@ -1,5 +1,5 @@
 /**
- * @file orto_camera.h
+ * @file ortho_camera.h
  * @author Christian Saloň
  */
 
@@ -10,11 +10,11 @@
 #include "base_camera.h"
 
 /**
- * @class OrtographicCamera
+ * @class OrthographicCamera
  * 
  * @brief Camera using ortographic projection
  */
-class OrtographicCamera : public BaseCamera {
+class OrthographicCamera : public BaseCamera {
 
 private:
 
@@ -28,7 +28,7 @@ private:
 
 public:
 
-    OrtographicCamera(
+    OrthographicCamera(
         glm::vec3 position,
         glm::vec3 rotation,
         float left,
@@ -38,7 +38,7 @@ public:
         float nearPlane,
         float farPlane
     );
-    OrtographicCamera(
+    OrthographicCamera(
         glm::vec3 position,
         float left,
         float right,
@@ -47,7 +47,7 @@ public:
         float nearPlane,
         float farPlane
     );
-    OrtographicCamera();
+    OrthographicCamera();
 
     void setProjection(
         float left,
