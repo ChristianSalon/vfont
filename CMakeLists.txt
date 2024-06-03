@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(kio VERSION 1.0)
+project(vfont-demo VERSION 1.0)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/")
@@ -58,12 +58,12 @@ if(BUILD_DOC AND DOXYGEN_FOUND)
     set(DOXYGEN_EXTRACT_PRIVATE "YES")
     set(DOXYGEN_ENABLE_PREPROCESSING "NO")
 
-    # kio documentation
+    # vfont-demo documentation
     message(STATUS "Generating documentation")
-    set(DOXYGEN_PROJECT_NAME "kio")
-    set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/doc/kio")
+    set(DOXYGEN_PROJECT_NAME "vfont-demo")
+    set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/doc/vfont-demo")
     doxygen_add_docs(
-        kio_doc
+        vfont_demo_doc
         ALL
         "${CMAKE_CURRENT_SOURCE_DIR}/src"
     )
@@ -91,5 +91,5 @@ add_subdirectory(thirdparty)
 add_subdirectory(libs/vfont)
 add_subdirectory(src)
 
-target_include_directories(kio PRIVATE ${INCLUDES})
-target_link_libraries(kio PRIVATE ${LIBS})
+target_include_directories(vfont-demo PRIVATE ${INCLUDES})
+target_link_libraries(vfont-demo PRIVATE ${LIBS})

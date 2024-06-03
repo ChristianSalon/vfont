@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
         for(int i = 1; i < argc; i++) {
             if(strcmp(argv[i], "-h") == 0) {
                 // Show help message
-                std::cout << "./kio [-h] [-c <perspective/orthographic>] [-s <demo/editor>]" << std::endl;
+                std::cout << "./vfont-demo [-h] [-c <perspective/orthographic>] [-s <demo/editor>]" << std::endl;
                 return EXIT_SUCCESS;
             }
             else if(strcmp(argv[i], "-c") == 0) {

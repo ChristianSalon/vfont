@@ -31,9 +31,9 @@
 #include "window.h"
 #include "kb_input.h"
 
-const std::string MainWindow::DEFAULT_WINDOW_TITLE = "kio";     /**< Default window title */
-const int MainWindow::DEFAULT_WIDTH = 512;                      /**< Default window width */
-const int MainWindow::DEFAULT_HEIGHT = 512;                     /**< Default window height */
+const std::string MainWindow::DEFAULT_WINDOW_TITLE = "vfont-demo";  /**< Default window title */
+const int MainWindow::DEFAULT_WIDTH = 512;                          /**< Default window width */
+const int MainWindow::DEFAULT_HEIGHT = 512;                         /**< Default window height */
 
 #if defined(USE_WIN32)
 
@@ -219,7 +219,7 @@ LRESULT CALLBACK MainWindow::_wndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARA
  * @brief Creates and initializes window
  */
 void MainWindow::create() {
-    const wchar_t CLASS_NAME[] = L"KIO Window Class";
+    const wchar_t CLASS_NAME[] = L"VFONT DEMO Window Class";
 
     WNDCLASSEX wc = {};
     wc.cbSize = sizeof(WNDCLASSEX);
@@ -242,7 +242,7 @@ void MainWindow::create() {
     this->_hwnd = CreateWindowEx(
         0,                       // Optional window styles
         CLASS_NAME,              // Window class
-        L"kio",                  // Window text
+        L"vfont-demo",           // Window text
         WS_OVERLAPPEDWINDOW,     // Window style
         // Size and position
         CW_USEDEFAULT, CW_USEDEFAULT, rect.right - rect.left, rect.bottom - rect.top,

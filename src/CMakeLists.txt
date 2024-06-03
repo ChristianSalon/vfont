@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.25)
 
-# Create kio executable
-add_executable(kio)
-set(KIO_SOURCES
+# Create executable
+add_executable(vfont-demo)
+set(VFONT_DEMO_SOURCES
     main.cpp
     scene.h
     scene.cpp
@@ -37,7 +37,7 @@ if("${PLATFORM}" STREQUAL "USE_WAYLAND")
         COMMAND ${Wayland_SCANNER} private-code  ${Wayland_PROTOCOLS_DIR}/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml ${CMAKE_CURRENT_SOURCE_DIR}/xdg-decoration-protocol.c
     )
 
-    set(KIO_SOURCES ${KIO_SOURCES} xdg-shell-client-protocol.h xdg-shell-protocol.c xdg-decoration-client-protocol.h xdg-decoration-protocol.c)
+    set(VFONT_DEMO_SOURCES ${VFONT_DEMO_SOURCES} xdg-shell-client-protocol.h xdg-shell-protocol.c xdg-decoration-client-protocol.h xdg-decoration-protocol.c)
 endif()
 
 # Compile vertex and fragment shaders with glslc
@@ -47,21 +47,21 @@ if(NOT Vulkan_glslc_FOUND)
 endif()
 
 add_custom_target(shaders
-    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:kio>/"
-    COMMAND ${Vulkan_GLSLC_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/shader.vert" -o "$<TARGET_FILE_DIR:kio>/vert.spv"
-    COMMAND ${Vulkan_GLSLC_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/shader.frag" -o "$<TARGET_FILE_DIR:kio>/frag.spv"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:vfont-demo>/"
+    COMMAND ${Vulkan_GLSLC_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/shader.vert" -o "$<TARGET_FILE_DIR:vfont-demo>/vert.spv"
+    COMMAND ${Vulkan_GLSLC_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/shader.frag" -o "$<TARGET_FILE_DIR:vfont-demo>/frag.spv"
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shader.vert" "${CMAKE_CURRENT_SOURCE_DIR}/shader.frag"
 )
 
 # Add font files to executable directory
-add_custom_command(TARGET kio POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/roboto/Roboto-Regular.ttf" "$<TARGET_FILE_DIR:kio>"
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/jersey10/Jersey10-Regular.ttf" "$<TARGET_FILE_DIR:kio>"
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/crimsontext/CrimsonText-Italic.ttf" "$<TARGET_FILE_DIR:kio>"
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/robotomono/RobotoMono-Bold.ttf" "$<TARGET_FILE_DIR:kio>"
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/notosansjp/NotoSansJP-Regular.ttf" "$<TARGET_FILE_DIR:kio>"
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/notoemoji/NotoEmoji.ttf" "$<TARGET_FILE_DIR:kio>"
+add_custom_command(TARGET vfont-demo POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/roboto/Roboto-Regular.ttf" "$<TARGET_FILE_DIR:vfont-demo>"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/jersey10/Jersey10-Regular.ttf" "$<TARGET_FILE_DIR:vfont-demo>"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/crimsontext/CrimsonText-Italic.ttf" "$<TARGET_FILE_DIR:vfont-demo>"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/robotomono/RobotoMono-Bold.ttf" "$<TARGET_FILE_DIR:vfont-demo>"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/notosansjp/NotoSansJP-Regular.ttf" "$<TARGET_FILE_DIR:vfont-demo>"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/notoemoji/NotoEmoji.ttf" "$<TARGET_FILE_DIR:vfont-demo>"
 )
 
-target_sources(kio PRIVATE ${KIO_SOURCES})
-add_dependencies(kio shaders)
+target_sources(vfont-demo PRIVATE ${VFONT_DEMO_SOURCES})
+add_dependencies(vfont-demo shaders)
