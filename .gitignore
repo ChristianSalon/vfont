@@ -1,8 +1,3 @@
-build/
-out/
-doc/
-.editorconfig
-
 # Wayland
 */xdg-shell-client-protocol.h
 */xdg-shell-protocol.c
@@ -60,3 +55,11 @@ CMakePresets.json
 # Visual Studio and VSCode
 .vs/
 .vscode/
+
+build/
+out/
+doc/
+.editorconfig
+
+# Include everyting in bin folder
+!bin/*
