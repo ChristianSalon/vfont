@@ -22,19 +22,19 @@ If you want to build documentation, use `cmake .. -DBUILD_DOC=ON`.
 
 ### Win32
 
-To explicitly build for Win32, instead of `cmake ..` use `cmake .. -DUSE_WIN32`.
+To explicitly build for Win32, instead of `cmake ..` use `cmake .. -DPLATFORM=USE_WIN32`.
 
 **Windows SDK** is required.
 
 ### X11
 
-To explicitly build for X11 using Xlib, instead of `cmake ..` use `cmake .. -DUSE_X11`.
+To explicitly build for X11 using Xlib, instead of `cmake ..` use `cmake .. -DPLATFORM=USE_X11`.
 
 Required library is **xlib**.
 
 ### Wayland
 
-To explicitly build for Wayland, instead of `cmake ..` use `cmake .. -DUSE_WAYLAND`.
+To explicitly build for Wayland, instead of `cmake ..` use `cmake .. -DPLATFORM=USE_WAYLAND`.
 
 Libraries required are **wayland**, **wayland-protocols** and **xkbcommon**.
 
