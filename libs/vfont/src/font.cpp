@@ -11,12 +11,12 @@
 namespace vft {
 
 /**
- * @brief Font constructor
+ * @brief Font constructor, loads font from fontt file
  * 
  * @param fontFile Path to font file
  */
-Font::Font(std::string fontFile) : _fontFile{fontFile} {
-    if(this->_fontFile.empty()) {
+Font::Font(std::string fontFile) {
+    if(fontFile.empty()) {
         throw std::runtime_error("Path to .ttf file was not entered");
     }
 
@@ -24,8 +24,32 @@ Font::Font(std::string fontFile) : _fontFile{fontFile} {
         throw std::runtime_error("Error initializing freetype");
     }
 
-    if(FT_New_Face(this->_ft, this->_fontFile.c_str(), 0, &(this->_face))) {
+    if(FT_New_Face(this->_ft, fontFile.c_str(), 0, &this->_face)) {
         throw std::runtime_error("Error loading font face, check path to .ttf file");
+    }
+
+    FT_Set_Pixel_Sizes(this->_face, Font::DEFAULT_FONT_SIZE, 0);
+
+    this->_supportsKerning = FT_HAS_KERNING(this->_face);
+    this->_initializeGlyphInfo();
+}
+
+/**
+ * @brief Font constructor, loads font from memory
+ *
+ * @param fontFile Path to font file
+ */
+Font::Font(uint8_t * buffer, long size) {
+    if(size <= 0) {
+        throw std::runtime_error("Buffer size must be greater than zero");
+    }
+
+    if(FT_Init_FreeType(&(this->_ft))) {
+        throw std::runtime_error("Error initializing freetype");
+    }
+
+    if(FT_New_Memory_Face(this->_ft, buffer, size, 0, &this->_face)) {
+        throw std::runtime_error("Error loading font from memory");
     }
 
     FT_Set_Pixel_Sizes(this->_face, Font::DEFAULT_FONT_SIZE, 0);
@@ -99,12 +123,12 @@ bool Font::supportsKerning() const {
 }
 
 /**
- * @brief Get path to font file
+ * @brief Get font family name
  * 
- * @return Path to font file
+ * @return Font family name
  */
-std::string Font::getFontFile() const {
-    return this->_fontFile;
+std::string Font::getFontFamily() const {
+    return std::string(this->_face->family_name);
 }
 
 /**

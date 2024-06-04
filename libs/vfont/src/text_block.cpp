@@ -268,7 +268,7 @@ void TextBlock::setWidth(int width) {
  */
 void TextBlock::setKerning(bool kerning) {
     if(kerning && !this->_font->supportsKerning()) {
-        std::cerr << "Font " << this->_font->getFontFile() << " does not support kerning" << std::endl;
+        std::cerr << "Font " << this->_font->getFontFamily() << " does not support kerning" << std::endl;
         return;
     }
 

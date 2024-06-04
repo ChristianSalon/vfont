@@ -29,8 +29,6 @@ public:
 
 protected:
 
-    std::string _fontFile;                          /**< Path to font file */
-
     FT_Library _ft;                                 /**< Freetype library */
     FT_Face _face;                                  /**< Freetype font face */
     bool _supportsKerning;                          /**< Indicates whether this font supprots kerning. */
@@ -40,15 +38,16 @@ protected:
 public:
 
     Font(std::string fontFile);
+    Font(uint8_t *buffer, long size);
 
     void setGlyphInfo(uint32_t codePoint, Glyph glyph);
     void clearGlyphInfo();
 
     bool supportsKerning() const;
+    std::string getFontFamily() const;
     glm::vec2 getScalingVector(unsigned int fontSize) const;
     const Glyph &getGlyphInfo(uint32_t codePoint) const;
     const std::unordered_map<uint32_t, Glyph> &getAllGlyphInfo() const;
-    std::string getFontFile() const;
     FT_Face getFace() const;
 
 protected:
