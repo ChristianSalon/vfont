@@ -467,11 +467,11 @@ void MainWindow::pollEvents() {
 
             // Check if user scrolled up
             if(ev.xbutton.button == Button4) {
-                this->_scrollCallback(-scrollFactor);
+                this->_scrollCallback(scrollFactor);
             }
             // Check if user scrolled down
             else if(ev.xbutton.button == Button5) {
-                this->_scrollCallback(scrollFactor);
+                this->_scrollCallback(-scrollFactor);
             }
         }
 
@@ -482,12 +482,12 @@ void MainWindow::pollEvents() {
             Status status = 0;
             nOfCodeUnits = Xutf8LookupString(this->_inputContext, (XKeyPressedEvent *)&ev, buffer, maxBufferBytes, nullptr, &status);
                 
-            if (status == XBufferOverflow) {
+            if(status == XBufferOverflow) {
                 throw std::runtime_error("Error processing character");
             }
-            else if (status == XLookupChars) {
+            else if(status == XLookupChars) {
                 KbInput::utf8_t character;
-                switch (nOfCodeUnits) {
+                switch(nOfCodeUnits) {
                     case 1: {
                         character.type = KbInput::Utf8Type::ONE_CODE_UNIT;
                         character.bytes_1 = buffer[0];
@@ -857,11 +857,11 @@ struct wl_pointer_listener MainWindow::_wlPointerListener = {
 
             // Check if user scrolled up
             if(direction > 0) {
-                pThis->_scrollCallback(scrollFactor);
+                pThis->_scrollCallback(-scrollFactor);
             }
             // Check if user scrolled down
             else if(direction < 0) {
-                pThis->_scrollCallback(-scrollFactor);
+                pThis->_scrollCallback(scrollFactor);
             }
         }
     }
