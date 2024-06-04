@@ -7,12 +7,12 @@
 
 #include <glm/vec4.hpp>
 
-const std::string DemoScene::JERSEY_PATH = "Jersey10-Regular.ttf";
-const std::string DemoScene::CRIMSON_TEXT_PATH = "CrimsonText-Italic.ttf";
-const std::string DemoScene::ROBOTO_PATH = "Roboto-Regular.ttf";
-const std::string DemoScene::ROBOTO_MONO_PATH = "RobotoMono-Bold.ttf";
-const std::string DemoScene::NOTO_SANS_JP_PATH = "NotoSansJP-Regular.ttf";
-const std::string DemoScene::NOTO_EMOJI_PATH = "NotoEmoji.ttf";
+const std::string DemoScene::JERSEY_PATH = "assets/Jersey10-Regular.ttf";
+const std::string DemoScene::CRIMSON_TEXT_PATH = "assets/CrimsonText-Italic.ttf";
+const std::string DemoScene::ROBOTO_PATH = "assets/Roboto-Regular.ttf";
+const std::string DemoScene::ROBOTO_MONO_PATH = "assets/RobotoMono-Bold.ttf";
+const std::string DemoScene::NOTO_SANS_JP_PATH = "assets/NotoSansJP-Regular.ttf";
+const std::string DemoScene::NOTO_EMOJI_PATH = "assets/NotoEmoji.ttf";
 
 const std::vector<uint32_t> DemoScene::ENGLISH_CODE_POINTS =
     {0x54, 0x68, 0x69, 0x73, 0x20, 0x69, 0x73, 0x20, 0x64, 0x65, 0x6D, 0x6F, 0x20, 0x74, 0x65, 0x78, 0x74};

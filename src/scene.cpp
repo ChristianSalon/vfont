@@ -1033,8 +1033,8 @@ void Scene::_setUniformBuffers() {
  * Color blending is enabled
  */
 void Scene::_createGraphicsPipeline() {
-    std::vector<char> vertexShaderCode = this->_readFile("vert.spv");
-    std::vector<char> fragmentShaderCode = this->_readFile("frag.spv");
+    std::vector<char> vertexShaderCode = this->_readFile("shaders/vert.spv");
+    std::vector<char> fragmentShaderCode = this->_readFile("shaders/frag.spv");
 
     VkShaderModule vertexShaderModule = this->_createShaderModule(vertexShaderCode);
     VkShaderModule fragmentShaderModule = this->_createShaderModule(fragmentShaderCode);

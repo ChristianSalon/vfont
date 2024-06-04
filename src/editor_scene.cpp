@@ -7,7 +7,7 @@
 
 #include <glm/vec4.hpp>
 
-const std::string EditorScene::ROBOTO_PATH = "Roboto-Regular.ttf";
+const std::string EditorScene::ROBOTO_PATH = "assets/Roboto-Regular.ttf";
 
 EditorScene::EditorScene(CameraType cameraType) : Scene{cameraType} {
     this->_roboto = std::make_shared<vft::Font>(EditorScene::ROBOTO_PATH);
