@@ -310,10 +310,6 @@ void Scene::_createInstance() {
         throw std::runtime_error("Selected vulkan extensions are not supported");
     }
 
-    if(!this->_areValidationLayersSupported()) {
-        throw std::runtime_error("Selected vulkan validation layers are not supported");
-    }
-
     VkApplicationInfo applicationInfo{};
     applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     applicationInfo.pApplicationName = "vfont-demo";
@@ -327,8 +323,8 @@ void Scene::_createInstance() {
     instanceCreateInfo.pApplicationInfo = &applicationInfo;
     instanceCreateInfo.enabledExtensionCount = 0;
     instanceCreateInfo.ppEnabledExtensionNames = nullptr;
-    instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-    instanceCreateInfo.ppEnabledLayerNames = validationLayers.data();
+    instanceCreateInfo.enabledLayerCount = 0;
+    instanceCreateInfo.ppEnabledLayerNames = nullptr;
     instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     instanceCreateInfo.ppEnabledExtensionNames = extensions.data();
 
@@ -542,8 +538,8 @@ void Scene::_createLogicalDevice() {
     deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
     deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
     deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
-    deviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-    deviceCreateInfo.ppEnabledLayerNames = validationLayers.data();
+    deviceCreateInfo.enabledLayerCount = 0;
+    deviceCreateInfo.ppEnabledLayerNames = nullptr;
 
     if(vkCreateDevice(this->_physicalDevice, &deviceCreateInfo, nullptr, &this->_logicalDevice) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan logical device");

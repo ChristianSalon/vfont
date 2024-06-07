@@ -111,22 +111,21 @@ void TextBlock::add(std::vector<uint32_t> codePoints) {
             }
         }
         else {
+            glm::vec2 scale = this->_font->getScalingVector(this->_fontSize);
+
             // Apply wrapping if specified
             bool wasWrapped = false;
-            if(this->_width >= 0 && this->_penX + this->_font->getGlyphInfo(codePoint).getAdvanceX() > this->getWidth()) {
+            if(this->_width >= 0 && this->_penX + (this->_font->getGlyphInfo(codePoint).getAdvanceX() * scale.x) > this->getWidth()) {
                 // Render character on new line by adding enter character
                 wasWrapped = true;
                 this->_penX = 0;
                 this->_penY += this->getFontSize();
             }
-            
-            glm::vec2 scale = this->_font->getScalingVector(this->_fontSize);
 
             // Apply kerning if specified
             if(!wasWrapped && this->_kerning && this->_characters.size() > 0) {
                 uint32_t leftCharIndex = FT_Get_Char_Index(this->_font->getFace(), this->_characters.back().getUnicodeCodePoint());
                 uint32_t rightCharIndex = FT_Get_Char_Index(this->_font->getFace(), codePoint);
-
 
                 FT_Vector delta;
                 FT_Get_Kerning(this->_font->getFace(), leftCharIndex, rightCharIndex, FT_KERNING_UNSCALED, &delta);
