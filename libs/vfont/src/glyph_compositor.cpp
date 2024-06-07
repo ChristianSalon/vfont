@@ -241,7 +241,7 @@ void GlyphCompositor::compose(uint32_t codePoint, std::shared_ptr<Font> font) {
         this->_triangulate();
 
         // Insert glyph info to map
-        font->setGlyphInfo(newCodePoint, this->_currentGlyph);
+        font->setGlyphInfo(codePoint, this->_currentGlyph);
     }
 }
 
