@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <iostream>
 #include <vector>
 #include <memory>
 #include <functional>
@@ -13,9 +14,11 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
+#include <glm/ext/matrix_transform.hpp>
 
 #include "character.h"
 #include "font.h"
+#include "tessellator.h"
 
 namespace vft {
 
@@ -46,6 +49,7 @@ protected:
     glm::vec3 _position;                /**< Position of text block */
 
     std::vector<Character> _characters; /**< Characters to render */
+    std::shared_ptr<Tessellator> _tessellator;
 
 public:
 
@@ -73,6 +77,7 @@ public:
     void setKerning(bool kerning);
     void setWrapping(bool wrapping);
     void setFontSize(unsigned int fontSize);
+    void setTessellationStrategy(std::shared_ptr<Tessellator> tessellator);
 
     std::vector<Character> &getCharacters();
     std::shared_ptr<Font> getFont() const;

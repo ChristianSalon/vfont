@@ -30,6 +30,8 @@ public:
     EditorScene(CameraType cameraType);
     ~EditorScene();
 
-    void updateText(uint32_t codePoint);
+private:
+
+    void _updateText(uint32_t codePoint);
 
 };

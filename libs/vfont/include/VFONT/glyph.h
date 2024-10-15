@@ -6,10 +6,12 @@
 #pragma once
 
 #include <vector>
+#include <array>
 #include <cstdint>
 
 #include <glm/vec2.hpp>
 
+#include "glyph_mesh.h"
 #include "text_renderer_utils.h"
 
 namespace vft {
@@ -21,51 +23,58 @@ namespace vft {
  */
 class Glyph {
 
+public:
+
+    GlyphMesh mesh;
+
 protected:
 
-    std::vector<glm::vec2> _vertices;       /**< Glyph vertices */
-    std::vector<uint32_t> _indices;         /**< Glyph vertex indices */
-    std::vector<vft::Edge> _edges;          /**< Glyph edges */
+    std::vector<vft::Curve> _curveSegments;
+    std::vector<vft::Edge> _lineSegments;
+
+    long _width;
+    long _height;
+
+    long _bearingX;
+    long _bearingY;
 
     /**
      * Indicates by how much to increment the X coordinate of pen position.
      * This includes the glyph's width plus the space behind.
      * Used for horizontal layouts
      */
-    int _advanceX;
+    long _advanceX;
 
     /**
      * Indicates by how much to increment the Y coordinate of pen position.
      * Not specified for horizontal layouts
      */
-    int _advanceY;
+    long _advanceY;
 
 public:
 
     Glyph();
 
-    void addVertex(glm::vec2 vertex);
-    void updateVertex(int index, glm::vec2 vertex);
+    void addLineSegment(vft::Edge edge);
+    void addCurveSegment(vft::Curve curve);
 
-    void addEdge(vft::Edge edge);
-    void updateEdge(int index, vft::Edge edge);
+    std::array<glm::vec2, 4> getBoundingBox() const;
 
-    void addIndex(uint32_t index);
+    void setWidth(long width);
+    void setHeight(long height);
+    void setBearingX(long bearingX);
+    void setBearingY(long bearingY);
+    void setAdvanceX(long advanceX);
+    void setAdvanceY(long advanceY);
 
-    void setVertices(const std::vector<glm::vec2> &vertices);
-    void setIndices(const std::vector<uint32_t> &indices);
-    void setEdges(const std::vector<vft::Edge> &edges);
-    void setAdvanceX(int advanceX);
-    void setAdvanceY(int advanceY);
 
-    int getAdvanceX() const;
-    int getAdvanceY() const;
-    const std::vector<glm::vec2> &getVertices() const;
-    const std::vector<uint32_t> &getIndices() const;
-    const std::vector<vft::Edge> &getEdges() const;
-    int getVertexCount() const;
-    int getIndexCount() const;
-    int getEdgeCount() const;
+    const std::vector<vft::Edge> &getLineSegmentsIndices() const;
+    const std::vector<vft::Curve> &getCurveSegmentsIndices() const;
+    uint32_t getLineSegmentsIndexCount() const;
+    uint32_t getCurveSegmentsIndexCount() const;
+
+    long getAdvanceX() const;
+    long getAdvanceY() const;
 
 };
 

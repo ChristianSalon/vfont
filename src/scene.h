@@ -26,6 +26,7 @@
 #include <VFONT/font.h>
 #include <VFONT/text_block.h>
 #include <VFONT/text_renderer.h>
+#include <VFONT/tessellator.h>
 
 #include "window.h"
 #include "base_camera.h"
@@ -65,14 +66,6 @@ protected:
         VkCompositeAlphaFlagBitsKHR compositeAlphaMode;
     };
 
-    /**
-     * @brief Uniform buffer object
-     */
-    struct UniformBufferObject {
-        glm::mat4 view;
-        glm::mat4 projection;
-    };
-
     static const int MAX_FRAMES_IN_FLIGHT;                  /**< Number of frames being concurrently processed */
     std::vector<const char *> extensions;                   /**< Selected vulkan extensions */
     std::vector<const char *> deviceExtensions;             /**< Selected vulkan device extensions */
@@ -84,10 +77,6 @@ protected:
     CameraType _cameraType;                                 /**< Type of camera used for rendering */
 
     uint32_t _currentFrameIndex;                            /**< Current frame used for rendering */
-
-    std::vector<VkBuffer> _uniformBuffers;                  /**< Uniform buffers */
-    std::vector<VkDeviceMemory> _uniformBuffersMemory;      /**< Uniform buffers memory */
-    std::vector<void *> _mappedUniformBuffers;              /**< Uniform buffers pointers */
 
     VkInstance _instance;                                   /**< Vulkan instance */
     VkSurfaceKHR _surface;                                  /**< Vulkan surface */
@@ -101,15 +90,8 @@ protected:
     VkExtent2D _swapChainExtent;                            /**< Vulkan swap chain extent */
     std::vector<VkImageView> _swapChainImageViews;          /**< Vulkan swap chain image views */
     VkRenderPass _renderPass;                               /**< Vulkan render pass */
-    VkDescriptorSetLayout _descriptorSetLayout;             /**< Vulkan descriptor set layout */
-    VkDescriptorPool _descriptorPool;                       /**< Vulkan descriptor pool */
-    std::vector<VkDescriptorSet> _descriptorSets;           /**< Vulkan descriptor sets */
-    VkPipelineLayout _pipelineLayout;                       /**< Vulkan pipeline layout */
-    VkPipeline _graphicsPipeline;                           /**< Vulkan graphics pipeline */
     std::vector<VkFramebuffer> _framebuffers;               /**< Vulkan frame buffers */
     VkCommandPool _commandPool;                             /**< Vulkan command pool */
-    VkBuffer _vertexBuffer;                                 /**< Vulkan vertex buffer */
-    VkDeviceMemory _vertexBufferMemory;                     /**< Vulkan vertex buffer memory */
     std::vector<VkCommandBuffer> _commandBuffers;           /**< Vulkan command buffers */
     std::vector<VkSemaphore> _imageAvailableSemaphores;     /**< Semaphore to signal that an image was acquired from the swap chain */
     std::vector<VkSemaphore> _renderFinishedSemaphores;     /**< Semaphore to signal if vulkan finished rendering and can begin presenting */
@@ -151,18 +133,7 @@ protected:
     void _createSwapChain();
     void _createImageViews();
     void _createRenderPass();
-    std::vector<char> _readFile(std::string fileName);
-    VkShaderModule _createShaderModule(const std::vector<char> &shaderCode);
-    void _createDescriptorSetLayout();
-    uint32_t _selectMemoryType(uint32_t memoryType, VkMemoryPropertyFlags properties);
 
-    void _createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
-    void _createUniformBuffers();
-    void _createDescriptorPool();
-    void _createDescriptorSets();
-    void _setUniformBuffers();
-
-    void _createGraphicsPipeline();
     void _createFramebuffers();
     void _createCommandPool();
     void _createCommandBuffers();

@@ -12,8 +12,6 @@
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
 
-#include "glyph.h"
-
 namespace vft {
 
 const uint32_t U_BACKSPACE = 0x00000008;
@@ -52,8 +50,22 @@ public:
 
     Edge(uint32_t first, uint32_t second) : first{first}, second{second} {};
 
-    inline bool operator==(const Edge &edge) { return this->first == edge.first && this->second == edge.second; };
+    bool operator==(const Edge &edge) const { return this->first == edge.first && this->second == edge.second; };
     inline bool isInverse(const Edge &edge) { return this->first == edge.second && this->second == edge.first; };
+
+};
+
+class Curve {
+
+public:
+
+    uint32_t start;
+    uint32_t control;
+    uint32_t end;
+
+    Curve(uint32_t start, uint32_t control, uint32_t end) : start{start}, control{control}, end{end} {};
+
+    bool operator==(const Curve& curve) const { return this->start == curve.start && this->control == curve.control && this->end == curve.end; };
 
 };
 
@@ -85,6 +97,25 @@ public:
         contourStartVertexId{0},
         lastVertex{0,0},
         contourCount{0} {}
+
+};
+
+/**
+ * @brief Uniform buffer object
+ */
+class UniformBufferObject {
+
+public:
+
+    glm::mat4 view;
+    glm::mat4 projection;
+
+    UniformBufferObject(glm::mat4 view, glm::mat4 projection) :
+        view{view},
+        projection{projection} {}
+    UniformBufferObject() :
+        view{glm::mat4(1.f)},
+        projection{glm::mat4(1.f)} {}
 
 };
 

@@ -47,10 +47,7 @@ Scene::Scene(CameraType cameraType) {
     this->_swapChainImageFormat = VK_FORMAT_UNDEFINED;
     this->_swapChainExtent = {};
     this->_renderPass = nullptr;
-    this->_pipelineLayout = nullptr;
-    this->_graphicsPipeline = nullptr;
     this->_commandPool = nullptr;
-    this->_vertexBuffer = nullptr;
 
     // Initialize window
     this->_createWindow();
@@ -78,11 +75,12 @@ Scene::Scene(CameraType cameraType) {
 
     // Initialize text renderer
     this->_renderer.init(
+        vft::TextRenderer::TessellationStrategy::CPU_AND_GPU,
         this->_physicalDevice,
         this->_logicalDevice,
         this->_commandPool,
         this->_graphicsQueue,
-        this->_pipelineLayout
+        this->_renderPass
     );
 }
 
@@ -91,15 +89,7 @@ Scene::Scene(CameraType cameraType) {
  */
 Scene::~Scene() {
     this->_renderer.destroy();
-
     this->_cleanupSwapChain();
-
-    for(int i = 0; i < Scene::MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroyBuffer(this->_logicalDevice, this->_uniformBuffers.at(i), nullptr);
-        vkFreeMemory(this->_logicalDevice, this->_uniformBuffersMemory.at(i), nullptr);
-    }
-    vkDestroyDescriptorPool(this->_logicalDevice, this->_descriptorPool, nullptr);
-    vkDestroyDescriptorSetLayout(this->_logicalDevice, this->_descriptorSetLayout, nullptr);
 
     for(int i = 0; i < Scene::MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroySemaphore(this->_logicalDevice, this->_imageAvailableSemaphores[i], nullptr);
@@ -108,11 +98,7 @@ Scene::~Scene() {
     }
 
     vkDestroyCommandPool(this->_logicalDevice, this->_commandPool, nullptr);
-
-    vkDestroyPipeline(this->_logicalDevice, this->_graphicsPipeline, nullptr);
-    vkDestroyPipelineLayout(this->_logicalDevice, this->_pipelineLayout, nullptr);
     vkDestroyRenderPass(this->_logicalDevice, this->_renderPass, nullptr);
-
     vkDestroyDevice(this->_logicalDevice, nullptr);
     vkDestroySurfaceKHR(this->_instance, this->_surface, nullptr);
     vkDestroyInstance(this->_instance, nullptr);
@@ -190,11 +176,6 @@ void Scene::_initVulkan() {
     this->_createSwapChain();
     this->_createImageViews();
     this->_createRenderPass();
-    this->_createUniformBuffers();
-    this->_createDescriptorSetLayout();
-    this->_createDescriptorPool();
-    this->_createDescriptorSets();
-    this->_createGraphicsPipeline();
     this->_createFramebuffers();
     this->_createCommandPool();
     this->_createCommandBuffers();
@@ -321,7 +302,7 @@ void Scene::_createInstance() {
     VkInstanceCreateInfo instanceCreateInfo{};
     instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instanceCreateInfo.pApplicationInfo = &applicationInfo;
-    instanceCreateInfo.enabledExtensionCount = 0;
+    instanceCreateInfo.enabledExtensionCount = 1;
     instanceCreateInfo.ppEnabledExtensionNames = nullptr;
     instanceCreateInfo.enabledLayerCount = 0;
     instanceCreateInfo.ppEnabledLayerNames = nullptr;
@@ -454,9 +435,15 @@ Scene::QueueFamilyIndices Scene::_findQueueFamilies(VkPhysicalDevice physicalDev
 int Scene::_ratePhysicalDevice(VkPhysicalDevice physicalDevice) {
     VkPhysicalDeviceProperties physicalDeviceProperties;
     vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+    VkPhysicalDeviceFeatures physicalDeviceFeatures;
+    vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
     int score = 0;
 
     if(!this->_areDeviceExtensionsSupported(physicalDevice)) {
+        return score;
+    }
+
+    if (!physicalDeviceFeatures.tessellationShader) {
         return score;
     }
 
@@ -477,7 +464,10 @@ int Scene::_ratePhysicalDevice(VkPhysicalDevice physicalDevice) {
     else if(physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
         score += 10;
     }
-
+    else {
+        score++;
+    }
+    
     return score;
 }
 
@@ -530,6 +520,7 @@ void Scene::_createLogicalDevice() {
     }
 
     VkPhysicalDeviceFeatures deviceFeatures{};
+    deviceFeatures.tessellationShader = VK_TRUE;
 
     VkDeviceCreateInfo deviceCreateInfo{};
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -813,344 +804,6 @@ void Scene::_createRenderPass() {
 }
 
 /**
- * @brief Used for reading shader code
- *
- * @param fileName Shader file name
- *
- * @return Shader code buffer
- */
-std::vector<char> Scene::_readFile(std::string fileName) {
-    std::ifstream file(fileName, std::ios::ate | std::ios::binary);
-
-    if(!file.is_open()) {
-        throw std::runtime_error("Error opening file " + fileName);
-    }
-
-    size_t size = static_cast<size_t>(file.tellg());
-    std::vector<char> buffer(size);
-
-    file.seekg(0);
-    file.read(buffer.data(), size);
-    file.close();
-
-    return buffer;
-}
-
-/**
- * @brief Creates vulkan shader module from specified shader
- *
- * @param shaderCode Shader code
- *
- * @return Vulkan shader module
- */
-VkShaderModule Scene::_createShaderModule(const std::vector<char> &shaderCode) {
-    VkShaderModuleCreateInfo shaderModuleCreateInfo{};
-    shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    shaderModuleCreateInfo.codeSize = shaderCode.size();
-    shaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t *>(shaderCode.data());
-
-    VkShaderModule shaderModule;
-
-    if(vkCreateShaderModule(this->_logicalDevice, &shaderModuleCreateInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-        throw std::runtime_error("Error creating vulkan shader module");
-    }
-
-    return shaderModule;
-}
-
-/**
- * @brief Creates vulkan descriptor set layout
- */
-void Scene::_createDescriptorSetLayout() {
-    VkDescriptorSetLayoutBinding layoutBinding{};
-    layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    layoutBinding.binding = 0;
-    layoutBinding.descriptorCount = 1;
-    layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-    VkDescriptorSetLayoutCreateInfo layoutCreateInfo{};
-    layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutCreateInfo.bindingCount = 1;
-    layoutCreateInfo.pBindings = &layoutBinding;
-
-    if(vkCreateDescriptorSetLayout(this->_logicalDevice, &layoutCreateInfo, nullptr, &(this->_descriptorSetLayout)) != VK_SUCCESS) {
-        throw std::runtime_error("Error creating vulkan descriptor set layout");
-    }
-
-}
-
-/**
- * @brief Selects the best possible memory to create vulkan buffer
- *
- * @param memoryType Required memory type
- * @param properties Required memory properties
- *
- * @return Index of selected memory
- */
-uint32_t Scene::_selectMemoryType(uint32_t memoryType, VkMemoryPropertyFlags properties) {
-    VkPhysicalDeviceMemoryProperties memoryProperties;
-    vkGetPhysicalDeviceMemoryProperties(this->_physicalDevice, &memoryProperties);
-
-    for(uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++) {
-        if((memoryType & (1 << i)) && (memoryProperties.memoryTypes[i].propertyFlags & properties) == properties) {
-            return i;
-        }
-    }
-
-    throw std::runtime_error("Error selecting memory for vulkan buffer");
-}
-
-/**
- * @brief Creates and allocates memory for vulkan buffer
- *
- * @param size Size of buffer
- * @param usage Usage of buffer
- * @param properties Memory properties
- * @param buffer Vulkan buffer
- * @param bufferMemory Vulkan buffer memory
- */
-void Scene::_createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory) {
-    VkBufferCreateInfo bufferCreateInfo{};
-    bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferCreateInfo.size = size;
-    bufferCreateInfo.usage = usage;
-    bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    if(vkCreateBuffer(this->_logicalDevice, &bufferCreateInfo, nullptr, &buffer) != VK_SUCCESS) {
-        throw std::runtime_error("Error creating vulkan buffer");
-    }
-
-    VkMemoryRequirements memoryRequirements;
-    vkGetBufferMemoryRequirements(this->_logicalDevice, buffer, &memoryRequirements);
-
-    VkMemoryAllocateInfo memoryAllocateInfo{};
-    memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    memoryAllocateInfo.allocationSize = memoryRequirements.size;
-    memoryAllocateInfo.memoryTypeIndex = this->_selectMemoryType(memoryRequirements.memoryTypeBits, properties);
-
-    if(vkAllocateMemory(this->_logicalDevice, &memoryAllocateInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
-        throw std::runtime_error("Error allocating vulkan buffer memory");
-    }
-
-    vkBindBufferMemory(this->_logicalDevice, buffer, bufferMemory, 0);
-}
-
-/**
- * @brief Creates vulkan uniform buffers
- */
-void Scene::_createUniformBuffers() {
-    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-
-    this->_uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-    this->_uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
-    this->_mappedUniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-
-    for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        this->_createBuffer(
-            bufferSize,
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            this->_uniformBuffers.at(i),
-            this->_uniformBuffersMemory.at(i)
-        );
-
-        vkMapMemory(this->_logicalDevice, this->_uniformBuffersMemory.at(i), 0, bufferSize, 0, &(this->_mappedUniformBuffers.at(i)));
-    }
-}
-
-/**
- * @brief Creates vulkan descriptor pool
- */
-void Scene::_createDescriptorPool() {
-    VkDescriptorPoolSize poolSize{};
-    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSize.descriptorCount = static_cast<uint32_t>(Scene::MAX_FRAMES_IN_FLIGHT);
-
-    VkDescriptorPoolCreateInfo poolCreateInfo{};
-    poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolCreateInfo.poolSizeCount = 1;
-    poolCreateInfo.pPoolSizes = &poolSize;
-    poolCreateInfo.maxSets = static_cast<uint32_t>(Scene::MAX_FRAMES_IN_FLIGHT);
-
-    if(vkCreateDescriptorPool(this->_logicalDevice, &poolCreateInfo, nullptr, &(this->_descriptorPool)) != VK_SUCCESS) {
-        throw std::runtime_error("Error creating vulkan descriptor pool");
-    }
-}
-
-/**
- * @brief Creates vulkan descriptor sets
- */
-void Scene::_createDescriptorSets() {
-    std::vector<VkDescriptorSetLayout> layouts(Scene::MAX_FRAMES_IN_FLIGHT, this->_descriptorSetLayout);
-
-    VkDescriptorSetAllocateInfo allocateInfo{};
-    allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocateInfo.descriptorPool = this->_descriptorPool;
-    allocateInfo.descriptorSetCount = static_cast<uint32_t>(Scene::MAX_FRAMES_IN_FLIGHT);
-    allocateInfo.pSetLayouts = layouts.data();
-
-    this->_descriptorSets.resize(Scene::MAX_FRAMES_IN_FLIGHT);
-
-    if(vkAllocateDescriptorSets(this->_logicalDevice, &allocateInfo, this->_descriptorSets.data()) != VK_SUCCESS) {
-        throw std::runtime_error("Error allocating vulkan descriptor sets");
-    }
-
-    for(int i = 0; i < Scene::MAX_FRAMES_IN_FLIGHT; i++) {
-        VkDescriptorBufferInfo descriptorBufferInfo{};
-        descriptorBufferInfo.buffer = this->_uniformBuffers.at(i);
-        descriptorBufferInfo.offset = 0;
-        descriptorBufferInfo.range = sizeof(UniformBufferObject);
-
-        VkWriteDescriptorSet writeDescriptorSet{};
-        writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        writeDescriptorSet.dstSet = this->_descriptorSets.at(i);
-        writeDescriptorSet.dstBinding = 0;
-        writeDescriptorSet.dstArrayElement = 0;
-        writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        writeDescriptorSet.descriptorCount = 1;
-        writeDescriptorSet.pBufferInfo = &descriptorBufferInfo;
-
-        vkUpdateDescriptorSets(this->_logicalDevice, 1, &writeDescriptorSet, 0, nullptr);
-    }
-}
-
-/**
- * @brief Updates uniform buffer currently used for rendering frame
- */
-void Scene::_setUniformBuffers() {
-    UniformBufferObject ubo{};
-    ubo.view = this->_camera->getViewMatrix();
-    ubo.projection = this->_camera->getProjectionMatrix();
-
-    memcpy(this->_mappedUniformBuffers.at(this->_currentFrameIndex), &ubo, sizeof(ubo));
-}
-
-/**
- * @brief Creates vulkan graphics pipeline
- * Color blending is enabled
- */
-void Scene::_createGraphicsPipeline() {
-    std::vector<char> vertexShaderCode = this->_readFile("shaders/vert.spv");
-    std::vector<char> fragmentShaderCode = this->_readFile("shaders/frag.spv");
-
-    VkShaderModule vertexShaderModule = this->_createShaderModule(vertexShaderCode);
-    VkShaderModule fragmentShaderModule = this->_createShaderModule(fragmentShaderCode);
-
-    VkPipelineShaderStageCreateInfo vertexShaderStageCreateInfo{};
-    vertexShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertexShaderStageCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vertexShaderStageCreateInfo.module = vertexShaderModule;
-    vertexShaderStageCreateInfo.pName = "main";
-
-    VkPipelineShaderStageCreateInfo fragmentShaderStageCreateInfo{};
-    fragmentShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    fragmentShaderStageCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fragmentShaderStageCreateInfo.module = fragmentShaderModule;
-    fragmentShaderStageCreateInfo.pName = "main";
-
-    VkPipelineShaderStageCreateInfo shaderStages[] = { vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo };
-
-    std::vector<VkDynamicState> dynamicStates = {
-        VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR
-    };
-
-    VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo{};
-    dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
-    dynamicStateCreateInfo.pDynamicStates = dynamicStates.data();
-
-    VkVertexInputBindingDescription vertexInputBindingDescription = vft::getVertexInutBindingDescription();
-    VkVertexInputAttributeDescription vertexInputAttributeDescription = vft::getVertexInputAttributeDescription();
-
-    VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo{};
-    vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputStateCreateInfo.vertexBindingDescriptionCount = 1;
-    vertexInputStateCreateInfo.pVertexBindingDescriptions = &vertexInputBindingDescription;
-    vertexInputStateCreateInfo.vertexAttributeDescriptionCount = 1;
-    vertexInputStateCreateInfo.pVertexAttributeDescriptions = &vertexInputAttributeDescription;
-
-    VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCreateInfo{};
-    inputAssemblyStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    inputAssemblyStateCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    inputAssemblyStateCreateInfo.primitiveRestartEnable = VK_FALSE;
-
-    VkPipelineViewportStateCreateInfo viewportStateCreateInfo{};
-    viewportStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    viewportStateCreateInfo.viewportCount = 1;
-    viewportStateCreateInfo.scissorCount = 1;
-
-    VkPipelineRasterizationStateCreateInfo rasterizationStateCreateInfo{};
-    rasterizationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rasterizationStateCreateInfo.depthClampEnable = VK_FALSE;
-    rasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
-    rasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
-    rasterizationStateCreateInfo.lineWidth = 1.0f;
-    rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_NONE;
-    rasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
-    rasterizationStateCreateInfo.depthBiasEnable = VK_FALSE;
-
-    VkPipelineMultisampleStateCreateInfo multisampleStateCreateInfo{};
-    multisampleStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisampleStateCreateInfo.sampleShadingEnable = VK_FALSE;
-    multisampleStateCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-
-    VkPipelineColorBlendAttachmentState colorBlendAttachmentState{};
-    colorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    colorBlendAttachmentState.blendEnable = VK_TRUE;
-    colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-    colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    colorBlendAttachmentState.colorBlendOp = VK_BLEND_OP_ADD;
-    colorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-    colorBlendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-    colorBlendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
-
-    VkPipelineColorBlendStateCreateInfo colorBlendStateCreateInfo{};
-    colorBlendStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colorBlendStateCreateInfo.logicOpEnable = VK_FALSE;
-    colorBlendStateCreateInfo.attachmentCount = 1;
-    colorBlendStateCreateInfo.pAttachments = &colorBlendAttachmentState;
-
-    VkPushConstantRange pushConstantRange{};
-    pushConstantRange.size = sizeof(vft::CharacterPushConstants);
-    pushConstantRange.offset = 0;
-    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
-    pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutCreateInfo.setLayoutCount = 1;
-    pipelineLayoutCreateInfo.pSetLayouts = &this->_descriptorSetLayout;
-    pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
-    pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
-
-    if(vkCreatePipelineLayout(this->_logicalDevice, &pipelineLayoutCreateInfo, nullptr, &this->_pipelineLayout) != VK_SUCCESS) {
-        throw std::runtime_error("Error creating vulkan pipeline layout");
-    }
-
-    VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo{};
-    graphicsPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    graphicsPipelineCreateInfo.stageCount = 2;
-    graphicsPipelineCreateInfo.pStages = shaderStages;
-    graphicsPipelineCreateInfo.pVertexInputState = &vertexInputStateCreateInfo;
-    graphicsPipelineCreateInfo.pInputAssemblyState = &inputAssemblyStateCreateInfo;
-    graphicsPipelineCreateInfo.pViewportState = &viewportStateCreateInfo;
-    graphicsPipelineCreateInfo.pRasterizationState = &rasterizationStateCreateInfo;
-    graphicsPipelineCreateInfo.pMultisampleState = &multisampleStateCreateInfo;
-    graphicsPipelineCreateInfo.pDepthStencilState = nullptr;
-    graphicsPipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
-    graphicsPipelineCreateInfo.pDynamicState = &dynamicStateCreateInfo;
-    graphicsPipelineCreateInfo.layout = this->_pipelineLayout;
-    graphicsPipelineCreateInfo.renderPass = this->_renderPass;
-    graphicsPipelineCreateInfo.subpass = 0;
-
-    if(vkCreateGraphicsPipelines(this->_logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr, &this->_graphicsPipeline) != VK_SUCCESS) {
-        throw std::runtime_error("Error creating vulkan graphics pipeline");
-    }
-
-    vkDestroyShaderModule(this->_logicalDevice, vertexShaderModule, nullptr);
-    vkDestroyShaderModule(this->_logicalDevice, fragmentShaderModule, nullptr);
-}
-
-/**
  * @brief Creates vulkan frame buffers
  */
 void Scene::_createFramebuffers() {
@@ -1233,9 +886,7 @@ void Scene::_recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIn
     renderPassBeginInfo.pClearValues = &clearColor;
 
     vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_graphicsPipeline);
-
+    
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
@@ -1250,8 +901,7 @@ void Scene::_recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIn
 
     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_pipelineLayout, 0, 1, &(this->_descriptorSets.at(this->_currentFrameIndex)), 0, nullptr);
+    
     this->_renderer.draw(commandBuffer);
 
     vkCmdEndRenderPass(commandBuffer);
@@ -1293,7 +943,9 @@ void Scene::_createSynchronizationObjects() {
 void Scene::_drawFrame() {
     vkWaitForFences(this->_logicalDevice, 1, &this->_inFlightFences[this->_currentFrameIndex], true, UINT64_MAX);
 
-    this->_setUniformBuffers();
+    // Set uniform buffers used for rendering text
+    vft::UniformBufferObject ubo{ this->_camera->getViewMatrix(), this->_camera->getProjectionMatrix() };
+    this->_renderer.setUniformBuffers(ubo);
 
     uint32_t imageIndex;
     VkResult result = vkAcquireNextImageKHR(this->_logicalDevice, this->_swapChain, UINT64_MAX, this->_imageAvailableSemaphores[this->_currentFrameIndex], nullptr, &imageIndex);

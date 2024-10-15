@@ -1,17 +1,9 @@
 /**
- * @file text_block.h
+ * @file text_block.cpp
  * @author Christian Saloň
  */
 
-#include <iostream>
-
-#include <glm/ext/matrix_transform.hpp>
-
 #include "text_block.h"
-#include "text_renderer.h"
-#include "text_renderer_utils.h"
-#include "glyph_compositor.h"
-
 
 namespace vft {
 
@@ -92,17 +84,16 @@ void TextBlock::rotate(float x, float y, float z) {
 void TextBlock::add(std::vector<uint32_t> codePoints) {
     for(uint32_t codePoint : codePoints) {
         // Creates glyph info if not set
-        GlyphCompositor compositor;
-        compositor.compose(codePoint, this->_font);
+        Glyph glyph = this->_tessellator->composeGlyph(codePoint, this->_font);
 
         if(codePoint == vft::U_ENTER) {
             this->_penX = 0;
             this->_penY += this->getFontSize();
 
-            this->_characters.push_back(Character(codePoint, this->_font, this->_fontSize, glm::vec3(this->_penX, this->_penY, 0), this->_transform));
+            this->_characters.push_back(Character(glyph, codePoint, this->_font, this->_fontSize, glm::vec3(this->_penX, this->_penY, 0), this->_transform));
         }
         else if(codePoint == vft::U_TAB) {
-            this->_characters.push_back(Character(codePoint, this->_font, this->_fontSize, glm::vec3(this->_penX, this->_penY, 0), this->_transform));
+            this->_characters.push_back(Character(glyph, codePoint, this->_font, this->_fontSize, glm::vec3(this->_penX, this->_penY, 0), this->_transform));
 
             glm::vec2 scale = this->_font->getScalingVector(this->_fontSize);
             for(int i = 0; i < 4; i++) {
@@ -115,7 +106,7 @@ void TextBlock::add(std::vector<uint32_t> codePoints) {
 
             // Apply wrapping if specified
             bool wasWrapped = false;
-            if(this->_width >= 0 && this->_penX + (this->_font->getGlyphInfo(codePoint).getAdvanceX() * scale.x) > this->getWidth()) {
+            if(this->_width >= 0 && this->_penX + (glyph.getAdvanceX() * scale.x) > this->getWidth()) {
                 // Render character on new line by adding enter character
                 wasWrapped = true;
                 this->_penX = 0;
@@ -132,7 +123,7 @@ void TextBlock::add(std::vector<uint32_t> codePoints) {
                 this->_penX += delta.x * scale.x;
             }
 
-            this->_characters.push_back(Character(codePoint, this->_font, this->_fontSize, glm::vec3(this->_penX, this->_penY, 0), this->_transform));
+            this->_characters.push_back(Character(glyph, codePoint, this->_font, this->_fontSize, glm::vec3(this->_penX, this->_penY, 0), this->_transform));
 
             this->_penX += this->_characters.back().glyph.getAdvanceX() * scale.x;
             this->_penY += this->_characters.back().glyph.getAdvanceY() * scale.y;
@@ -287,6 +278,10 @@ void TextBlock::setWrapping(bool wrapping) {
         this->_wrapping = wrapping;
         this->_updateCharacters();
     }
+}
+
+void TextBlock::setTessellationStrategy(std::shared_ptr<Tessellator> tessellator) {
+    this->_tessellator = tessellator;
 }
 
 /**

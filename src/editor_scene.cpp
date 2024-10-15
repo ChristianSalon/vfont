@@ -15,13 +15,13 @@ EditorScene::EditorScene(CameraType cameraType) : Scene{cameraType} {
     this->_renderer.add(this->_textBlock);
 
     this->_window->setKeypressCallback([&](uint32_t codePoint) {
-        this->updateText(codePoint);
+        this->_updateText(codePoint);
     });
 }
 
 EditorScene::~EditorScene() {}
 
-void EditorScene::updateText(uint32_t codePoint) {
+void EditorScene::_updateText(uint32_t codePoint) {
     if(codePoint == vft::U_BACKSPACE) {
         this->_textBlock->remove();
     }

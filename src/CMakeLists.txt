@@ -40,29 +40,24 @@ if("${PLATFORM}" STREQUAL "USE_WAYLAND")
     set(VFONT_DEMO_SOURCES ${VFONT_DEMO_SOURCES} xdg-shell-client-protocol.h xdg-shell-protocol.c xdg-decoration-client-protocol.h xdg-decoration-protocol.c)
 endif()
 
-# Compile vertex and fragment shaders with glslc
-message(STATUS "Compiling shaders")
-if(NOT Vulkan_glslc_FOUND)
-    message(FATAL_ERROR "Error compiling shaders, glslc not found")
-endif()
-
-add_custom_target(shaders
-    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:vfont-demo>/shaders"
-    COMMAND ${Vulkan_GLSLC_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/shader.vert" -o "$<TARGET_FILE_DIR:vfont-demo>/shaders/vert.spv"
-    COMMAND ${Vulkan_GLSLC_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/shader.frag" -o "$<TARGET_FILE_DIR:vfont-demo>/shaders/frag.spv"
-    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shader.vert" "${CMAKE_CURRENT_SOURCE_DIR}/shader.frag"
-)
-
-# Add font files to executable directory
+# Add font files and vfont shaders to executable directory
 add_custom_command(TARGET vfont-demo POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:vfont-demo>/assets"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:vfont-demo>/shaders"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/roboto/Roboto-Regular.ttf" "$<TARGET_FILE_DIR:vfont-demo>/assets"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/jersey10/Jersey10-Regular.ttf" "$<TARGET_FILE_DIR:vfont-demo>/assets"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/crimsontext/CrimsonText-Italic.ttf" "$<TARGET_FILE_DIR:vfont-demo>/assets"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/robotomono/RobotoMono-Bold.ttf" "$<TARGET_FILE_DIR:vfont-demo>/assets"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/notosansjp/NotoSansJP-Regular.ttf" "$<TARGET_FILE_DIR:vfont-demo>/assets"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/assets/notoemoji/NotoEmoji.ttf" "$<TARGET_FILE_DIR:vfont-demo>/assets"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/libs/vfont/shaders/triangle-vert.spv" "$<TARGET_FILE_DIR:vfont-demo>/shaders"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/libs/vfont/shaders/triangle-frag.spv" "$<TARGET_FILE_DIR:vfont-demo>/shaders"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/libs/vfont/shaders/curve-vert.spv" "$<TARGET_FILE_DIR:vfont-demo>/shaders"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/libs/vfont/shaders/curve-tesc.spv" "$<TARGET_FILE_DIR:vfont-demo>/shaders"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/libs/vfont/shaders/curve-tese.spv" "$<TARGET_FILE_DIR:vfont-demo>/shaders"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/libs/vfont/shaders/curve-frag.spv" "$<TARGET_FILE_DIR:vfont-demo>/shaders"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/libs/vfont/shaders/winding_number-vert.spv" "$<TARGET_FILE_DIR:vfont-demo>/shaders"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/libs/vfont/shaders/winding_number-frag.spv" "$<TARGET_FILE_DIR:vfont-demo>/shaders"
 )
 
 target_sources(vfont-demo PRIVATE ${VFONT_DEMO_SOURCES})
-add_dependencies(vfont-demo shaders)

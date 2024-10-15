@@ -1,12 +1,9 @@
 /**
- * @file font.h
+ * @file font.cpp
  * @author Christian Saloň
  */
 
-#include <stdexcept>
-
 #include "font.h"
-#include "text_renderer_utils.h"
 
 namespace vft {
 
@@ -31,7 +28,6 @@ Font::Font(std::string fontFile) {
     FT_Set_Pixel_Sizes(this->_face, Font::DEFAULT_FONT_SIZE, 0);
 
     this->_supportsKerning = FT_HAS_KERNING(this->_face);
-    this->_initializeGlyphInfo();
 }
 
 /**
@@ -39,7 +35,7 @@ Font::Font(std::string fontFile) {
  *
  * @param fontFile Path to font file
  */
-Font::Font(uint8_t * buffer, long size) {
+Font::Font(uint8_t *buffer, long size) {
     if(size <= 0) {
         throw std::runtime_error("Buffer size must be greater than zero");
     }
@@ -55,24 +51,6 @@ Font::Font(uint8_t * buffer, long size) {
     FT_Set_Pixel_Sizes(this->_face, Font::DEFAULT_FONT_SIZE, 0);
 
     this->_supportsKerning = FT_HAS_KERNING(this->_face);
-    this->_initializeGlyphInfo();
-}
-
-/**
- * @brief Inserts triangulated glyph to cache
- * 
- * @param codePoint Unicode cde point of glyph
- * @param glyph Triangulated glyph
- */
-void Font::setGlyphInfo(uint32_t codePoint, Glyph glyph) {
-    this->_glyphInfo.insert({ codePoint, glyph });
-}
-
-/**
- * @brief Resets cached glyphs
- */
-void Font::clearGlyphInfo() {
-    this->_glyphInfo.clear();
 }
 
 /**
@@ -87,30 +65,6 @@ glm::vec2 Font::getScalingVector(unsigned int fontSize) const {
         (static_cast<double>(fontSize) / static_cast<double>(Font::DEFAULT_FONT_SIZE)) * (static_cast<double>(this->_face->size->metrics.x_scale) / 4194304.f),
         (static_cast<double>(fontSize) / static_cast<double>(Font::DEFAULT_FONT_SIZE)) * (static_cast<double>(this->_face->size->metrics.y_scale) / 4194304.f)
     );
-}
-
-/**
- * @brief Get cached glyph
- * 
- * @param codePoint Unicode code point of glyph
- * 
- * @return Cached glyph
- */
-const Glyph &Font::getGlyphInfo(uint32_t codePoint) const {
-    if(codePoint == vft::U_TAB) {
-        return this->_glyphInfo.at(vft::U_SPACE);
-    }
-
-    return this->_glyphInfo.at(codePoint);
-}
-
-/**
- * @brief Get all cached glyphs
- * 
- * @return Cached glyphs
- */
-const std::unordered_map<uint32_t, Glyph> &Font::getAllGlyphInfo() const {
-    return this->_glyphInfo;
 }
 
 /**
@@ -138,17 +92,6 @@ std::string Font::getFontFamily() const {
  */
 FT_Face Font::getFace() const {
     return this->_face;
-}
-
-/**
- * @brief Set initial cache for glyphs
- */
-void Font::_initializeGlyphInfo() {
-    this->_glyphInfo.clear();
-
-    this->_glyphInfo.insert({vft::U_ENTER, Glyph{}});
-    this->_glyphInfo.at(vft::U_ENTER).setAdvanceX(0);
-    this->_glyphInfo.at(vft::U_ENTER).setAdvanceY(this->_face->size->metrics.height);
 }
 
 }
