@@ -27,14 +27,12 @@ TextRenderer::~TextRenderer() {
  * @param commandPool Vulkan command pool
  * @param graphicsQueue Vulkan graphics queue
  */
-void TextRenderer::init(
-    TessellationStrategy tessellationStrategy,
-    VkPhysicalDevice physicalDevice,
-    VkDevice logicalDevice,
-    VkCommandPool commandPool,
-    VkQueue graphicsQueue,
-    VkRenderPass renderPass
-) {
+void TextRenderer::init(TessellationStrategy tessellationStrategy,
+                        VkPhysicalDevice physicalDevice,
+                        VkDevice logicalDevice,
+                        VkCommandPool commandPool,
+                        VkQueue graphicsQueue,
+                        VkRenderPass renderPass) {
     this->_setPhysicalDevice(physicalDevice);
     this->_setLogicalDevice(logicalDevice);
     this->_setCommandPool(commandPool);
@@ -44,16 +42,13 @@ void TextRenderer::init(
     if (tessellationStrategy == TessellationStrategy::CPU_ONLY) {
         this->_tessellator = std::make_shared<CpuTessellator>(this->_cache);
         this->_drawer = std::make_shared<CpuDrawer>(this->_cache);
-    }
-    else if(tessellationStrategy == TessellationStrategy::GPU_ONLY) {
+    } else if (tessellationStrategy == TessellationStrategy::GPU_ONLY) {
         this->_tessellator = std::make_shared<GpuTessellator>(this->_cache);
         this->_drawer = std::make_shared<GpuDrawer>(this->_cache);
-    }
-    else if (tessellationStrategy == TessellationStrategy::CPU_AND_GPU) {
+    } else if (tessellationStrategy == TessellationStrategy::CPU_AND_GPU) {
         this->_tessellator = std::make_shared<CombinedTessellator>(this->_cache);
         this->_drawer = std::make_shared<CombinedDrawer>(this->_cache);
-    }
-    else {
+    } else {
         throw std::runtime_error("Invalid tessellation strategy.");
     }
 
@@ -79,16 +74,14 @@ void TextRenderer::draw(VkCommandBuffer commandBuffer) {
 
 /**
  * @brief Add text block for rendering
- * 
+ *
  * @param text Text block to render
  */
 void TextRenderer::add(std::shared_ptr<TextBlock> text) {
     text->setTessellationStrategy(this->_tessellator);
     this->_blocks.push_back(text);
 
-    text->onTextChange = [this]() {
-        this->_drawer->recreateBuffers(this->_blocks);
-    };
+    text->onTextChange = [this]() { this->_drawer->recreateBuffers(this->_blocks); };
 
     this->_drawer->recreateBuffers(this->_blocks);
 }
@@ -103,7 +96,7 @@ void TextRenderer::setUniformBuffers(vft::UniformBufferObject ubo) {
  * @param physicalDevice Vulkan physical device
  */
 void TextRenderer::_setPhysicalDevice(VkPhysicalDevice physicalDevice) {
-    if(physicalDevice == nullptr)
+    if (physicalDevice == nullptr)
         throw std::runtime_error("Vulkan physical device is not initialized");
 
     this->_physicalDevice = physicalDevice;
@@ -115,7 +108,7 @@ void TextRenderer::_setPhysicalDevice(VkPhysicalDevice physicalDevice) {
  * @param logicalDevice Vulkan logical device
  */
 void TextRenderer::_setLogicalDevice(VkDevice logicalDevice) {
-    if(logicalDevice == nullptr)
+    if (logicalDevice == nullptr)
         throw std::runtime_error("Vulkan logical device is not initialized");
 
     this->_logicalDevice = logicalDevice;
@@ -127,7 +120,7 @@ void TextRenderer::_setLogicalDevice(VkDevice logicalDevice) {
  * @param commandPool Vulkan command pool
  */
 void TextRenderer::_setCommandPool(VkCommandPool commandPool) {
-    if(commandPool == nullptr)
+    if (commandPool == nullptr)
         throw std::runtime_error("Vulkan command pool is not initialized");
 
     this->_commandPool = commandPool;
@@ -139,7 +132,7 @@ void TextRenderer::_setCommandPool(VkCommandPool commandPool) {
  * @param graphicsQueue Vulkan graphics queue
  */
 void TextRenderer::_setGraphicsQueue(VkQueue graphicsQueue) {
-    if(graphicsQueue == nullptr)
+    if (graphicsQueue == nullptr)
         throw std::runtime_error("Vulkan graphics queue is not initialized");
 
     this->_graphicsQueue = graphicsQueue;
@@ -152,4 +145,4 @@ void TextRenderer::_setRenderPass(VkRenderPass renderPass) {
     this->_renderPass = renderPass;
 }
 
-}
+}  // namespace vft

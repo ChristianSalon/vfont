@@ -5,17 +5,17 @@
 
 #pragma once
 
-#include <vector>
 #include <array>
-#include <memory>
-#include <unordered_map>
 #include <cstdint>
-#include <stdexcept>
 #include <fstream>
+#include <memory>
+#include <stdexcept>
+#include <unordered_map>
+#include <vector>
 
 #include <vulkan/vulkan.h>
-#include <glm/vec2.hpp>
 #include <glm/mat4x4.hpp>
+#include <glm/vec2.hpp>
 
 #include "glyph_cache.h"
 #include "text_block.h"
@@ -24,44 +24,39 @@
 namespace vft {
 
 class Drawer {
-
 protected:
+    GlyphCache &_cache;
 
-    GlyphCache& _cache;
+    VkPhysicalDevice _physicalDevice{nullptr}; /**< Vulkan physical device */
+    VkDevice _logicalDevice{nullptr};          /**< Vulkan logical device */
+    VkCommandPool _commandPool{nullptr};       /**< Vulkan command pool */
+    VkQueue _graphicsQueue{nullptr};           /**< Vulkan graphics queue */
+    VkRenderPass _renderPass{nullptr};
 
-    VkPhysicalDevice _physicalDevice{ nullptr };                   /**< Vulkan physical device */
-    VkDevice _logicalDevice{ nullptr };                            /**< Vulkan logical device */
-    VkCommandPool _commandPool{ nullptr };                         /**< Vulkan command pool */
-    VkQueue _graphicsQueue{ nullptr };                             /**< Vulkan graphics queue */
-    VkRenderPass _renderPass{ nullptr };
+    VkDescriptorPool _descriptorPool{nullptr};
 
-    VkDescriptorPool _descriptorPool{ nullptr };
-    
-    VkDescriptorSetLayout _uboDescriptorSetLayout{ nullptr };
+    VkDescriptorSetLayout _uboDescriptorSetLayout{nullptr};
     std::vector<VkDescriptorSet> _uboDescriptorSets;
 
     std::vector<VkBuffer> _ubo;
     std::vector<VkDeviceMemory> _uboMemory;
-    std::vector<void*> _mappedUbo;
+    std::vector<void *> _mappedUbo;
 
 public:
-
     Drawer(GlyphCache &cache);
     ~Drawer();
 
-    virtual void init(
-        VkPhysicalDevice physicalDevice,
-        VkDevice logicalDevice,
-        VkCommandPool commandPool,
-        VkQueue graphicsQueue,
-        VkRenderPass renderPass);
+    virtual void init(VkPhysicalDevice physicalDevice,
+                      VkDevice logicalDevice,
+                      VkCommandPool commandPool,
+                      VkQueue graphicsQueue,
+                      VkRenderPass renderPass);
     void setUniformBuffers(vft::UniformBufferObject ubo);
 
     virtual void draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, VkCommandBuffer commandBuffer) = 0;
     virtual void recreateBuffers(std::vector<std::shared_ptr<TextBlock>> textBlocks) = 0;
 
 protected:
-
     virtual void _createDescriptorPool();
 
     void _createUbo();
@@ -69,14 +64,21 @@ protected:
     void _createUboDescriptorSets();
 
     std::vector<char> _readFile(std::string fileName);
-    VkShaderModule _createShaderModule(const std::vector<char>& shaderCode);
+    VkShaderModule _createShaderModule(const std::vector<char> &shaderCode);
 
-    void _stageAndCreateVulkanBuffer(void* data, VkDeviceSize size, VkBufferUsageFlags destinationUsage, VkBuffer& destinationBuffer, VkDeviceMemory& destinationMemory);
-    void _createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+    void _stageAndCreateVulkanBuffer(void *data,
+                                     VkDeviceSize size,
+                                     VkBufferUsageFlags destinationUsage,
+                                     VkBuffer &destinationBuffer,
+                                     VkDeviceMemory &destinationMemory);
+    void _createBuffer(VkDeviceSize size,
+                       VkBufferUsageFlags usage,
+                       VkMemoryPropertyFlags properties,
+                       VkBuffer &buffer,
+                       VkDeviceMemory &bufferMemory);
     void _copyBuffer(VkBuffer sourceBuffer, VkBuffer destinationBuffer, VkDeviceSize size);
-    void _destroyBuffer(VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+    void _destroyBuffer(VkBuffer &buffer, VkDeviceMemory &bufferMemory);
     uint32_t _selectMemoryType(uint32_t memoryType, VkMemoryPropertyFlags properties);
-
 };
 
-}
+}  // namespace vft

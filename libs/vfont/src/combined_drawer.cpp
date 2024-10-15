@@ -9,7 +9,7 @@
 
 namespace vft {
 
-CombinedDrawer::CombinedDrawer(GlyphCache& cache) : Drawer{ cache } {};
+CombinedDrawer::CombinedDrawer(GlyphCache &cache) : Drawer{cache} {};
 
 CombinedDrawer::~CombinedDrawer() {
     // Destroy vulkan buffers
@@ -29,13 +29,11 @@ CombinedDrawer::~CombinedDrawer() {
     vkDestroyPipelineLayout(this->_logicalDevice, this->_curveSegmentsPipelineLayout, nullptr);
 }
 
-void CombinedDrawer::init(
-    VkPhysicalDevice physicalDevice,
-    VkDevice logicalDevice,
-    VkCommandPool commandPool,
-    VkQueue graphicsQueue,
-    VkRenderPass renderPass
-) {
+void CombinedDrawer::init(VkPhysicalDevice physicalDevice,
+                          VkDevice logicalDevice,
+                          VkCommandPool commandPool,
+                          VkQueue graphicsQueue,
+                          VkRenderPass renderPass) {
     Drawer::init(physicalDevice, logicalDevice, commandPool, graphicsQueue, renderPass);
 
     this->_createLineSegmentsPipeline();
@@ -51,42 +49,49 @@ void CombinedDrawer::draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, Vk
     }
 
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_lineSegmentsPipeline);
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_lineSegmentsPipelineLayout, 0, 1, &(this->_uboDescriptorSets.at(i % 2)), 0, nullptr);
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_lineSegmentsPipelineLayout, 0, 1,
+                            &(this->_uboDescriptorSets.at(i % 2)), 0, nullptr);
 
-    VkBuffer vertexBuffers[] = { this->_vertexBuffer };
-    VkDeviceSize offsets[] = { 0 };
+    VkBuffer vertexBuffers[] = {this->_vertexBuffer};
+    VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
     // Draw line segments
     vkCmdBindIndexBuffer(commandBuffer, this->_lineSegmentsIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
     for (int i = 0; i < textBlocks.size(); i++) {
-        for (Character& character : textBlocks[i]->getCharacters()) {
+        for (Character &character : textBlocks[i]->getCharacters()) {
             if (character.glyph.mesh.getVertexCount() > 0) {
-                GlyphKey key{ textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint() };
+                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint()};
 
-                vft::CharacterPushConstants pushConstants{ character.getModelMatrix(), textBlocks.at(i)->getColor() };
-                vkCmdPushConstants(commandBuffer, this->_lineSegmentsPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(vft::CharacterPushConstants), &pushConstants);
+                vft::CharacterPushConstants pushConstants{character.getModelMatrix(), textBlocks.at(i)->getColor()};
+                vkCmdPushConstants(commandBuffer, this->_lineSegmentsPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
+                                   sizeof(vft::CharacterPushConstants), &pushConstants);
 
-                vkCmdDrawIndexed(commandBuffer, character.glyph.mesh.getIndexCount(GLYPH_MESH_TRIANGLE_BUFFER_INDEX), 1, this->_offsets.at(key).at(LINE_OFFSET_BUFFER_INDEX), 0, 0);
+                vkCmdDrawIndexed(commandBuffer, character.glyph.mesh.getIndexCount(GLYPH_MESH_TRIANGLE_BUFFER_INDEX), 1,
+                                 this->_offsets.at(key).at(LINE_OFFSET_BUFFER_INDEX), 0, 0);
             }
         }
     }
 
     // Draw curve segments
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_curveSegmentsPipeline);
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_curveSegmentsPipelineLayout, 0, 1, &(this->_uboDescriptorSets.at((i++) % 2)), 0, nullptr);
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_curveSegmentsPipelineLayout, 0, 1,
+                            &(this->_uboDescriptorSets.at((i++) % 2)), 0, nullptr);
 
     // vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
     vkCmdBindIndexBuffer(commandBuffer, this->_curveSegmentsIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
     for (int i = 0; i < textBlocks.size(); i++) {
-        for (Character& character : textBlocks[i]->getCharacters()) {
+        for (Character &character : textBlocks[i]->getCharacters()) {
             if (character.glyph.mesh.getVertexCount() > 0) {
-                GlyphKey key{ textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint() };
+                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint()};
 
-                vft::CharacterPushConstants pushConstants{ character.getModelMatrix(), textBlocks.at(i)->getColor() };
-                vkCmdPushConstants(commandBuffer, this->_curveSegmentsPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(vft::CharacterPushConstants), &pushConstants);
+                vft::CharacterPushConstants pushConstants{character.getModelMatrix(), textBlocks.at(i)->getColor()};
+                vkCmdPushConstants(commandBuffer, this->_curveSegmentsPipelineLayout,
+                                   VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                                   sizeof(vft::CharacterPushConstants), &pushConstants);
 
-                vkCmdDrawIndexed(commandBuffer, character.glyph.mesh.getIndexCount(GLYPH_MESH_CURVE_BUFFER_INDEX), 1, this->_offsets.at(key).at(CURVE_OFFSET_BUFFER_INDEX), 0, 0);
+                vkCmdDrawIndexed(commandBuffer, character.glyph.mesh.getIndexCount(GLYPH_MESH_CURVE_BUFFER_INDEX), 1,
+                                 this->_offsets.at(key).at(CURVE_OFFSET_BUFFER_INDEX), 0, 0);
             }
         }
     }
@@ -102,7 +107,7 @@ void CombinedDrawer::recreateBuffers(std::vector<std::shared_ptr<TextBlock>> tex
     this->_createVertexAndIndexBuffers(textBlocks);
 }
 
-void CombinedDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<TextBlock>>& textBlocks) {
+void CombinedDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<TextBlock>> &textBlocks) {
     this->_vertices.clear();
     this->_lineSegmentsIndices.clear();
     this->_curveSegmentsIndices.clear();
@@ -113,14 +118,21 @@ void CombinedDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<Te
     uint32_t curveSegmentsIndexCount = 0;
 
     for (int i = 0; i < textBlocks.size(); i++) {
-        for (Character& character : textBlocks[i]->getCharacters()) {
-            GlyphKey key{ textBlocks[i]->getFont()->getFontFamily(), character.getUnicodeCodePoint() };
+        for (Character &character : textBlocks[i]->getCharacters()) {
+            GlyphKey key{textBlocks[i]->getFont()->getFontFamily(), character.getUnicodeCodePoint()};
             if (!this->_offsets.contains(key)) {
-                this->_offsets.insert({ key, { lineSegmentsIndexCount, curveSegmentsIndexCount } });
+                this->_offsets.insert({key, {lineSegmentsIndexCount, curveSegmentsIndexCount}});
 
-                this->_vertices.insert(this->_vertices.end(), character.glyph.mesh.getVertices().begin(), character.glyph.mesh.getVertices().end());
-                this->_lineSegmentsIndices.insert(this->_lineSegmentsIndices.end(), character.glyph.mesh.getIndices(GLYPH_MESH_TRIANGLE_BUFFER_INDEX).begin(), character.glyph.mesh.getIndices(GLYPH_MESH_TRIANGLE_BUFFER_INDEX).end());
-                this->_curveSegmentsIndices.insert(this->_curveSegmentsIndices.end(), character.glyph.mesh.getIndices(GLYPH_MESH_CURVE_BUFFER_INDEX).begin(), character.glyph.mesh.getIndices(GLYPH_MESH_CURVE_BUFFER_INDEX).end());
+                this->_vertices.insert(this->_vertices.end(), character.glyph.mesh.getVertices().begin(),
+                                       character.glyph.mesh.getVertices().end());
+                this->_lineSegmentsIndices.insert(
+                    this->_lineSegmentsIndices.end(),
+                    character.glyph.mesh.getIndices(GLYPH_MESH_TRIANGLE_BUFFER_INDEX).begin(),
+                    character.glyph.mesh.getIndices(GLYPH_MESH_TRIANGLE_BUFFER_INDEX).end());
+                this->_curveSegmentsIndices.insert(
+                    this->_curveSegmentsIndices.end(),
+                    character.glyph.mesh.getIndices(GLYPH_MESH_CURVE_BUFFER_INDEX).begin(),
+                    character.glyph.mesh.getIndices(GLYPH_MESH_CURVE_BUFFER_INDEX).end());
 
                 // Add an offset to line segment indices of current character
                 for (int j = lineSegmentsIndexCount; j < this->_lineSegmentsIndices.size(); j++) {
@@ -146,20 +158,25 @@ void CombinedDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<Te
 
     // Create vertex buffer
     VkDeviceSize bufferSize = sizeof(this->_vertices.at(0)) * this->_vertices.size();
-    this->_stageAndCreateVulkanBuffer(this->_vertices.data(), bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, this->_vertexBuffer, this->_vertexBufferMemory);
+    this->_stageAndCreateVulkanBuffer(this->_vertices.data(), bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                                      this->_vertexBuffer, this->_vertexBufferMemory);
 
     // Check if at least one line segment exists
     if (lineSegmentsIndexCount > 0) {
         // Create index buffer for line segments
         VkDeviceSize bufferSize = sizeof(this->_lineSegmentsIndices.at(0)) * this->_lineSegmentsIndices.size();
-        this->_stageAndCreateVulkanBuffer(this->_lineSegmentsIndices.data(), bufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, this->_lineSegmentsIndexBuffer, this->_lineSegmentsIndexBufferMemory);
+        this->_stageAndCreateVulkanBuffer(this->_lineSegmentsIndices.data(), bufferSize,
+                                          VK_BUFFER_USAGE_INDEX_BUFFER_BIT, this->_lineSegmentsIndexBuffer,
+                                          this->_lineSegmentsIndexBufferMemory);
     }
 
     // Check if at least one curve segment exists
     if (curveSegmentsIndexCount > 0) {
         // Create index buffer for curve segments
         VkDeviceSize bufferSize = sizeof(this->_curveSegmentsIndices.at(0)) * this->_curveSegmentsIndices.size();
-        this->_stageAndCreateVulkanBuffer(this->_curveSegmentsIndices.data(), bufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, this->_curveSegmentsIndexBuffer, this->_curveSegmentsIndexBufferMemory);
+        this->_stageAndCreateVulkanBuffer(this->_curveSegmentsIndices.data(), bufferSize,
+                                          VK_BUFFER_USAGE_INDEX_BUFFER_BIT, this->_curveSegmentsIndexBuffer,
+                                          this->_curveSegmentsIndexBufferMemory);
     }
 }
 
@@ -182,12 +199,9 @@ void CombinedDrawer::_createLineSegmentsPipeline() {
     fragmentShaderStageCreateInfo.module = fragmentShaderModule;
     fragmentShaderStageCreateInfo.pName = "main";
 
-    VkPipelineShaderStageCreateInfo shaderStages[] = { vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo };
+    VkPipelineShaderStageCreateInfo shaderStages[] = {vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo};
 
-    std::vector<VkDynamicState> dynamicStates = {
-        VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR
-    };
+    std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 
     VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo{};
     dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -230,7 +244,8 @@ void CombinedDrawer::_createLineSegmentsPipeline() {
     multisampleStateCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     VkPipelineColorBlendAttachmentState colorBlendAttachmentState{};
-    colorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colorBlendAttachmentState.colorWriteMask =
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachmentState.blendEnable = VK_TRUE;
     colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
     colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
@@ -257,7 +272,8 @@ void CombinedDrawer::_createLineSegmentsPipeline() {
     pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
     pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 
-    if (vkCreatePipelineLayout(this->_logicalDevice, &pipelineLayoutCreateInfo, nullptr, &this->_lineSegmentsPipelineLayout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(this->_logicalDevice, &pipelineLayoutCreateInfo, nullptr,
+                               &this->_lineSegmentsPipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan pipeline layout");
     }
 
@@ -277,7 +293,8 @@ void CombinedDrawer::_createLineSegmentsPipeline() {
     graphicsPipelineCreateInfo.renderPass = this->_renderPass;
     graphicsPipelineCreateInfo.subpass = 0;
 
-    if (vkCreateGraphicsPipelines(this->_logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr, &this->_lineSegmentsPipeline) != VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(this->_logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr,
+                                  &this->_lineSegmentsPipeline) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan graphics pipeline");
     }
 
@@ -342,10 +359,7 @@ void CombinedDrawer::_createCurveSegmentsPipeline() {
     shaderStages[3].module = fragmentShaderModule;
     shaderStages[3].pName = "main";
 
-    std::vector<VkDynamicState> dynamicStates = {
-        VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR
-    };
+    std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 
     VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo{};
     dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -392,7 +406,8 @@ void CombinedDrawer::_createCurveSegmentsPipeline() {
     multisampleStateCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     VkPipelineColorBlendAttachmentState colorBlendAttachmentState{};
-    colorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colorBlendAttachmentState.colorWriteMask =
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachmentState.blendEnable = VK_TRUE;
     colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
     colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
@@ -419,7 +434,8 @@ void CombinedDrawer::_createCurveSegmentsPipeline() {
     pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
     pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 
-    if (vkCreatePipelineLayout(this->_logicalDevice, &pipelineLayoutCreateInfo, nullptr, &this->_curveSegmentsPipelineLayout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(this->_logicalDevice, &pipelineLayoutCreateInfo, nullptr,
+                               &this->_curveSegmentsPipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan pipeline layout");
     }
 
@@ -440,7 +456,8 @@ void CombinedDrawer::_createCurveSegmentsPipeline() {
     graphicsPipelineCreateInfo.renderPass = this->_renderPass;
     graphicsPipelineCreateInfo.subpass = 0;
 
-    if (vkCreateGraphicsPipelines(this->_logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr, &this->_curveSegmentsPipeline) != VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(this->_logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr,
+                                  &this->_curveSegmentsPipeline) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan graphics pipeline");
     }
 
@@ -450,4 +467,4 @@ void CombinedDrawer::_createCurveSegmentsPipeline() {
     vkDestroyShaderModule(this->_logicalDevice, fragmentShaderModule, nullptr);
 }
 
-}
+}  // namespace vft

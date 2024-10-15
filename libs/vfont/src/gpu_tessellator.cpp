@@ -7,10 +7,10 @@
 
 namespace vft {
 
-GpuTessellator::GpuTessellator(GlyphCache& cache) : Tessellator{ cache } {}
+GpuTessellator::GpuTessellator(GlyphCache &cache) : Tessellator{cache} {}
 
 Glyph GpuTessellator::composeGlyph(uint32_t codePoint, std::shared_ptr<vft::Font> font) {
-    GlyphKey key{ font->getFontFamily(), codePoint };
+    GlyphKey key{font->getFontFamily(), codePoint};
     if (this->_cache.exists(key)) {
         return this->_cache.getGlyph(key);
     }
@@ -23,7 +23,8 @@ Glyph GpuTessellator::composeGlyph(uint32_t codePoint, std::shared_ptr<vft::Font
 
     // Create bounding box indices that form two triangles
     uint32_t newVertexIndex = vertices.size();
-    std::vector<uint32_t> boundingBoxIndices = { newVertexIndex, newVertexIndex + 3, newVertexIndex + 1, newVertexIndex + 2, newVertexIndex + 1, newVertexIndex + 3 };
+    std::vector<uint32_t> boundingBoxIndices = {newVertexIndex,     newVertexIndex + 3, newVertexIndex + 1,
+                                                newVertexIndex + 2, newVertexIndex + 1, newVertexIndex + 3};
 
     // Add bounding box vertices to vertex buffer if neccessary
     std::array<glm::vec2, 4> boundingBoxVertices = glyph.getBoundingBox();
@@ -34,12 +35,12 @@ Glyph GpuTessellator::composeGlyph(uint32_t codePoint, std::shared_ptr<vft::Font
 
     // Make line segments continuous
     for (vft::Curve curve : curveSegments) {
-        if (GpuTessellator::_isOnRightSide(vertices.at(curve.start), vertices.at(curve.end), vertices.at(curve.control))) {
-            lineSegments.push_back({ curve.start, curve.control });
-            lineSegments.push_back({ curve.control, curve.end });
-        }
-        else {
-            lineSegments.push_back({ curve.start, curve.end });
+        if (GpuTessellator::_isOnRightSide(vertices.at(curve.start), vertices.at(curve.end),
+                                           vertices.at(curve.control))) {
+            lineSegments.push_back({curve.start, curve.control});
+            lineSegments.push_back({curve.control, curve.end});
+        } else {
+            lineSegments.push_back({curve.start, curve.end});
         }
     }
 
@@ -58,11 +59,11 @@ Glyph GpuTessellator::composeGlyph(uint32_t codePoint, std::shared_ptr<vft::Font
         curveIndices.push_back(curve.end);
     }
 
-    GlyphMesh mesh{ vertices, { boundingBoxIndices, curveIndices, lineIndices } };
+    GlyphMesh mesh{vertices, {boundingBoxIndices, curveIndices, lineIndices}};
     glyph.mesh = mesh;
     this->_cache.setGlyph(key, glyph);
 
     return glyph;
 }
 
-}
+}  // namespace vft

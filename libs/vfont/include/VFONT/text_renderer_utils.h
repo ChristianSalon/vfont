@@ -42,81 +42,60 @@ static VkVertexInputAttributeDescription getVertexInputAttributeDescription() {
  * @brief Represents an edge between two vertices
  */
 class Edge {
-
 public:
-
-    uint32_t first;     /**< First vertex index */
-    uint32_t second;    /**< Second vertex index */
+    uint32_t first;  /**< First vertex index */
+    uint32_t second; /**< Second vertex index */
 
     Edge(uint32_t first, uint32_t second) : first{first}, second{second} {};
 
     bool operator==(const Edge &edge) const { return this->first == edge.first && this->second == edge.second; };
     inline bool isInverse(const Edge &edge) { return this->first == edge.second && this->second == edge.first; };
-
 };
 
 class Curve {
-
 public:
-
     uint32_t start;
     uint32_t control;
     uint32_t end;
 
     Curve(uint32_t start, uint32_t control, uint32_t end) : start{start}, control{control}, end{end} {};
 
-    bool operator==(const Curve& curve) const { return this->start == curve.start && this->control == curve.control && this->end == curve.end; };
-
+    bool operator==(const Curve &curve) const {
+        return this->start == curve.start && this->control == curve.control && this->end == curve.end;
+    };
 };
 
 /**
  * @brief Push constants used by Vulkan for rendering
  */
 class CharacterPushConstants {
-
 public:
-
-    glm::mat4 model;    /**< Model matrix of character */
-    glm::vec4 color;    /**< Color of character */
+    glm::mat4 model; /**< Model matrix of character */
+    glm::vec4 color; /**< Color of character */
 
     CharacterPushConstants(glm::mat4 model, glm::vec4 color) : model{model}, color{color} {};
-
 };
 
 class ComposedGlyphData {
-
 public:
-    
-    uint32_t vertexId;              /**< Currently processed glyph's vertex id counter */
-    uint32_t contourStartVertexId;  /**< Vertex id for the starting vertex of a contour */
-    glm::vec2 lastVertex;           /**< Last vertex processed */
-    int contourCount;               /**< Number of processed contours */
+    uint32_t vertexId;             /**< Currently processed glyph's vertex id counter */
+    uint32_t contourStartVertexId; /**< Vertex id for the starting vertex of a contour */
+    glm::vec2 lastVertex;          /**< Last vertex processed */
+    int contourCount;              /**< Number of processed contours */
 
-    ComposedGlyphData() :
-        vertexId{0},
-        contourStartVertexId{0},
-        lastVertex{0,0},
-        contourCount{0} {}
-
+    ComposedGlyphData() : vertexId{0}, contourStartVertexId{0}, lastVertex{0, 0}, contourCount{0} {}
 };
 
 /**
  * @brief Uniform buffer object
  */
 class UniformBufferObject {
-
 public:
-
     glm::mat4 view;
     glm::mat4 projection;
 
-    UniformBufferObject(glm::mat4 view, glm::mat4 projection) :
-        view{view},
-        projection{projection} {}
-    UniformBufferObject() :
-        view{glm::mat4(1.f)},
-        projection{glm::mat4(1.f)} {}
-
+    UniformBufferObject(glm::mat4 view, glm::mat4 projection) : view{view}, projection{projection} {}
+    UniformBufferObject() : view{glm::mat4(1.f)}, projection{glm::mat4(1.f)} {}
 };
 
-}
+}  // namespace vft

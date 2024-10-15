@@ -7,7 +7,7 @@
 
 namespace vft {
 
-CpuDrawer::CpuDrawer(GlyphCache& cache) : Drawer{ cache } {};
+CpuDrawer::CpuDrawer(GlyphCache &cache) : Drawer{cache} {};
 
 CpuDrawer::~CpuDrawer() {
     // Destroy vulkan buffers
@@ -21,13 +21,11 @@ CpuDrawer::~CpuDrawer() {
     vkDestroyPipelineLayout(this->_logicalDevice, this->_pipelineLayout, nullptr);
 }
 
-void CpuDrawer::init(
-    VkPhysicalDevice physicalDevice,
-    VkDevice logicalDevice,
-    VkCommandPool commandPool,
-    VkQueue graphicsQueue,
-    VkRenderPass renderPass
-) {
+void CpuDrawer::init(VkPhysicalDevice physicalDevice,
+                     VkDevice logicalDevice,
+                     VkCommandPool commandPool,
+                     VkQueue graphicsQueue,
+                     VkRenderPass renderPass) {
     Drawer::init(physicalDevice, logicalDevice, commandPool, graphicsQueue, renderPass);
 
     this->_createPipeline();
@@ -42,20 +40,22 @@ void CpuDrawer::draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, VkComma
     }
 
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_pipeline);
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_pipelineLayout, 0, 1, &(this->_uboDescriptorSets.at(i % 2)), 0, nullptr);
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_pipelineLayout, 0, 1,
+                            &(this->_uboDescriptorSets.at(i % 2)), 0, nullptr);
 
-    VkBuffer vertexBuffers[] = { this->_vertexBuffer };
-    VkDeviceSize offsets[] = { 0 };
+    VkBuffer vertexBuffers[] = {this->_vertexBuffer};
+    VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
     vkCmdBindIndexBuffer(commandBuffer, this->_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
     for (int i = 0; i < textBlocks.size(); i++) {
-        for (Character& character : textBlocks[i]->getCharacters()) {
+        for (Character &character : textBlocks[i]->getCharacters()) {
             if (character.glyph.mesh.getVertexCount() > 0) {
-                GlyphKey key{ textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint() };
+                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint()};
 
-                vft::CharacterPushConstants pushConstants{ character.getModelMatrix(), textBlocks.at(i)->getColor() };
-                vkCmdPushConstants(commandBuffer, this->_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(vft::CharacterPushConstants), &pushConstants);
+                vft::CharacterPushConstants pushConstants{character.getModelMatrix(), textBlocks.at(i)->getColor()};
+                vkCmdPushConstants(commandBuffer, this->_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
+                                   sizeof(vft::CharacterPushConstants), &pushConstants);
 
                 vkCmdDrawIndexed(commandBuffer, character.glyph.mesh.getIndexCount(0), 1, this->_offsets.at(key), 0, 0);
             }
@@ -72,7 +72,7 @@ void CpuDrawer::recreateBuffers(std::vector<std::shared_ptr<TextBlock>> textBloc
     this->_createVertexAndIndexBuffers(textBlocks);
 }
 
-void CpuDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<TextBlock>>& textBlocks) {
+void CpuDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<TextBlock>> &textBlocks) {
     this->_vertices.clear();
     this->_indices.clear();
     this->_offsets.clear();
@@ -81,13 +81,15 @@ void CpuDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<TextBlo
     uint32_t indexCount = 0;
 
     for (int i = 0; i < textBlocks.size(); i++) {
-        for (Character& character : textBlocks[i]->getCharacters()) {
-            GlyphKey key{ textBlocks[i]->getFont()->getFontFamily(), character.getUnicodeCodePoint() };
+        for (Character &character : textBlocks[i]->getCharacters()) {
+            GlyphKey key{textBlocks[i]->getFont()->getFontFamily(), character.getUnicodeCodePoint()};
             if (!this->_offsets.contains(key)) {
-                this->_offsets.insert({ key, indexCount });
+                this->_offsets.insert({key, indexCount});
 
-                this->_vertices.insert(this->_vertices.end(), character.glyph.mesh.getVertices().begin(), character.glyph.mesh.getVertices().end());
-                this->_indices.insert(this->_indices.end(), character.glyph.mesh.getIndices(0).begin(), character.glyph.mesh.getIndices(0).end());
+                this->_vertices.insert(this->_vertices.end(), character.glyph.mesh.getVertices().begin(),
+                                       character.glyph.mesh.getVertices().end());
+                this->_indices.insert(this->_indices.end(), character.glyph.mesh.getIndices(0).begin(),
+                                      character.glyph.mesh.getIndices(0).end());
 
                 // Add an offset to line segment indices of current character
                 for (int j = indexCount; j < this->_indices.size(); j++) {
@@ -107,11 +109,13 @@ void CpuDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<TextBlo
 
     // Create vertex buffer
     VkDeviceSize vertexBufferSize = sizeof(this->_vertices.at(0)) * this->_vertices.size();
-    this->_stageAndCreateVulkanBuffer(this->_vertices.data(), vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, this->_vertexBuffer, this->_vertexBufferMemory);
+    this->_stageAndCreateVulkanBuffer(this->_vertices.data(), vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                                      this->_vertexBuffer, this->_vertexBufferMemory);
 
     // Create index buffer
     VkDeviceSize indexBufferSize = sizeof(this->_indices.at(0)) * this->_indices.size();
-    this->_stageAndCreateVulkanBuffer(this->_indices.data(), indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, this->_indexBuffer, this->_indexBufferMemory);
+    this->_stageAndCreateVulkanBuffer(this->_indices.data(), indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                                      this->_indexBuffer, this->_indexBufferMemory);
 }
 
 void CpuDrawer::_createPipeline() {
@@ -133,12 +137,9 @@ void CpuDrawer::_createPipeline() {
     fragmentShaderStageCreateInfo.module = fragmentShaderModule;
     fragmentShaderStageCreateInfo.pName = "main";
 
-    VkPipelineShaderStageCreateInfo shaderStages[] = { vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo };
+    VkPipelineShaderStageCreateInfo shaderStages[] = {vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo};
 
-    std::vector<VkDynamicState> dynamicStates = {
-        VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR
-    };
+    std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 
     VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo{};
     dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -181,7 +182,8 @@ void CpuDrawer::_createPipeline() {
     multisampleStateCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     VkPipelineColorBlendAttachmentState colorBlendAttachmentState{};
-    colorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colorBlendAttachmentState.colorWriteMask =
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachmentState.blendEnable = VK_TRUE;
     colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
     colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
@@ -208,7 +210,8 @@ void CpuDrawer::_createPipeline() {
     pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
     pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 
-    if (vkCreatePipelineLayout(this->_logicalDevice, &pipelineLayoutCreateInfo, nullptr, &this->_pipelineLayout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(this->_logicalDevice, &pipelineLayoutCreateInfo, nullptr, &this->_pipelineLayout) !=
+        VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan pipeline layout");
     }
 
@@ -228,7 +231,8 @@ void CpuDrawer::_createPipeline() {
     graphicsPipelineCreateInfo.renderPass = this->_renderPass;
     graphicsPipelineCreateInfo.subpass = 0;
 
-    if (vkCreateGraphicsPipelines(this->_logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr, &this->_pipeline) != VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(this->_logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr,
+                                  &this->_pipeline) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan graphics pipeline");
     }
 
@@ -236,4 +240,4 @@ void CpuDrawer::_createPipeline() {
     vkDestroyShaderModule(this->_logicalDevice, fragmentShaderModule, nullptr);
 }
 
-}
+}  // namespace vft

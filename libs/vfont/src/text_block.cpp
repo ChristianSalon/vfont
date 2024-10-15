@@ -9,7 +9,7 @@ namespace vft {
 
 /**
  * @brief TextBloc constructor
- * 
+ *
  * @param font Font used in text block
  * @param fontSize Font size in pixels
  * @param color Font color
@@ -18,29 +18,29 @@ namespace vft {
  * @param kerning Indicates whether to use kerning in block
  * @param wrapping Indicates whether to use wrapping in block
  */
-TextBlock::TextBlock(
-    std::shared_ptr<Font> font,
-    unsigned int fontSize,
-    glm::vec4 color,
-    glm::vec3 position,
-    int width,
-    bool kerning,
-    bool wrapping) : _font{font},
-                     _fontSize{fontSize},
-                    _penX{0},
-                    _penY{static_cast<int>(fontSize)},
-                    _transform{glm::mat4(1.f)},
-                    _position{glm::vec3(0, 0, 0)} {
+TextBlock::TextBlock(std::shared_ptr<Font> font,
+                     unsigned int fontSize,
+                     glm::vec4 color,
+                     glm::vec3 position,
+                     int width,
+                     bool kerning,
+                     bool wrapping)
+    : _font{font},
+      _fontSize{fontSize},
+      _penX{0},
+      _penY{static_cast<int>(fontSize)},
+      _transform{glm::mat4(1.f)},
+      _position{glm::vec3(0, 0, 0)} {
     this->setKerning(kerning);
     this->setWrapping(wrapping);
     this->setWidth(width);
     this->setColor(color);
     this->setPosition(position);
- }
+}
 
 /**
  * @brief Apply scale to text block
- * 
+ *
  * @param x Scale in X direction
  * @param y Scale in Y direction
  * @param z Scale in Z direction
@@ -78,35 +78,35 @@ void TextBlock::rotate(float x, float y, float z) {
 
 /**
  * @brief Add characters to block
- * 
+ *
  * @param codePoints Unicode code points of characters
  */
 void TextBlock::add(std::vector<uint32_t> codePoints) {
-    for(uint32_t codePoint : codePoints) {
+    for (uint32_t codePoint : codePoints) {
         // Creates glyph info if not set
         Glyph glyph = this->_tessellator->composeGlyph(codePoint, this->_font);
 
-        if(codePoint == vft::U_ENTER) {
+        if (codePoint == vft::U_ENTER) {
             this->_penX = 0;
             this->_penY += this->getFontSize();
 
-            this->_characters.push_back(Character(glyph, codePoint, this->_font, this->_fontSize, glm::vec3(this->_penX, this->_penY, 0), this->_transform));
-        }
-        else if(codePoint == vft::U_TAB) {
-            this->_characters.push_back(Character(glyph, codePoint, this->_font, this->_fontSize, glm::vec3(this->_penX, this->_penY, 0), this->_transform));
+            this->_characters.push_back(Character(glyph, codePoint, this->_font, this->_fontSize,
+                                                  glm::vec3(this->_penX, this->_penY, 0), this->_transform));
+        } else if (codePoint == vft::U_TAB) {
+            this->_characters.push_back(Character(glyph, codePoint, this->_font, this->_fontSize,
+                                                  glm::vec3(this->_penX, this->_penY, 0), this->_transform));
 
             glm::vec2 scale = this->_font->getScalingVector(this->_fontSize);
-            for(int i = 0; i < 4; i++) {
+            for (int i = 0; i < 4; i++) {
                 this->_penX += this->_characters.back().glyph.getAdvanceX() * scale.x;
                 this->_penY += this->_characters.back().glyph.getAdvanceY() * scale.y;
             }
-        }
-        else {
+        } else {
             glm::vec2 scale = this->_font->getScalingVector(this->_fontSize);
 
             // Apply wrapping if specified
             bool wasWrapped = false;
-            if(this->_width >= 0 && this->_penX + (glyph.getAdvanceX() * scale.x) > this->getWidth()) {
+            if (this->_width >= 0 && this->_penX + (glyph.getAdvanceX() * scale.x) > this->getWidth()) {
                 // Render character on new line by adding enter character
                 wasWrapped = true;
                 this->_penX = 0;
@@ -114,8 +114,9 @@ void TextBlock::add(std::vector<uint32_t> codePoints) {
             }
 
             // Apply kerning if specified
-            if(!wasWrapped && this->_kerning && this->_characters.size() > 0) {
-                uint32_t leftCharIndex = FT_Get_Char_Index(this->_font->getFace(), this->_characters.back().getUnicodeCodePoint());
+            if (!wasWrapped && this->_kerning && this->_characters.size() > 0) {
+                uint32_t leftCharIndex =
+                    FT_Get_Char_Index(this->_font->getFace(), this->_characters.back().getUnicodeCodePoint());
                 uint32_t rightCharIndex = FT_Get_Char_Index(this->_font->getFace(), codePoint);
 
                 FT_Vector delta;
@@ -123,13 +124,14 @@ void TextBlock::add(std::vector<uint32_t> codePoints) {
                 this->_penX += delta.x * scale.x;
             }
 
-            this->_characters.push_back(Character(glyph, codePoint, this->_font, this->_fontSize, glm::vec3(this->_penX, this->_penY, 0), this->_transform));
+            this->_characters.push_back(Character(glyph, codePoint, this->_font, this->_fontSize,
+                                                  glm::vec3(this->_penX, this->_penY, 0), this->_transform));
 
             this->_penX += this->_characters.back().glyph.getAdvanceX() * scale.x;
             this->_penY += this->_characters.back().glyph.getAdvanceY() * scale.y;
         }
 
-        if(this->onTextChange) {
+        if (this->onTextChange) {
             this->onTextChange();
         }
     }
@@ -137,15 +139,14 @@ void TextBlock::add(std::vector<uint32_t> codePoints) {
 
 /**
  * @brief Remove characters from end of text block
- * 
+ *
  * @param count Amount of characters to remove
  */
 void TextBlock::remove(unsigned int count) {
-    for(unsigned int i = 0; i < count; i++) {
-        if(this->_characters.size() == 0) {
+    for (unsigned int i = 0; i < count; i++) {
+        if (this->_characters.size() == 0) {
             return;
-        }
-        else if(this->_characters.size() == 1) {
+        } else if (this->_characters.size() == 1) {
             this->_characters.pop_back();
             this->_penX = 0;
             this->_penY = this->getFontSize();
@@ -155,31 +156,31 @@ void TextBlock::remove(unsigned int count) {
 
         glm::vec2 scale = this->_font->getScalingVector(this->_fontSize);
 
-        if(this->_characters.back().getUnicodeCodePoint() == vft::U_ENTER) {
+        if (this->_characters.back().getUnicodeCodePoint() == vft::U_ENTER) {
             this->_characters.pop_back();
 
-            this->_penX = this->_characters.back().getPosition().x + this->_characters.back().glyph.getAdvanceX() * scale.x;
+            this->_penX =
+                this->_characters.back().getPosition().x + this->_characters.back().glyph.getAdvanceX() * scale.x;
             this->_penY -= this->getFontSize();
-        }
-        else {
+        } else {
             this->_characters.pop_back();
 
-            if(this->_characters.back().getUnicodeCodePoint() == vft::U_TAB) {
+            if (this->_characters.back().getUnicodeCodePoint() == vft::U_TAB) {
                 this->_penX = this->_characters.back().getPosition().x;
                 this->_penY = this->_characters.back().getPosition().y;
 
-                for(int i = 0; i < 4; i++) {
+                for (int i = 0; i < 4; i++) {
                     this->_penX += this->_characters.back().glyph.getAdvanceX() * scale.x;
                 }
-            }
-            else {
-                this->_penX = this->_characters.back().getPosition().x + this->_characters.back().glyph.getAdvanceX() * scale.x;
+            } else {
+                this->_penX =
+                    this->_characters.back().getPosition().x + this->_characters.back().glyph.getAdvanceX() * scale.x;
                 this->_penY = this->_characters.back().getPosition().y;
             }
         }
     }
 
-    if(this->onTextChange) {
+    if (this->onTextChange) {
         this->onTextChange();
     }
 }
@@ -193,7 +194,7 @@ void TextBlock::clear() {
 
 /**
  * @brief Set font in text block
- * 
+ *
  * @param font Font
  */
 void TextBlock::setFont(std::shared_ptr<Font> font) {
@@ -203,9 +204,9 @@ void TextBlock::setFont(std::shared_ptr<Font> font) {
 
 /**
  * @brief Set font size of characters in text block
- * 
+ *
  * @param fontSize Font size in pixels
-*/
+ */
 void TextBlock::setFontSize(unsigned int fontSize) {
     this->_fontSize = fontSize;
     this->_updateCharacters();
@@ -213,7 +214,7 @@ void TextBlock::setFontSize(unsigned int fontSize) {
 
 /**
  * @brief Set color of characters in text block
- * 
+ *
  * @param color Color
  */
 void TextBlock::setColor(glm::vec4 color) {
@@ -222,7 +223,7 @@ void TextBlock::setColor(glm::vec4 color) {
 
 /**
  * @brief Set position of text block in scene
- * 
+ *
  * @param position 3D position
  */
 void TextBlock::setPosition(glm::vec3 position) {
@@ -233,7 +234,7 @@ void TextBlock::setPosition(glm::vec3 position) {
 
 /**
  * @brief Set transform of text block and update characters
- * 
+ *
  * @param transform Transform matrix
  */
 void TextBlock::setTransform(glm::mat4 transform) {
@@ -243,7 +244,7 @@ void TextBlock::setTransform(glm::mat4 transform) {
 
 /**
  * @brief Set width of text block. -1 indicates unlimited width
- * 
+ *
  * @param width Width of text block
  */
 void TextBlock::setWidth(int width) {
@@ -253,16 +254,16 @@ void TextBlock::setWidth(int width) {
 
 /**
  * @brief Check if font supports kerning, apply if supported and update characters
- * 
+ *
  * @param kerning Indicates whether to use kerning in text block
  */
 void TextBlock::setKerning(bool kerning) {
-    if(kerning && !this->_font->supportsKerning()) {
+    if (kerning && !this->_font->supportsKerning()) {
         std::cerr << "Font " << this->_font->getFontFamily() << " does not support kerning" << std::endl;
         return;
     }
 
-    if(this->getKerning() != kerning) {
+    if (this->getKerning() != kerning) {
         this->_kerning = kerning;
         this->_updateCharacters();
     }
@@ -274,7 +275,7 @@ void TextBlock::setKerning(bool kerning) {
  * @param kerning Indicates whether to use wrapping in text block
  */
 void TextBlock::setWrapping(bool wrapping) {
-    if(this->getWrapping() != wrapping) {
+    if (this->getWrapping() != wrapping) {
         this->_wrapping = wrapping;
         this->_updateCharacters();
     }
@@ -286,7 +287,7 @@ void TextBlock::setTessellationStrategy(std::shared_ptr<Tessellator> tessellator
 
 /**
  * @brief Get all characters in text block
- * 
+ *
  * @return Characters in text block
  */
 std::vector<Character> &TextBlock::getCharacters() {
@@ -295,7 +296,7 @@ std::vector<Character> &TextBlock::getCharacters() {
 
 /**
  * @brief Get font used in text block
- * 
+ *
  * @return Font used in text block
  */
 std::shared_ptr<Font> TextBlock::getFont() const {
@@ -370,7 +371,7 @@ bool TextBlock::getWrapping() const {
  */
 void TextBlock::_updateCharacters() {
     std::vector<uint32_t> codePoints;
-    for(Character &character : this->_characters) {
+    for (Character &character : this->_characters) {
         codePoints.push_back(character.getUnicodeCodePoint());
     }
 
@@ -382,9 +383,9 @@ void TextBlock::_updateCharacters() {
  * @brief Update all characters and use new transform of text block
  */
 void TextBlock::_updateTransform() {
-    for(Character &character : this->_characters) {
+    for (Character &character : this->_characters) {
         character.transform(this->getTransform(), this->_font, this->_fontSize);
     }
 }
 
-}
+}  // namespace vft

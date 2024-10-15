@@ -10,7 +10,7 @@
 
 namespace vft {
 
-GpuDrawer::GpuDrawer(GlyphCache& cache) : Drawer{ cache } {};
+GpuDrawer::GpuDrawer(GlyphCache &cache) : Drawer{cache} {};
 
 GpuDrawer::~GpuDrawer() {
     // Destroy vulkan buffers
@@ -35,13 +35,11 @@ GpuDrawer::~GpuDrawer() {
     vkDestroyPipelineLayout(this->_logicalDevice, this->_curveSegmentsPipelineLayout, nullptr);
 }
 
-void GpuDrawer::init(
-    VkPhysicalDevice physicalDevice,
-    VkDevice logicalDevice,
-    VkCommandPool commandPool,
-    VkQueue graphicsQueue,
-    VkRenderPass renderPass
-) {
+void GpuDrawer::init(VkPhysicalDevice physicalDevice,
+                     VkDevice logicalDevice,
+                     VkCommandPool commandPool,
+                     VkQueue graphicsQueue,
+                     VkRenderPass renderPass) {
     Drawer::init(physicalDevice, logicalDevice, commandPool, graphicsQueue, renderPass);
 
     this->_createLineSegmentsDescriptorSetLayout();
@@ -61,44 +59,55 @@ void GpuDrawer::draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, VkComma
 
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_lineSegmentsPipeline);
 
-    std::array<VkDescriptorSet, 2> sets = { this->_uboDescriptorSets.at(i % 2), this->_lineSegmentsDescriptorSets.at(0) };
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_lineSegmentsPipelineLayout, 0, sets.size(), sets.data(), 0, nullptr);
+    std::array<VkDescriptorSet, 2> sets = {this->_uboDescriptorSets.at(i % 2), this->_lineSegmentsDescriptorSets.at(0)};
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_lineSegmentsPipelineLayout, 0,
+                            sets.size(), sets.data(), 0, nullptr);
 
-    VkBuffer vertexBuffers[] = { this->_vertexBuffer };
-    VkDeviceSize offsets[] = { 0 };
+    VkBuffer vertexBuffers[] = {this->_vertexBuffer};
+    VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
     // Draw line segments
     vkCmdBindIndexBuffer(commandBuffer, this->_boundingBoxIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
     for (int i = 0; i < textBlocks.size(); i++) {
-        for (Character& character : textBlocks[i]->getCharacters()) {
+        for (Character &character : textBlocks[i]->getCharacters()) {
             if (character.glyph.mesh.getVertexCount() > 0) {
-                GlyphKey key{ textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint() };
+                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint()};
 
-                LineSegmentsInfo segmentsInfo = this->_lineSegmentsInfo.at(this->_offsets.at(key).at(LINE_SEGMENTS_INFO_OFFSET_BUFFER_INDEX));
-                PushConstants pushConstants{ character.getModelMatrix(), textBlocks.at(i)->getColor(), segmentsInfo.startIndex, segmentsInfo.count };
-                vkCmdPushConstants(commandBuffer, this->_lineSegmentsPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &pushConstants);
+                LineSegmentsInfo segmentsInfo =
+                    this->_lineSegmentsInfo.at(this->_offsets.at(key).at(LINE_SEGMENTS_INFO_OFFSET_BUFFER_INDEX));
+                PushConstants pushConstants{character.getModelMatrix(), textBlocks.at(i)->getColor(),
+                                            segmentsInfo.startIndex, segmentsInfo.count};
+                vkCmdPushConstants(commandBuffer, this->_lineSegmentsPipelineLayout,
+                                   VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants),
+                                   &pushConstants);
 
-                vkCmdDrawIndexed(commandBuffer, character.glyph.mesh.getIndexCount(GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX), 1, this->_offsets.at(key).at(BOUNDING_BOX_OFFSET_BUFFER_INDEX), 0, 0);
+                vkCmdDrawIndexed(commandBuffer,
+                                 character.glyph.mesh.getIndexCount(GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX), 1,
+                                 this->_offsets.at(key).at(BOUNDING_BOX_OFFSET_BUFFER_INDEX), 0, 0);
             }
         }
     }
 
     // Draw curve segments
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_curveSegmentsPipeline);
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_curveSegmentsPipelineLayout, 0, 1, &(this->_uboDescriptorSets.at(i % 2)), 0, nullptr);
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_curveSegmentsPipelineLayout, 0, 1,
+                            &(this->_uboDescriptorSets.at(i % 2)), 0, nullptr);
 
     // vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
     vkCmdBindIndexBuffer(commandBuffer, this->_curveSegmentsIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
     for (int i = 0; i < textBlocks.size(); i++) {
-        for (Character& character : textBlocks[i]->getCharacters()) {
+        for (Character &character : textBlocks[i]->getCharacters()) {
             if (character.glyph.mesh.getVertexCount() > 0) {
-                GlyphKey key{ textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint() };
+                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint()};
 
-                vft::CharacterPushConstants pushConstants{ character.getModelMatrix(), textBlocks.at(i)->getColor() };
-                vkCmdPushConstants(commandBuffer, this->_curveSegmentsPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(vft::CharacterPushConstants), &pushConstants);
+                vft::CharacterPushConstants pushConstants{character.getModelMatrix(), textBlocks.at(i)->getColor()};
+                vkCmdPushConstants(commandBuffer, this->_curveSegmentsPipelineLayout,
+                                   VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                                   sizeof(vft::CharacterPushConstants), &pushConstants);
 
-                vkCmdDrawIndexed(commandBuffer, character.glyph.mesh.getIndexCount(GLYPH_MESH_CURVE_BUFFER_INDEX), 1, this->_offsets.at(key).at(CURVE_OFFSET_BUFFER_INDEX), 0, 0);
+                vkCmdDrawIndexed(commandBuffer, character.glyph.mesh.getIndexCount(GLYPH_MESH_CURVE_BUFFER_INDEX), 1,
+                                 this->_offsets.at(key).at(CURVE_OFFSET_BUFFER_INDEX), 0, 0);
             }
         }
     }
@@ -117,7 +126,7 @@ void GpuDrawer::recreateBuffers(std::vector<std::shared_ptr<TextBlock>> textBloc
     this->_createVertexAndIndexBuffers(textBlocks);
 }
 
-void GpuDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<TextBlock>>& textBlocks) {
+void GpuDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<TextBlock>> &textBlocks) {
     this->_vertices.clear();
     this->_boundingBoxIndices.clear();
     this->_curveSegmentsIndices.clear();
@@ -132,24 +141,32 @@ void GpuDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<TextBlo
     uint32_t lineSegmentsInfoCount = 0;
 
     for (int i = 0; i < textBlocks.size(); i++) {
-        for (Character& character : textBlocks[i]->getCharacters()) {
-            GlyphKey key{ textBlocks[i]->getFont()->getFontFamily(), character.getUnicodeCodePoint() };
+        for (Character &character : textBlocks[i]->getCharacters()) {
+            GlyphKey key{textBlocks[i]->getFont()->getFontFamily(), character.getUnicodeCodePoint()};
             if (!this->_offsets.contains(key)) {
-                this->_offsets.insert({ key, { boundingBoxIndexCount, curveSegmentsIndexCount, lineSegmentsInfoCount } });
+                this->_offsets.insert({key, {boundingBoxIndexCount, curveSegmentsIndexCount, lineSegmentsInfoCount}});
 
-                this->_vertices.insert(this->_vertices.end(), character.glyph.mesh.getVertices().begin(), character.glyph.mesh.getVertices().end());
-                this->_boundingBoxIndices.insert(this->_boundingBoxIndices.end(), character.glyph.mesh.getIndices(GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX).begin(), character.glyph.mesh.getIndices(GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX).end());
-                this->_curveSegmentsIndices.insert(this->_curveSegmentsIndices.end(), character.glyph.mesh.getIndices(GLYPH_MESH_CURVE_BUFFER_INDEX).begin(), character.glyph.mesh.getIndices(GLYPH_MESH_CURVE_BUFFER_INDEX).end());
+                this->_vertices.insert(this->_vertices.end(), character.glyph.mesh.getVertices().begin(),
+                                       character.glyph.mesh.getVertices().end());
+                this->_boundingBoxIndices.insert(
+                    this->_boundingBoxIndices.end(),
+                    character.glyph.mesh.getIndices(GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX).begin(),
+                    character.glyph.mesh.getIndices(GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX).end());
+                this->_curveSegmentsIndices.insert(
+                    this->_curveSegmentsIndices.end(),
+                    character.glyph.mesh.getIndices(GLYPH_MESH_CURVE_BUFFER_INDEX).begin(),
+                    character.glyph.mesh.getIndices(GLYPH_MESH_CURVE_BUFFER_INDEX).end());
 
                 std::vector<glm::vec2> vertices = character.glyph.mesh.getVertices();
                 std::vector<uint32_t> lineSegments = character.glyph.mesh.getIndices(GLYPH_MESH_LINE_BUFFER_INDEX);
                 uint32_t lineCount = 0;
                 for (int j = 0; j < lineSegments.size(); j += 2) {
-                    this->_lineSegments.push_back(LineSegment{ vertices.at(lineSegments.at(j)), vertices.at(lineSegments.at(j + 1)) });
+                    this->_lineSegments.push_back(
+                        LineSegment{vertices.at(lineSegments.at(j)), vertices.at(lineSegments.at(j + 1))});
                     lineCount++;
                 }
 
-                this->_lineSegmentsInfo.push_back(LineSegmentsInfo{ lineSegmentsCount, lineCount });
+                this->_lineSegmentsInfo.push_back(LineSegmentsInfo{lineSegmentsCount, lineCount});
 
                 // Add an offset to line segment indices of current character
                 for (int j = boundingBoxIndexCount; j < this->_boundingBoxIndices.size(); j++) {
@@ -177,19 +194,24 @@ void GpuDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<TextBlo
 
     // Create vertex buffer
     VkDeviceSize bufferSize = sizeof(this->_vertices.at(0)) * this->_vertices.size();
-    this->_stageAndCreateVulkanBuffer(this->_vertices.data(), bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, this->_vertexBuffer, this->_vertexBufferMemory);
-    
+    this->_stageAndCreateVulkanBuffer(this->_vertices.data(), bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                                      this->_vertexBuffer, this->_vertexBufferMemory);
+
     if (boundingBoxIndexCount > 0) {
         // Create index buffer for bounding boxes
         VkDeviceSize bufferSize = sizeof(this->_boundingBoxIndices.at(0)) * this->_boundingBoxIndices.size();
-        this->_stageAndCreateVulkanBuffer(this->_boundingBoxIndices.data(), bufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, this->_boundingBoxIndexBuffer, this->_boundingBoxIndexBufferMemory);
+        this->_stageAndCreateVulkanBuffer(this->_boundingBoxIndices.data(), bufferSize,
+                                          VK_BUFFER_USAGE_INDEX_BUFFER_BIT, this->_boundingBoxIndexBuffer,
+                                          this->_boundingBoxIndexBufferMemory);
     }
 
     // Check if at least one curve segment exists
     if (curveSegmentsIndexCount > 0) {
         // Create index buffer for curve segments
         VkDeviceSize bufferSize = sizeof(this->_curveSegmentsIndices.at(0)) * this->_curveSegmentsIndices.size();
-        this->_stageAndCreateVulkanBuffer(this->_curveSegmentsIndices.data(), bufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, this->_curveSegmentsIndexBuffer, this->_curveSegmentsIndexBufferMemory);
+        this->_stageAndCreateVulkanBuffer(this->_curveSegmentsIndices.data(), bufferSize,
+                                          VK_BUFFER_USAGE_INDEX_BUFFER_BIT, this->_curveSegmentsIndexBuffer,
+                                          this->_curveSegmentsIndexBufferMemory);
     }
 
     // Check if at least one line segment exists
@@ -213,14 +235,17 @@ void GpuDrawer::_createDescriptorPool() {
     poolCreateInfo.pPoolSizes = poolSizes.data();
     poolCreateInfo.maxSets = static_cast<uint32_t>(4);
 
-    if (vkCreateDescriptorPool(this->_logicalDevice, &poolCreateInfo, nullptr, &(this->_descriptorPool)) != VK_SUCCESS) {
+    if (vkCreateDescriptorPool(this->_logicalDevice, &poolCreateInfo, nullptr, &(this->_descriptorPool)) !=
+        VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan descriptor pool");
     }
 }
 
 void GpuDrawer::_createSsbo() {
     VkDeviceSize lineSegmentsBufferSize = sizeof(this->_lineSegments.at(0)) * this->_lineSegments.size();
-    this->_stageAndCreateVulkanBuffer(this->_lineSegments.data(), lineSegmentsBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, this->_lineSegmentsBuffer, this->_lineSegmentsBufferMemory);
+    this->_stageAndCreateVulkanBuffer(this->_lineSegments.data(), lineSegmentsBufferSize,
+                                      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, this->_lineSegmentsBuffer,
+                                      this->_lineSegmentsBufferMemory);
 
     VkDescriptorBufferInfo lineSegmentsBufferInfo{};
     lineSegmentsBufferInfo.buffer = this->_lineSegmentsBuffer;
@@ -238,33 +263,6 @@ void GpuDrawer::_createSsbo() {
     writeDescriptorSets[0].pBufferInfo = &lineSegmentsBufferInfo;
 
     vkUpdateDescriptorSets(this->_logicalDevice, writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
-
-    /* this->_ssbo.resize(2);
-    this->_ssboMemory.resize(2);
-    this->_mappedSSBO.resize(2);
-
-    VkDeviceSize bufferSize = sizeof(this->_lineSegments.at(0)) * this->_lineSegments.size();
-
-    for (int i = 0; i < 2; i++) {
-        this->_stageAndCreateVulkanBuffer(this->_lineSegments.data(), bufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, this->_ssbo.at(i), this->_ssboMemory.at(i));
-
-        VkDescriptorBufferInfo ssboBufferInfo{};
-        ssboBufferInfo.buffer = this->_ssbo.at(i);
-        ssboBufferInfo.offset = 0;
-        ssboBufferInfo.range = bufferSize;
-
-        std::array<VkWriteDescriptorSet, 1> writeDescriptorSets = {};
-
-        writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        writeDescriptorSets[0].dstSet = this->_lineSegmentsDescriptorSets.at(i);
-        writeDescriptorSets[0].dstBinding = 0;
-        writeDescriptorSets[0].dstArrayElement = 0;
-        writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        writeDescriptorSets[0].descriptorCount = 1;
-        writeDescriptorSets[0].pBufferInfo = &ssboBufferInfo;
-
-        vkUpdateDescriptorSets(this->_logicalDevice, writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
-    } */
 }
 
 void GpuDrawer::_createLineSegmentsDescriptorSetLayout() {
@@ -280,10 +278,10 @@ void GpuDrawer::_createLineSegmentsDescriptorSetLayout() {
     layoutCreateInfo.bindingCount = layoutBindings.size();
     layoutCreateInfo.pBindings = layoutBindings.data();
 
-    if (vkCreateDescriptorSetLayout(this->_logicalDevice, &layoutCreateInfo, nullptr, &(this->_lineSegmentsDescriptorSetLayout)) != VK_SUCCESS) {
+    if (vkCreateDescriptorSetLayout(this->_logicalDevice, &layoutCreateInfo, nullptr,
+                                    &(this->_lineSegmentsDescriptorSetLayout)) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan descriptor set layout");
     }
-
 }
 
 void GpuDrawer::_createLineSegmentsDescriptorSets() {
@@ -297,7 +295,8 @@ void GpuDrawer::_createLineSegmentsDescriptorSets() {
 
     this->_lineSegmentsDescriptorSets.resize(layouts.size());
 
-    if (vkAllocateDescriptorSets(this->_logicalDevice, &allocateInfo, this->_lineSegmentsDescriptorSets.data()) != VK_SUCCESS) {
+    if (vkAllocateDescriptorSets(this->_logicalDevice, &allocateInfo, this->_lineSegmentsDescriptorSets.data()) !=
+        VK_SUCCESS) {
         throw std::runtime_error("Error allocating vulkan descriptor sets");
     }
 }
@@ -321,12 +320,9 @@ void GpuDrawer::_createLineSegmentsPipeline() {
     fragmentShaderStageCreateInfo.module = fragmentShaderModule;
     fragmentShaderStageCreateInfo.pName = "main";
 
-    VkPipelineShaderStageCreateInfo shaderStages[] = { vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo };
+    VkPipelineShaderStageCreateInfo shaderStages[] = {vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo};
 
-    std::vector<VkDynamicState> dynamicStates = {
-        VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR
-    };
+    std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 
     VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo{};
     dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -369,7 +365,8 @@ void GpuDrawer::_createLineSegmentsPipeline() {
     multisampleStateCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     VkPipelineColorBlendAttachmentState colorBlendAttachmentState{};
-    colorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colorBlendAttachmentState.colorWriteMask =
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachmentState.blendEnable = VK_TRUE;
     colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
     colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
@@ -389,7 +386,8 @@ void GpuDrawer::_createLineSegmentsPipeline() {
     pushConstantRange.offset = 0;
     pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    std::array<VkDescriptorSetLayout, 2> descriptorSetLayouts = { this->_uboDescriptorSetLayout, this->_lineSegmentsDescriptorSetLayout };
+    std::array<VkDescriptorSetLayout, 2> descriptorSetLayouts = {this->_uboDescriptorSetLayout,
+                                                                 this->_lineSegmentsDescriptorSetLayout};
 
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
     pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -398,7 +396,8 @@ void GpuDrawer::_createLineSegmentsPipeline() {
     pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
     pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 
-    if (vkCreatePipelineLayout(this->_logicalDevice, &pipelineLayoutCreateInfo, nullptr, &this->_lineSegmentsPipelineLayout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(this->_logicalDevice, &pipelineLayoutCreateInfo, nullptr,
+                               &this->_lineSegmentsPipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan pipeline layout");
     }
 
@@ -418,7 +417,8 @@ void GpuDrawer::_createLineSegmentsPipeline() {
     graphicsPipelineCreateInfo.renderPass = this->_renderPass;
     graphicsPipelineCreateInfo.subpass = 0;
 
-    if (vkCreateGraphicsPipelines(this->_logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr, &this->_lineSegmentsPipeline) != VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(this->_logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr,
+                                  &this->_lineSegmentsPipeline) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan graphics pipeline");
     }
 
@@ -483,10 +483,7 @@ void GpuDrawer::_createCurveSegmentsPipeline() {
     shaderStages[3].module = fragmentShaderModule;
     shaderStages[3].pName = "main";
 
-    std::vector<VkDynamicState> dynamicStates = {
-        VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR
-    };
+    std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 
     VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo{};
     dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -533,7 +530,8 @@ void GpuDrawer::_createCurveSegmentsPipeline() {
     multisampleStateCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     VkPipelineColorBlendAttachmentState colorBlendAttachmentState{};
-    colorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colorBlendAttachmentState.colorWriteMask =
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachmentState.blendEnable = VK_TRUE;
     colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
     colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
@@ -560,7 +558,8 @@ void GpuDrawer::_createCurveSegmentsPipeline() {
     pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
     pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 
-    if (vkCreatePipelineLayout(this->_logicalDevice, &pipelineLayoutCreateInfo, nullptr, &this->_curveSegmentsPipelineLayout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(this->_logicalDevice, &pipelineLayoutCreateInfo, nullptr,
+                               &this->_curveSegmentsPipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan pipeline layout");
     }
 
@@ -581,7 +580,8 @@ void GpuDrawer::_createCurveSegmentsPipeline() {
     graphicsPipelineCreateInfo.renderPass = this->_renderPass;
     graphicsPipelineCreateInfo.subpass = 0;
 
-    if (vkCreateGraphicsPipelines(this->_logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr, &this->_curveSegmentsPipeline) != VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(this->_logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr,
+                                  &this->_curveSegmentsPipeline) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan graphics pipeline");
     }
 
@@ -591,4 +591,4 @@ void GpuDrawer::_createCurveSegmentsPipeline() {
     vkDestroyShaderModule(this->_logicalDevice, fragmentShaderModule, nullptr);
 }
 
-}
+}  // namespace vft

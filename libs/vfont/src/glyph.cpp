@@ -10,13 +10,7 @@ namespace vft {
 /**
  * @brief Glyph constructor
  */
-Glyph::Glyph()
-    : _advanceX{ 0 }
-    , _advanceY{ 0 }
-    , _width{ 0 }
-    , _height{ 0 }
-    , _bearingX{ 0 }
-    , _bearingY{ 0 } {}
+Glyph::Glyph() : _advanceX{0}, _advanceY{0}, _width{0}, _height{0}, _bearingX{0}, _bearingY{0} {}
 
 void Glyph::addLineSegment(vft::Edge edge) {
     this->_lineSegments.push_back(edge);
@@ -32,7 +26,7 @@ std::array<glm::vec2, 4> Glyph::getBoundingBox() const {
     long yMin = this->_bearingY - this->_height;
     long yMax = this->_bearingY;
 
-    return { glm::vec2(xMin, yMin), glm::vec2(xMin, yMax), glm::vec2(xMax, yMax), glm::vec2(xMax, yMin) };
+    return {glm::vec2(xMin, yMin), glm::vec2(xMin, yMax), glm::vec2(xMax, yMax), glm::vec2(xMax, yMin)};
 }
 
 const std::vector<vft::Edge> &Glyph::getLineSegmentsIndices() const {
@@ -69,7 +63,7 @@ void Glyph::setBearingY(long bearingY) {
 
 /**
  * @brief Set by how much should the X coordinate update after rendering glyph
- * 
+ *
  * @param advanceX X value of advance vector
  */
 void Glyph::setAdvanceX(long advanceX) {
@@ -87,7 +81,7 @@ void Glyph::setAdvanceY(long advanceY) {
 
 /**
  * @brief Get by how much should the X coordinate update after rendering glyph
- * 
+ *
  * @return X value of advance vector
  */
 long Glyph::getAdvanceX() const {
@@ -103,4 +97,4 @@ long Glyph::getAdvanceY() const {
     return this->_advanceY;
 }
 
-}
+}  // namespace vft

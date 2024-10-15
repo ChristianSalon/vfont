@@ -7,7 +7,7 @@
 
 namespace vft {
 
-Drawer::Drawer(GlyphCache &cache) : _cache{ cache } {};
+Drawer::Drawer(GlyphCache &cache) : _cache{cache} {};
 
 Drawer::~Drawer() {
     for (int i = 0; i < 2; i++) {
@@ -18,13 +18,11 @@ Drawer::~Drawer() {
     vkDestroyDescriptorSetLayout(this->_logicalDevice, this->_uboDescriptorSetLayout, nullptr);
 }
 
-void Drawer::init(
-    VkPhysicalDevice physicalDevice,
-    VkDevice logicalDevice,
-    VkCommandPool commandPool,
-    VkQueue graphicsQueue,
-    VkRenderPass renderPass
-) {
+void Drawer::init(VkPhysicalDevice physicalDevice,
+                  VkDevice logicalDevice,
+                  VkCommandPool commandPool,
+                  VkQueue graphicsQueue,
+                  VkRenderPass renderPass) {
     this->_physicalDevice = physicalDevice;
     this->_logicalDevice = logicalDevice;
     this->_commandPool = commandPool;
@@ -57,7 +55,11 @@ uint32_t Drawer::_selectMemoryType(uint32_t memoryType, VkMemoryPropertyFlags pr
     throw std::runtime_error("Error selecting memory for vulkan vertex buffer");
 }
 
-void Drawer::_createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
+void Drawer::_createBuffer(VkDeviceSize size,
+                           VkBufferUsageFlags usage,
+                           VkMemoryPropertyFlags properties,
+                           VkBuffer &buffer,
+                           VkDeviceMemory &bufferMemory) {
     VkBufferCreateInfo bufferCreateInfo{};
     bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferCreateInfo.size = size;
@@ -118,20 +120,27 @@ void Drawer::_copyBuffer(VkBuffer sourceBuffer, VkBuffer destinationBuffer, VkDe
     vkFreeCommandBuffers(this->_logicalDevice, this->_commandPool, 1, &commandBuffer);
 }
 
-void Drawer::_stageAndCreateVulkanBuffer(void* data, VkDeviceSize size, VkBufferUsageFlags destinationUsage, VkBuffer& destinationBuffer, VkDeviceMemory& destinationMemory) {
+void Drawer::_stageAndCreateVulkanBuffer(void *data,
+                                         VkDeviceSize size,
+                                         VkBufferUsageFlags destinationUsage,
+                                         VkBuffer &destinationBuffer,
+                                         VkDeviceMemory &destinationMemory) {
     // Create staging buffer
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
-    this->_createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+    this->_createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer,
+                        stagingBufferMemory);
 
     // Copy data from CPU to staging buffer
-    void* buffer;
+    void *buffer;
     vkMapMemory(this->_logicalDevice, stagingBufferMemory, 0, size, 0, &buffer);
     memcpy(buffer, data, size);
     vkUnmapMemory(this->_logicalDevice, stagingBufferMemory);
 
     // Copy data from staging buffer to newly created vulkan buffer
-    this->_createBuffer(size, destinationUsage | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, destinationBuffer, destinationMemory);
+    this->_createBuffer(size, destinationUsage | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                        destinationBuffer, destinationMemory);
     this->_copyBuffer(stagingBuffer, destinationBuffer, size);
 
     // Destroy and deallocate memory from the staging buffer
@@ -139,7 +148,7 @@ void Drawer::_stageAndCreateVulkanBuffer(void* data, VkDeviceSize size, VkBuffer
     vkFreeMemory(this->_logicalDevice, stagingBufferMemory, nullptr);
 }
 
-void Drawer::_destroyBuffer(VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
+void Drawer::_destroyBuffer(VkBuffer &buffer, VkDeviceMemory &bufferMemory) {
     if (buffer == nullptr)
         return;
 
@@ -169,11 +178,11 @@ std::vector<char> Drawer::_readFile(std::string fileName) {
     return buffer;
 }
 
-VkShaderModule Drawer::_createShaderModule(const std::vector<char>& shaderCode) {
+VkShaderModule Drawer::_createShaderModule(const std::vector<char> &shaderCode) {
     VkShaderModuleCreateInfo shaderModuleCreateInfo{};
     shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     shaderModuleCreateInfo.codeSize = shaderCode.size();
-    shaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t*>(shaderCode.data());
+    shaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t *>(shaderCode.data());
 
     VkShaderModule shaderModule;
 
@@ -192,13 +201,9 @@ void Drawer::_createUbo() {
     this->_mappedUbo.resize(2);
 
     for (int i = 0; i < 2; i++) {
-        this->_createBuffer(
-            bufferSize,
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            this->_ubo.at(i),
-            this->_uboMemory.at(i)
-        );
+        this->_createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                            this->_ubo.at(i), this->_uboMemory.at(i));
 
         vkMapMemory(this->_logicalDevice, this->_uboMemory.at(i), 0, bufferSize, 0, &(this->_mappedUbo.at(i)));
     }
@@ -215,7 +220,8 @@ void Drawer::_createDescriptorPool() {
     poolCreateInfo.pPoolSizes = &poolSize;
     poolCreateInfo.maxSets = static_cast<uint32_t>(2);
 
-    if (vkCreateDescriptorPool(this->_logicalDevice, &poolCreateInfo, nullptr, &(this->_descriptorPool)) != VK_SUCCESS) {
+    if (vkCreateDescriptorPool(this->_logicalDevice, &poolCreateInfo, nullptr, &(this->_descriptorPool)) !=
+        VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan descriptor pool");
     }
 }
@@ -232,10 +238,10 @@ void Drawer::_createUboDescriptorSetLayout() {
     layoutCreateInfo.bindingCount = 1;
     layoutCreateInfo.pBindings = &layoutBinding;
 
-    if (vkCreateDescriptorSetLayout(this->_logicalDevice, &layoutCreateInfo, nullptr, &(this->_uboDescriptorSetLayout)) != VK_SUCCESS) {
+    if (vkCreateDescriptorSetLayout(this->_logicalDevice, &layoutCreateInfo, nullptr,
+                                    &(this->_uboDescriptorSetLayout)) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan descriptor set layout");
     }
-
 }
 
 void Drawer::_createUboDescriptorSets() {
@@ -272,4 +278,4 @@ void Drawer::_createUboDescriptorSets() {
     }
 }
 
-}
+}  // namespace vft

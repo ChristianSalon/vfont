@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include <vector>
 #include <array>
 #include <cstdint>
+#include <vector>
 
 #include <glm/vec2.hpp>
 
@@ -22,13 +22,10 @@ namespace vft {
  * @brief Represents glyph vertex data and metrics expressed in font units
  */
 class Glyph {
-
 public:
-
     GlyphMesh mesh;
 
 protected:
-
     std::vector<vft::Curve> _curveSegments;
     std::vector<vft::Edge> _lineSegments;
 
@@ -52,7 +49,6 @@ protected:
     long _advanceY;
 
 public:
-
     Glyph();
 
     void addLineSegment(vft::Edge edge);
@@ -67,7 +63,6 @@ public:
     void setAdvanceX(long advanceX);
     void setAdvanceY(long advanceY);
 
-
     const std::vector<vft::Edge> &getLineSegmentsIndices() const;
     const std::vector<vft::Curve> &getCurveSegmentsIndices() const;
     uint32_t getLineSegmentsIndexCount() const;
@@ -75,7 +70,6 @@ public:
 
     long getAdvanceX() const;
     long getAdvanceY() const;
-
 };
 
-}
+}  // namespace vft

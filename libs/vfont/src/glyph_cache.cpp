@@ -7,9 +7,9 @@
 
 namespace vft {
 
-GlyphKey::GlyphKey(std::string fontName, uint32_t codePoint) : fontName{ fontName }, codePoint{ codePoint } {}
+GlyphKey::GlyphKey(std::string fontName, uint32_t codePoint) : fontName{fontName}, codePoint{codePoint} {}
 
-GlyphCache::GlyphCache(unsigned long maxSize) : _maxSize{ maxSize } {}
+GlyphCache::GlyphCache(unsigned long maxSize) : _maxSize{maxSize} {}
 
 GlyphCache::GlyphCache() : _maxSize{ULONG_MAX} {}
 
@@ -18,7 +18,7 @@ void GlyphCache::setGlyph(GlyphKey key, Glyph glyph) {
         return;
     }
 
-    this->_cache.insert({ key, glyph });
+    this->_cache.insert({key, glyph});
 }
 
 const Glyph &GlyphCache::getGlyph(GlyphKey key) const {
@@ -41,4 +41,4 @@ void GlyphCache::clearAll() {
     this->_cache.clear();
 }
 
-}
+}  // namespace vft

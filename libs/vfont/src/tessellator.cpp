@@ -10,7 +10,7 @@ namespace vft {
 Glyph Tessellator::_currentGlyph{};
 ComposedGlyphData Tessellator::_currentGlyphData{};
 
-Tessellator::Tessellator(GlyphCache &cache) : _cache{ cache } {};
+Tessellator::Tessellator(GlyphCache &cache) : _cache{cache} {};
 
 /**
  * @brief Freetype outline decomposition move_to function.
@@ -21,44 +21,7 @@ Tessellator::Tessellator(GlyphCache &cache) : _cache{ cache } {};
  *
  * @return Exit code
  */
-FT_Outline_MoveToFunc Tessellator::_moveToFunc = [](const FT_Vector* to, void* user) {
-    // GlyphCompositor* pThis = reinterpret_cast<GlyphCompositor*>(user);
-
-    // Makes the contour closed
-    /*if (Tessellator::_currentGlyphData.contourCount != 0) {
-        Tessellator::_currentGlyph.updateEdge(
-            Tessellator::_currentGlyph.getEdgeCount() - 1,
-            vft::Edge{Tessellator::_currentGlyph.getEdges().at(Tessellator::_currentGlyph.getEdgeCount() - 1).first, Tessellator::_currentGlyphData.contourStartVertexId});
-    }*/
-
-    // Combine two contours into one
-    /*if (Tessellator::_currentGlyphData.contourCount >= 2) {
-        std::vector<glm::vec2> vertices = Tessellator::_currentGlyph.mesh.getVertices();
-        std::vector<vft::Edge> edges = Tessellator::_currentGlyph.getEdges();
-
-        std::set<uint32_t> intersections;
-        Tessellator::_removeInverseEdges(edges, intersections);
-        intersections = Tessellator::_resolveIntersectingEdges(vertices, edges);
-        Tessellator::_removeInverseEdges(edges, intersections);
-        Tessellator::_resolveSharedVertices(vertices, edges, intersections);
-        Tessellator::_walkContours(vertices, edges, intersections);
-
-        // Remove duplicate vertices
-        CDT::DuplicatesInfo info = CDT::RemoveDuplicatesAndRemapEdges<float>(
-            vertices,
-            [](const glm::vec2 &p) { return p.x; },
-            [](const glm::vec2 &p) { return p.y; },
-            edges.begin(),
-            edges.end(),
-            [](const vft::Edge &e) { return e.first; },
-            [](const vft::Edge &e) { return e.second; },
-            [](uint32_t i1, uint32_t i2) -> vft::Edge { return vft::Edge{i1, i2}; });
-        Tessellator::_currentGlyphData.vertexId -= info.duplicates.size();
-
-        Tessellator::_currentGlyph.setVertices(vertices);
-        Tessellator::_currentGlyph.setEdges(edges);
-    }*/
-
+FT_Outline_MoveToFunc Tessellator::_moveToFunc = [](const FT_Vector *to, void *user) {
     // Start processing new contour
     glm::vec2 newVertex = glm::vec2(static_cast<float>(to->x), static_cast<float>(to->y));
     int newVertexIndex = Tessellator::_getVertexIndex(Tessellator::_currentGlyph.mesh.getVertices(), newVertex);
@@ -67,8 +30,7 @@ FT_Outline_MoveToFunc Tessellator::_moveToFunc = [](const FT_Vector* to, void* u
         Tessellator::_currentGlyph.mesh.addVertex(newVertex);
         Tessellator::_currentGlyphData.contourStartVertexId = Tessellator::_currentGlyphData.vertexId;
         Tessellator::_currentGlyphData.vertexId++;
-    }
-    else {
+    } else {
         Tessellator::_currentGlyphData.contourStartVertexId = newVertexIndex;
     }
 
@@ -86,8 +48,9 @@ FT_Outline_MoveToFunc Tessellator::_moveToFunc = [](const FT_Vector* to, void* u
  *
  * @return Exit code
  */
-FT_Outline_LineToFunc Tessellator::_lineToFunc = [](const FT_Vector* to, void* user) {
-    uint32_t lastVertexIndex = Tessellator::_getVertexIndex(Tessellator::_currentGlyph.mesh.getVertices(), Tessellator::_currentGlyphData.lastVertex);
+FT_Outline_LineToFunc Tessellator::_lineToFunc = [](const FT_Vector *to, void *user) {
+    uint32_t lastVertexIndex = Tessellator::_getVertexIndex(Tessellator::_currentGlyph.mesh.getVertices(),
+                                                            Tessellator::_currentGlyphData.lastVertex);
 
     glm::vec2 newVertex = glm::vec2(static_cast<float>(to->x), static_cast<float>(to->y));
     int newVertexIndex = Tessellator::_getVertexIndex(Tessellator::_currentGlyph.mesh.getVertices(), newVertex);
@@ -97,7 +60,7 @@ FT_Outline_LineToFunc Tessellator::_lineToFunc = [](const FT_Vector* to, void* u
         Tessellator::_currentGlyphData.vertexId++;
     }
 
-    vft::Edge lineSegment{ lastVertexIndex, static_cast<uint32_t>(newVertexIndex) };
+    vft::Edge lineSegment{lastVertexIndex, static_cast<uint32_t>(newVertexIndex)};
     Tessellator::_currentGlyph.addLineSegment(lineSegment);
 
     Tessellator::_currentGlyphData.lastVertex = newVertex;
@@ -114,8 +77,9 @@ FT_Outline_LineToFunc Tessellator::_lineToFunc = [](const FT_Vector* to, void* u
  *
  * @return Exit code
  */
-FT_Outline_ConicToFunc Tessellator::_conicToFunc = [](const FT_Vector* control, const FT_Vector* to, void* user) {
-    uint32_t startPointIndex = Tessellator::_getVertexIndex(Tessellator::_currentGlyph.mesh.getVertices(), Tessellator::_currentGlyphData.lastVertex);
+FT_Outline_ConicToFunc Tessellator::_conicToFunc = [](const FT_Vector *control, const FT_Vector *to, void *user) {
+    uint32_t startPointIndex = Tessellator::_getVertexIndex(Tessellator::_currentGlyph.mesh.getVertices(),
+                                                            Tessellator::_currentGlyphData.lastVertex);
     glm::vec2 startPoint = Tessellator::_currentGlyph.mesh.getVertices().at(startPointIndex);
 
     glm::vec2 controlPoint = glm::vec2(static_cast<float>(control->x), static_cast<float>(control->y));
@@ -135,7 +99,8 @@ FT_Outline_ConicToFunc Tessellator::_conicToFunc = [](const FT_Vector* control, 
     }
 
     // Generate quadratic bezier curve segment for tessellation
-    Tessellator::_currentGlyph.addCurveSegment({ startPointIndex, static_cast<uint32_t>(controlPointIndex), static_cast<uint32_t>(endPointIndex) });
+    Tessellator::_currentGlyph.addCurveSegment(
+        {startPointIndex, static_cast<uint32_t>(controlPointIndex), static_cast<uint32_t>(endPointIndex)});
 
     Tessellator::_currentGlyphData.lastVertex = endPoint;
     return 0;
@@ -152,10 +117,11 @@ FT_Outline_ConicToFunc Tessellator::_conicToFunc = [](const FT_Vector* control, 
  *
  * @return Exit code
  */
-FT_Outline_CubicToFunc Tessellator::_cubicToFunc = [](const FT_Vector* control1, const FT_Vector* control2, const FT_Vector* to, void* user) {
-    throw std::runtime_error("Fonts with cubic bezier curves are not supported");
-    return 0;
-};
+FT_Outline_CubicToFunc Tessellator::_cubicToFunc =
+    [](const FT_Vector *control1, const FT_Vector *control2, const FT_Vector *to, void *user) {
+        throw std::runtime_error("Fonts with cubic bezier curves are not supported");
+        return 0;
+    };
 
 /**
  * @brief Creates a triangulated glyph if not in cache and inserts glyph into cache
@@ -176,14 +142,12 @@ Glyph Tessellator::_composeGlyph(uint32_t codePoint, std::shared_ptr<Font> font)
     // Decompose outlines to vertices and vertex indices
     Tessellator::_currentGlyph = Glyph{};
     Tessellator::_currentGlyphData = ComposedGlyphData{};
-    FT_Outline_Funcs outlineFunctions = {
-        .move_to = this->_getMoveToFunc(),
-        .line_to = this->_getLineToFunc(),
-        .conic_to = this->_getConicToFunc(),
-        .cubic_to = this->_getCubicToFunc(),
-        .shift = 0,
-        .delta = 0
-    };
+    FT_Outline_Funcs outlineFunctions = {.move_to = this->_getMoveToFunc(),
+                                         .line_to = this->_getLineToFunc(),
+                                         .conic_to = this->_getConicToFunc(),
+                                         .cubic_to = this->_getCubicToFunc(),
+                                         .shift = 0,
+                                         .delta = 0};
     FT_Outline_Decompose(&(slot->outline), &outlineFunctions, this);
 
     Tessellator::_currentGlyph.setWidth(slot->metrics.width);
@@ -205,7 +169,7 @@ bool Tessellator::_isOnRightSide(glm::vec2 lineStartingPoint, glm::vec2 lineEndi
     return d > 0;
 }
 
-int Tessellator::_getVertexIndex(const std::vector<glm::vec2>& vertices, glm::vec2 vertex) {
+int Tessellator::_getVertexIndex(const std::vector<glm::vec2> &vertices, glm::vec2 vertex) {
     for (int i = 0; i < vertices.size(); i++) {
         if (glm::distance(vertex, vertices.at(i)) <= 1.f) {
             return i;
@@ -255,7 +219,10 @@ double Tessellator::_determinant(double a, double b, double c, double d) {
  *
  * @return True if edges intersect in edge boundaries, else false
  */
-bool Tessellator::_intersect(const std::vector<glm::vec2>& vertices, vft::Edge first, vft::Edge second, glm::vec2& intersection) {
+bool Tessellator::_intersect(const std::vector<glm::vec2> &vertices,
+                             vft::Edge first,
+                             vft::Edge second,
+                             glm::vec2 &intersection) {
     static double epsilon = 1e-6;
 
     double x1 = vertices.at(first.first).x;
@@ -275,20 +242,18 @@ bool Tessellator::_intersect(const std::vector<glm::vec2>& vertices, vft::Edge f
         return false;
     }
 
-    intersection.x = Tessellator::_determinant(Tessellator::_determinant(x1, y1, x2, y2), x1 - x2, Tessellator::_determinant(x3, y3, x4, y4), x3 - x4) / det1;
-    intersection.y = Tessellator::_determinant(Tessellator::_determinant(x1, y1, x2, y2), y1 - y2, Tessellator::_determinant(x3, y3, x4, y4), y3 - y4) / det1;
+    intersection.x = Tessellator::_determinant(Tessellator::_determinant(x1, y1, x2, y2), x1 - x2,
+                                               Tessellator::_determinant(x3, y3, x4, y4), x3 - x4) /
+                     det1;
+    intersection.y = Tessellator::_determinant(Tessellator::_determinant(x1, y1, x2, y2), y1 - y2,
+                                               Tessellator::_determinant(x3, y3, x4, y4), y3 - y4) /
+                     det1;
 
     // Check if intersection is in the boundaries of both edges
-    if (
-        (
-            (intersection.x >= std::min(x1, x2) && intersection.x <= std::max(x1, x2)) &&
-            (intersection.y >= std::min(y1, y2) && intersection.y <= std::max(y1, y2))
-            ) &&
-        (
-            (intersection.x >= std::min(x3, x4) && intersection.x <= std::max(x3, x4)) &&
-            (intersection.y >= std::min(y3, y4) && intersection.y <= std::max(y3, y4))
-            )
-        ) {
+    if (((intersection.x >= std::min(x1, x2) && intersection.x <= std::max(x1, x2)) &&
+         (intersection.y >= std::min(y1, y2) && intersection.y <= std::max(y1, y2))) &&
+        ((intersection.x >= std::min(x3, x4) && intersection.x <= std::max(x3, x4)) &&
+         (intersection.y >= std::min(y3, y4) && intersection.y <= std::max(y3, y4)))) {
         return true;
     }
 
@@ -303,7 +268,8 @@ bool Tessellator::_intersect(const std::vector<glm::vec2>& vertices, vft::Edge f
  *
  * @return Set of vertex indices that are intersections
  */
-std::set<uint32_t> Tessellator::_resolveIntersectingEdges(std::vector<glm::vec2>& vertices, std::vector<vft::Edge>& edges) {
+std::set<uint32_t> Tessellator::_resolveIntersectingEdges(std::vector<glm::vec2> &vertices,
+                                                          std::vector<vft::Edge> &edges) {
     std::set<uint32_t> intersectionVertexIndices;
 
     for (int i = 0; i < edges.size(); i++) {
@@ -312,22 +278,17 @@ std::set<uint32_t> Tessellator::_resolveIntersectingEdges(std::vector<glm::vec2>
                 continue;
             }
 
-            vft::Edge& firstEdge = edges.at(i);
-            vft::Edge& secondEdge = edges.at(j);
+            vft::Edge &firstEdge = edges.at(i);
+            vft::Edge &secondEdge = edges.at(j);
 
             if (firstEdge == secondEdge) {
                 // Add both intersection vertices
                 intersectionVertexIndices.insert(firstEdge.first);
                 intersectionVertexIndices.insert(firstEdge.second);
                 continue;
-            }
-            else if (
-                firstEdge.isInverse(secondEdge) ||
-                firstEdge.first == secondEdge.first ||
-                firstEdge.first == secondEdge.second ||
-                firstEdge.second == secondEdge.first ||
-                firstEdge.second == secondEdge.second
-                ) {
+            } else if (firstEdge.isInverse(secondEdge) || firstEdge.first == secondEdge.first ||
+                       firstEdge.first == secondEdge.second || firstEdge.second == secondEdge.first ||
+                       firstEdge.second == secondEdge.second) {
                 continue;
             }
 
@@ -337,36 +298,32 @@ std::set<uint32_t> Tessellator::_resolveIntersectingEdges(std::vector<glm::vec2>
                 if (glm::distance(intersection, vertices.at(firstEdge.first)) <= 1.f) {
                     uint32_t firstEdgeFirstIndex = firstEdge.first;
                     auto secondEdgeIterator = std::find(edges.begin(), edges.end(), secondEdge);
-                    edges.insert(secondEdgeIterator + 1, vft::Edge{ firstEdge.first, secondEdge.second });
+                    edges.insert(secondEdgeIterator + 1, vft::Edge{firstEdge.first, secondEdge.second});
                     edges.at(j).second = firstEdgeFirstIndex;
 
                     intersectionVertexIndices.insert(firstEdgeFirstIndex);
-                }
-                else if (glm::distance(intersection, vertices.at(firstEdge.second)) <= 1.f) {
+                } else if (glm::distance(intersection, vertices.at(firstEdge.second)) <= 1.f) {
                     uint32_t firstEdgeSecondIndex = firstEdge.second;
                     auto secondEdgeIterator = std::find(edges.begin(), edges.end(), secondEdge);
-                    edges.insert(secondEdgeIterator + 1, vft::Edge{ firstEdge.second, secondEdge.second });
+                    edges.insert(secondEdgeIterator + 1, vft::Edge{firstEdge.second, secondEdge.second});
                     edges.at(j).second = firstEdgeSecondIndex;
 
                     intersectionVertexIndices.insert(firstEdgeSecondIndex);
-                }
-                else if (glm::distance(intersection, vertices.at(secondEdge.first)) <= 1.f) {
+                } else if (glm::distance(intersection, vertices.at(secondEdge.first)) <= 1.f) {
                     uint32_t secondEdgeFirstIndex = secondEdge.first;
                     auto firstEdgeIterator = std::find(edges.begin(), edges.end(), firstEdge);
-                    edges.insert(firstEdgeIterator + 1, vft::Edge{ secondEdge.first, firstEdge.second });
+                    edges.insert(firstEdgeIterator + 1, vft::Edge{secondEdge.first, firstEdge.second});
                     edges.at(i).second = secondEdgeFirstIndex;
 
                     intersectionVertexIndices.insert(secondEdgeFirstIndex);
-                }
-                else if (glm::distance(intersection, vertices.at(secondEdge.second)) <= 1.f) {
+                } else if (glm::distance(intersection, vertices.at(secondEdge.second)) <= 1.f) {
                     uint32_t secondEdgeSecondIndex = secondEdge.second;
                     auto firstEdgeIterator = std::find(edges.begin(), edges.end(), firstEdge);
-                    edges.insert(firstEdgeIterator + 1, vft::Edge{ secondEdge.second, firstEdge.second });
+                    edges.insert(firstEdgeIterator + 1, vft::Edge{secondEdge.second, firstEdge.second});
                     edges.at(i).second = secondEdgeSecondIndex;
 
                     intersectionVertexIndices.insert(secondEdgeSecondIndex);
-                }
-                else {
+                } else {
                     uint32_t intersectionIndex = vertices.size();
                     vertices.push_back(intersection);
                     Tessellator::_currentGlyphData.vertexId++;
@@ -380,10 +337,10 @@ std::set<uint32_t> Tessellator::_resolveIntersectingEdges(std::vector<glm::vec2>
                     vft::Edge se = edges.at(j);
 
                     auto firstEdgeIterator = std::find(edges.begin(), edges.end(), fe);
-                    edges.insert(firstEdgeIterator + 1, vft::Edge{ intersectionIndex, oldFirstEdgeSecondIndex });
+                    edges.insert(firstEdgeIterator + 1, vft::Edge{intersectionIndex, oldFirstEdgeSecondIndex});
 
                     auto secondEdgeIterator = std::find(edges.begin(), edges.end(), se);
-                    edges.insert(secondEdgeIterator + 1, vft::Edge{ intersectionIndex, oldSecondEdgeSecondIndex });
+                    edges.insert(secondEdgeIterator + 1, vft::Edge{intersectionIndex, oldSecondEdgeSecondIndex});
 
                     intersectionVertexIndices.insert(intersectionIndex);
                 }
@@ -401,22 +358,18 @@ std::set<uint32_t> Tessellator::_resolveIntersectingEdges(std::vector<glm::vec2>
  * @param edges Edges of glyph
  * @param intersections Intersection indices
  */
-void Tessellator::_resolveSharedVertices(std::vector<glm::vec2>& vertices, std::vector<vft::Edge>& edges, std::set<uint32_t>& intersections) {
+void Tessellator::_resolveSharedVertices(std::vector<glm::vec2> &vertices,
+                                         std::vector<vft::Edge> &edges,
+                                         std::set<uint32_t> &intersections) {
     for (int i = 0; i < edges.size(); i++) {
         for (int j = i + 1; j < edges.size(); j++) {
-            vft::Edge& firstEdge = edges.at(i);
-            vft::Edge& secondEdge = edges.at(j);
+            vft::Edge &firstEdge = edges.at(i);
+            vft::Edge &secondEdge = edges.at(j);
 
-            if (
-                firstEdge == secondEdge ||
-                firstEdge.isInverse(secondEdge) ||
-                firstEdge.first == secondEdge.first ||
-                firstEdge.first == secondEdge.second ||
-                firstEdge.second == secondEdge.first
-                ) {
+            if (firstEdge == secondEdge || firstEdge.isInverse(secondEdge) || firstEdge.first == secondEdge.first ||
+                firstEdge.first == secondEdge.second || firstEdge.second == secondEdge.first) {
                 continue;
-            }
-            else if (firstEdge.second == secondEdge.second) {
+            } else if (firstEdge.second == secondEdge.second) {
                 // Vertex index at which two edges intersect at end
                 uint32_t intersectionIndex = firstEdge.second;
 
@@ -424,8 +377,7 @@ void Tessellator::_resolveSharedVertices(std::vector<glm::vec2>& vertices, std::
                 std::vector<uint32_t> edgeIndices = Tessellator::_getEdgesStartingAt(intersectionIndex, edges);
                 if (edgeIndices.size() == 1) {
                     continue;
-                }
-                else if (edgeIndices.size() < 1) {
+                } else if (edgeIndices.size() < 1) {
                     throw std::runtime_error("_resolveSharedVertices(): Invalid edges");
                 }
 
@@ -457,7 +409,7 @@ void Tessellator::_resolveSharedVertices(std::vector<glm::vec2>& vertices, std::
  *
  * @param edges Vector of edges
  */
-void Tessellator::_removeDuplicateEdges(std::vector<vft::Edge>& edges) {
+void Tessellator::_removeDuplicateEdges(std::vector<vft::Edge> &edges) {
     for (int i = 0; i < edges.size(); i++) {
         for (int j = i + 1; j < edges.size(); j++) {
             if (edges.at(i) == edges.at(j)) {
@@ -471,12 +423,13 @@ void Tessellator::_removeDuplicateEdges(std::vector<vft::Edge>& edges) {
 }
 
 /**
- * @brief Removes both edges where first edge starts at the end of the second edge and first edge ends at the start of second edge and remove intesections
+ * @brief Removes both edges where first edge starts at the end of the second edge and first edge ends at the start of
+ * second edge and remove intesections
  *
  * @param edges Vector of edges
  * @param intersections Set of intesections
  */
-void Tessellator::_removeInverseEdges(std::vector<vft::Edge>& edges, std::set<uint32_t>& intersections) {
+void Tessellator::_removeInverseEdges(std::vector<vft::Edge> &edges, std::set<uint32_t> &intersections) {
     for (int i = 0; i < edges.size(); i++) {
         for (int j = i + 1; j < edges.size(); j++) {
             if (edges.at(i).isInverse(edges.at(j))) {
@@ -518,7 +471,9 @@ bool Tessellator::_isInPositiveRegion(glm::vec2 startVertex, glm::vec2 endVertex
  * @param edges Edges of glyph
  * @param intersections Intersection indices
  */
-void Tessellator::_walkContours(const std::vector<glm::vec2>& vertices, std::vector<vft::Edge>& edges, std::set<uint32_t> intersections) {
+void Tessellator::_walkContours(const std::vector<glm::vec2> &vertices,
+                                std::vector<vft::Edge> &edges,
+                                std::set<uint32_t> intersections) {
     if (edges.size() == 0) {
         return;
     }
@@ -542,13 +497,14 @@ void Tessellator::_walkContours(const std::vector<glm::vec2>& vertices, std::vec
         // Get all edges starting at currentVertex
         std::vector<uint32_t> edgeIndices = Tessellator::_getEdgesStartingAt(currentVertexIndex, edges);
 
-        if (Tessellator::_isInPositiveRegion(vertices.at(edges.at(edgeIndices.at(0)).first), vertices.at(edges.at(edgeIndices.at(0)).second), vertices.at(edges.at(edgeIndices.at(1)).second))) {
+        if (Tessellator::_isInPositiveRegion(vertices.at(edges.at(edgeIndices.at(0)).first),
+                                             vertices.at(edges.at(edgeIndices.at(0)).second),
+                                             vertices.at(edges.at(edgeIndices.at(1)).second))) {
             newEdges.push_back(edges.at(edgeIndices.at(1)));
             visitedEdges.insert(edgeIndices.at(1));
             currentVertexIndex = edges.at(edgeIndices.at(1)).second;
             Tessellator::_visitEdgesUntilIntersection(edges, visitedEdges, edgeIndices.at(0));
-        }
-        else {
+        } else {
             newEdges.push_back(edges.at(edgeIndices.at(0)));
             visitedEdges.insert(edgeIndices.at(0));
             currentVertexIndex = edges.at(edgeIndices.at(0)).second;
@@ -565,11 +521,12 @@ void Tessellator::_walkContours(const std::vector<glm::vec2>& vertices, std::vec
                 newEdges.push_back(edges.at(edgeIndices.at(0)));
                 visitedEdges.insert(edgeIndices.at(0));
                 currentVertexIndex = edges.at(edgeIndices.at(0)).second;
-            }
-            else if (edgeIndices.size() == 2) {
+            } else if (edgeIndices.size() == 2) {
                 visitedIntersections.insert(currentVertexIndex);
 
-                if (Tessellator::_isInPositiveRegion(vertices.at(edges.at(edgeIndices.at(0)).first), vertices.at(edges.at(edgeIndices.at(0)).second), vertices.at(edges.at(edgeIndices.at(1)).second))) {
+                if (Tessellator::_isInPositiveRegion(vertices.at(edges.at(edgeIndices.at(0)).first),
+                                                     vertices.at(edges.at(edgeIndices.at(0)).second),
+                                                     vertices.at(edges.at(edgeIndices.at(1)).second))) {
                     if (visitedEdges.contains(edgeIndices.at(1))) {
                         break;
                     }
@@ -578,8 +535,7 @@ void Tessellator::_walkContours(const std::vector<glm::vec2>& vertices, std::vec
                     visitedEdges.insert(edgeIndices.at(1));
                     currentVertexIndex = edges.at(edgeIndices.at(1)).second;
                     Tessellator::_visitEdgesUntilIntersection(edges, visitedEdges, edgeIndices.at(0));
-                }
-                else {
+                } else {
                     if (visitedEdges.contains(edgeIndices.at(0))) {
                         break;
                     }
@@ -589,8 +545,7 @@ void Tessellator::_walkContours(const std::vector<glm::vec2>& vertices, std::vec
                     currentVertexIndex = edges.at(edgeIndices.at(0)).second;
                     Tessellator::_visitEdgesUntilIntersection(edges, visitedEdges, edgeIndices.at(1));
                 }
-            }
-            else {
+            } else {
                 throw std::runtime_error("_walkContours(): Invalid edges.");
             }
         }
@@ -631,8 +586,7 @@ void Tessellator::_walkContours(const std::vector<glm::vec2>& vertices, std::vec
                     edgeIndex++;
                 }
                 currentVertexIndex = edges.at(edgeIndex).first;
-            }
-            else {
+            } else {
                 throw std::runtime_error("_walkContours(): Invalid edges.");
             }
         }
@@ -648,7 +602,9 @@ void Tessellator::_walkContours(const std::vector<glm::vec2>& vertices, std::vec
  * @param visited Set of visited edges
  * @param startEdgeIndex Index of edge where to start
  */
-void Tessellator::_visitEdgesUntilIntersection(std::vector<vft::Edge>& edges, std::set<uint32_t>& visited, uint32_t startEdgeIndex) {
+void Tessellator::_visitEdgesUntilIntersection(std::vector<vft::Edge> &edges,
+                                               std::set<uint32_t> &visited,
+                                               uint32_t startEdgeIndex) {
     visited.insert(startEdgeIndex);
     uint32_t currentVertexId = edges.at(startEdgeIndex).second;
     uint32_t lastEdgeIndex = startEdgeIndex;
@@ -660,8 +616,7 @@ void Tessellator::_visitEdgesUntilIntersection(std::vector<vft::Edge>& edges, st
             visited.insert(edgeIndices.at(0));
             currentVertexId = edges.at(edgeIndices.at(0)).second;
             lastEdgeIndex = edgeIndices.at(0);
-        }
-        else {
+        } else {
             // Intersection
             return;
         }
@@ -678,7 +633,7 @@ void Tessellator::_visitEdgesUntilIntersection(std::vector<vft::Edge>& edges, st
  *
  * @return Vector of all edges starting at given vertex
  */
-std::vector<uint32_t> Tessellator::_getEdgesStartingAt(uint32_t vertexId, const std::vector<vft::Edge>& edges) {
+std::vector<uint32_t> Tessellator::_getEdgesStartingAt(uint32_t vertexId, const std::vector<vft::Edge> &edges) {
     std::vector<uint32_t> indices;
     for (int i = 0; i < edges.size(); i++) {
         if (edges.at(i).first == vertexId) {
@@ -689,4 +644,4 @@ std::vector<uint32_t> Tessellator::_getEdgesStartingAt(uint32_t vertexId, const 
     return indices;
 }
 
-}
+}  // namespace vft

@@ -5,22 +5,19 @@
 
 #pragma once
 
-#include <vector>
 #include <cstdint>
+#include <vector>
 
 #include <glm/vec2.hpp>
 
 namespace vft {
 
 class GlyphMesh {
-
 protected:
-
     std::vector<glm::vec2> _vertices{};
     std::vector<std::vector<uint32_t>> _indices{};
 
 public:
-
     GlyphMesh(std::vector<glm::vec2> vertices, std::vector<std::vector<uint32_t>> indices);
     GlyphMesh();
     ~GlyphMesh() = default;
@@ -36,7 +33,6 @@ public:
     uint32_t getVertexCount() const;
     int getIndexCount(unsigned int drawIndex) const;
     unsigned int getDrawCount(unsigned int drawIndex) const;
-
 };
 
-}
+}  // namespace vft

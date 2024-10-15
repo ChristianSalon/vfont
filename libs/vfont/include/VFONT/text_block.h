@@ -5,16 +5,16 @@
 
 #pragma once
 
-#include <iostream>
-#include <vector>
-#include <memory>
-#include <functional>
 #include <cstdint>
+#include <functional>
+#include <iostream>
+#include <memory>
+#include <vector>
 
+#include <glm/ext/matrix_transform.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
-#include <glm/ext/matrix_transform.hpp>
 
 #include "character.h"
 #include "font.h"
@@ -28,31 +28,27 @@ namespace vft {
  * @brief Groups together characters which are rendered
  */
 class TextBlock {
-
 public:
-
     std::function<void()> onTextChange; /**< Callback when text in block changes */
 
 protected:
+    std::shared_ptr<Font> _font; /**< Font of text in text block */
 
-    std::shared_ptr<Font> _font;        /**< Font of text in text block */
+    bool _kerning;          /**< Indicates whether to use kerning in text block */
+    bool _wrapping;         /**< Indicates whether to use wrapping in text block */
+    unsigned int _fontSize; /**< Font size in text block */
+    int _width;             /**< Width of text block. -1 indicates unlimited width */
+    int _penX;              /**< X coordinate of current pen position */
+    int _penY;              /**< Y coordinate of current pen position */
 
-    bool _kerning;                      /**< Indicates whether to use kerning in text block */
-    bool _wrapping;                     /**< Indicates whether to use wrapping in text block */
-    unsigned int _fontSize;             /**< Font size in text block */
-    int _width;                         /**< Width of text block. -1 indicates unlimited width */
-    int _penX;                          /**< X coordinate of current pen position */
-    int _penY;                          /**< Y coordinate of current pen position */
-
-    glm::mat4 _transform;               /**< Transform matrix of text block */
-    glm::vec4 _color;                   /**< Color of text */
-    glm::vec3 _position;                /**< Position of text block */
+    glm::mat4 _transform; /**< Transform matrix of text block */
+    glm::vec4 _color;     /**< Color of text */
+    glm::vec3 _position;  /**< Position of text block */
 
     std::vector<Character> _characters; /**< Characters to render */
     std::shared_ptr<Tessellator> _tessellator;
 
 public:
-
     TextBlock(std::shared_ptr<Font> font,
               unsigned int fontSize,
               glm::vec4 color,
@@ -90,10 +86,8 @@ public:
     unsigned int getFontSize() const;
 
 protected:
-
     void _updateCharacters();
     void _updateTransform();
-
 };
 
-}
+}  // namespace vft
