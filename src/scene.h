@@ -66,7 +66,6 @@ protected:
         VkCompositeAlphaFlagBitsKHR compositeAlphaMode;
     };
 
-    static const int MAX_FRAMES_IN_FLIGHT;                  /**< Number of frames being concurrently processed */
     std::vector<const char *> extensions;                   /**< Selected vulkan extensions */
     std::vector<const char *> deviceExtensions;             /**< Selected vulkan device extensions */
     std::vector<const char *> validationLayers;             /**< Selected vulkan validation layers */
@@ -75,8 +74,6 @@ protected:
     std::shared_ptr<MainWindow> _window;                    /**< Application window */
     std::unique_ptr<BaseCamera> _camera;                    /**< Camera object */
     CameraType _cameraType;                                 /**< Type of camera used for rendering */
-
-    uint32_t _currentFrameIndex;                            /**< Current frame used for rendering */
 
     VkInstance _instance;                                   /**< Vulkan instance */
     VkSurfaceKHR _surface;                                  /**< Vulkan surface */
@@ -92,10 +89,10 @@ protected:
     VkRenderPass _renderPass;                               /**< Vulkan render pass */
     std::vector<VkFramebuffer> _framebuffers;               /**< Vulkan frame buffers */
     VkCommandPool _commandPool;                             /**< Vulkan command pool */
-    std::vector<VkCommandBuffer> _commandBuffers;           /**< Vulkan command buffers */
-    std::vector<VkSemaphore> _imageAvailableSemaphores;     /**< Semaphore to signal that an image was acquired from the swap chain */
-    std::vector<VkSemaphore> _renderFinishedSemaphores;     /**< Semaphore to signal if vulkan finished rendering and can begin presenting */
-    std::vector<VkFence> _inFlightFences;                   /**< Fence to ensure only one frame at a time is being rendered */
+    VkCommandBuffer _commandBuffer;           /**< Vulkan command buffers */
+    VkSemaphore _imageAvailableSemaphore;     /**< Semaphore to signal that an image was acquired from the swap chain */
+    VkSemaphore _renderFinishedSemaphore;     /**< Semaphore to signal if vulkan finished rendering and can begin presenting */
+    VkFence _inFlightFence;                   /**< Fence to ensure only one frame at a time is being rendered */
 
 public:
 

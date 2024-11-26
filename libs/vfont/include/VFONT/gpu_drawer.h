@@ -63,7 +63,7 @@ protected:
     std::vector<uint32_t> _boundingBoxIndices;   /**< Index buffer */
     std::vector<uint32_t> _curveSegmentsIndices; /**< Index buffer */
     std::vector<LineSegment> _lineSegments;
-    std::vector<LineSegmentsInfo> _lineSegmentsInfo;    
+    std::vector<LineSegmentsInfo> _lineSegmentsInfo;
 
     unsigned int _viewportWidth{0};
     unsigned int _viewportHeight{0};
@@ -83,11 +83,11 @@ protected:
     VkPipeline _curveSegmentsPipeline{nullptr};
 
     VkDescriptorSetLayout _lineSegmentsDescriptorSetLayout{nullptr};
-    std::vector<VkDescriptorSet> _lineSegmentsDescriptorSets;
+    VkDescriptorSet _lineSegmentsDescriptorSet;
 
-    std::vector<VkBuffer> _ssbo;
-    std::vector<VkDeviceMemory> _ssboMemory;
-    std::vector<void *> _mappedSSBO;
+    VkBuffer _ssbo;
+    VkDeviceMemory _ssboMemory;
+    void *_mappedSSBO;
 
 public:
     GpuDrawer(GlyphCache &cache);
@@ -109,7 +109,7 @@ protected:
 
     void _createDescriptorPool() override;
     void _createLineSegmentsDescriptorSetLayout();
-    void _createLineSegmentsDescriptorSets();
+    void _createLineSegmentsDescriptorSet();
 
     void _createLineSegmentsPipeline();
     void _createCurveSegmentsPipeline();

@@ -41,7 +41,7 @@ void CpuDrawer::draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, VkComma
 
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_pipeline);
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_pipelineLayout, 0, 1,
-                            &(this->_uboDescriptorSets.at(i % 2)), 0, nullptr);
+                            &this->_uboDescriptorSet, 0, nullptr);
 
     VkBuffer vertexBuffers[] = {this->_vertexBuffer};
     VkDeviceSize offsets[] = {0};

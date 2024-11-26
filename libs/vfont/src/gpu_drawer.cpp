@@ -43,7 +43,7 @@ void GpuDrawer::init(VkPhysicalDevice physicalDevice,
     Drawer::init(physicalDevice, logicalDevice, commandPool, graphicsQueue, renderPass);
 
     this->_createLineSegmentsDescriptorSetLayout();
-    this->_createLineSegmentsDescriptorSets();
+    this->_createLineSegmentsDescriptorSet();
 
     this->_createLineSegmentsPipeline();
     this->_createCurveSegmentsPipeline();
@@ -59,7 +59,7 @@ void GpuDrawer::draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, VkComma
 
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_lineSegmentsPipeline);
 
-    std::array<VkDescriptorSet, 2> sets = {this->_uboDescriptorSets.at(i % 2), this->_lineSegmentsDescriptorSets.at(0)};
+    std::array<VkDescriptorSet, 2> sets = {this->_uboDescriptorSet, this->_lineSegmentsDescriptorSet};
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_lineSegmentsPipelineLayout, 0,
                             sets.size(), sets.data(), 0, nullptr);
 
@@ -93,7 +93,7 @@ void GpuDrawer::draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, VkComma
     // Draw curve segments
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_curveSegmentsPipeline);
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_curveSegmentsPipelineLayout, 0, 1,
-                            &(this->_uboDescriptorSets.at(i % 2)), 0, nullptr);
+                            &this->_uboDescriptorSet, 0, nullptr);
 
     // vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
     vkCmdBindIndexBuffer(commandBuffer, this->_curveSegmentsIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
@@ -266,7 +266,7 @@ void GpuDrawer::_createSsbo() {
     std::array<VkWriteDescriptorSet, 1> writeDescriptorSets = {};
 
     writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writeDescriptorSets[0].dstSet = this->_lineSegmentsDescriptorSets.at(0);
+    writeDescriptorSets[0].dstSet = this->_lineSegmentsDescriptorSet;
     writeDescriptorSets[0].dstBinding = 0;
     writeDescriptorSets[0].dstArrayElement = 0;
     writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
@@ -295,18 +295,14 @@ void GpuDrawer::_createLineSegmentsDescriptorSetLayout() {
     }
 }
 
-void GpuDrawer::_createLineSegmentsDescriptorSets() {
-    std::vector<VkDescriptorSetLayout> layouts(2, this->_lineSegmentsDescriptorSetLayout);
-
+void GpuDrawer::_createLineSegmentsDescriptorSet() {
     VkDescriptorSetAllocateInfo allocateInfo{};
     allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocateInfo.descriptorPool = this->_descriptorPool;
-    allocateInfo.descriptorSetCount = layouts.size();
-    allocateInfo.pSetLayouts = layouts.data();
+    allocateInfo.descriptorSetCount = 1;
+    allocateInfo.pSetLayouts = &this->_lineSegmentsDescriptorSetLayout;
 
-    this->_lineSegmentsDescriptorSets.resize(layouts.size());
-
-    if (vkAllocateDescriptorSets(this->_logicalDevice, &allocateInfo, this->_lineSegmentsDescriptorSets.data()) !=
+    if (vkAllocateDescriptorSets(this->_logicalDevice, &allocateInfo, &this->_lineSegmentsDescriptorSet) !=
         VK_SUCCESS) {
         throw std::runtime_error("Error allocating vulkan descriptor sets");
     }

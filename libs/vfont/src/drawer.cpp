@@ -10,9 +10,7 @@ namespace vft {
 Drawer::Drawer(GlyphCache &cache) : _cache{cache} {};
 
 Drawer::~Drawer() {
-    for (int i = 0; i < 2; i++) {
-        this->_destroyBuffer(this->_ubo.at(i), this->_uboMemory.at(i));
-    }
+    this->_destroyBuffer(this->_ubo, this->_uboMemory);
 
     vkDestroyDescriptorPool(this->_logicalDevice, this->_descriptorPool, nullptr);
     vkDestroyDescriptorSetLayout(this->_logicalDevice, this->_uboDescriptorSetLayout, nullptr);
@@ -33,13 +31,13 @@ void Drawer::init(VkPhysicalDevice physicalDevice,
 
     this->_createUboDescriptorSetLayout();
     this->_createDescriptorPool();
-    this->_createUboDescriptorSets();
+    this->_createUboDescriptorSet();
 }
 
 void Drawer::setUniformBuffers(vft::UniformBufferObject ubo) {
     static size_t i = 0;
 
-    memcpy(this->_mappedUbo.at((i++) % 2), &ubo, sizeof(ubo));
+    memcpy(this->_mappedUbo, &ubo, sizeof(ubo));
 }
 
 uint32_t Drawer::_selectMemoryType(uint32_t memoryType, VkMemoryPropertyFlags properties) {
@@ -196,17 +194,11 @@ VkShaderModule Drawer::_createShaderModule(const std::vector<char> &shaderCode) 
 void Drawer::_createUbo() {
     VkDeviceSize bufferSize = sizeof(vft::UniformBufferObject);
 
-    this->_ubo.resize(2);
-    this->_uboMemory.resize(2);
-    this->_mappedUbo.resize(2);
+    this->_createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, this->_ubo,
+                        this->_uboMemory);
 
-    for (int i = 0; i < 2; i++) {
-        this->_createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                            this->_ubo.at(i), this->_uboMemory.at(i));
-
-        vkMapMemory(this->_logicalDevice, this->_uboMemory.at(i), 0, bufferSize, 0, &(this->_mappedUbo.at(i)));
-    }
+    vkMapMemory(this->_logicalDevice, this->_uboMemory, 0, bufferSize, 0, &this->_mappedUbo);
 }
 
 void Drawer::_createDescriptorPool() {
@@ -239,44 +231,38 @@ void Drawer::_createUboDescriptorSetLayout() {
     layoutCreateInfo.bindingCount = 1;
     layoutCreateInfo.pBindings = &layoutBinding;
 
-    if (vkCreateDescriptorSetLayout(this->_logicalDevice, &layoutCreateInfo, nullptr,
-                                    &(this->_uboDescriptorSetLayout)) != VK_SUCCESS) {
+    if (vkCreateDescriptorSetLayout(this->_logicalDevice, &layoutCreateInfo, nullptr, &this->_uboDescriptorSetLayout) !=
+        VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan descriptor set layout");
     }
 }
 
-void Drawer::_createUboDescriptorSets() {
-    std::vector<VkDescriptorSetLayout> layouts(2, this->_uboDescriptorSetLayout);
-
+void Drawer::_createUboDescriptorSet() {
     VkDescriptorSetAllocateInfo allocateInfo{};
     allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocateInfo.descriptorPool = this->_descriptorPool;
-    allocateInfo.descriptorSetCount = static_cast<uint32_t>(2);
-    allocateInfo.pSetLayouts = layouts.data();
+    allocateInfo.descriptorSetCount = 1;
+    allocateInfo.pSetLayouts = &this->_uboDescriptorSetLayout;
 
-    this->_uboDescriptorSets.resize(2);
-
-    if (vkAllocateDescriptorSets(this->_logicalDevice, &allocateInfo, this->_uboDescriptorSets.data()) != VK_SUCCESS) {
+    if (vkAllocateDescriptorSets(this->_logicalDevice, &allocateInfo, &this->_uboDescriptorSet) != VK_SUCCESS) {
         throw std::runtime_error("Error allocating vulkan descriptor sets");
     }
 
-    for (int i = 0; i < 2; i++) {
-        VkDescriptorBufferInfo descriptorBufferInfo{};
-        descriptorBufferInfo.buffer = this->_ubo.at(i);
-        descriptorBufferInfo.offset = 0;
-        descriptorBufferInfo.range = sizeof(vft::UniformBufferObject);
+    VkDescriptorBufferInfo descriptorBufferInfo{};
+    descriptorBufferInfo.buffer = this->_ubo;
+    descriptorBufferInfo.offset = 0;
+    descriptorBufferInfo.range = sizeof(vft::UniformBufferObject);
 
-        VkWriteDescriptorSet writeDescriptorSet{};
-        writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        writeDescriptorSet.dstSet = this->_uboDescriptorSets.at(i);
-        writeDescriptorSet.dstBinding = 0;
-        writeDescriptorSet.dstArrayElement = 0;
-        writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        writeDescriptorSet.descriptorCount = 1;
-        writeDescriptorSet.pBufferInfo = &descriptorBufferInfo;
+    VkWriteDescriptorSet writeDescriptorSet{};
+    writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writeDescriptorSet.dstSet = this->_uboDescriptorSet;
+    writeDescriptorSet.dstBinding = 0;
+    writeDescriptorSet.dstArrayElement = 0;
+    writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.pBufferInfo = &descriptorBufferInfo;
 
-        vkUpdateDescriptorSets(this->_logicalDevice, 1, &writeDescriptorSet, 0, nullptr);
-    }
+    vkUpdateDescriptorSets(this->_logicalDevice, 1, &writeDescriptorSet, 0, nullptr);
 }
 
 }  // namespace vft

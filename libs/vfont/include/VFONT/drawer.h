@@ -36,11 +36,11 @@ protected:
     VkDescriptorPool _descriptorPool{nullptr};
 
     VkDescriptorSetLayout _uboDescriptorSetLayout{nullptr};
-    std::vector<VkDescriptorSet> _uboDescriptorSets;
+    VkDescriptorSet _uboDescriptorSet;
 
-    std::vector<VkBuffer> _ubo;
-    std::vector<VkDeviceMemory> _uboMemory;
-    std::vector<void *> _mappedUbo;
+    VkBuffer _ubo;
+    VkDeviceMemory _uboMemory;
+    void *_mappedUbo;
 
 public:
     Drawer(GlyphCache &cache);
@@ -61,7 +61,7 @@ protected:
 
     void _createUbo();
     void _createUboDescriptorSetLayout();
-    void _createUboDescriptorSets();
+    void _createUboDescriptorSet();
 
     std::vector<char> _readFile(std::string fileName);
     VkShaderModule _createShaderModule(const std::vector<char> &shaderCode);

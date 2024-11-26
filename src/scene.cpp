@@ -5,8 +5,6 @@
 
 #include "scene.h"
 
-constexpr int Scene::MAX_FRAMES_IN_FLIGHT = 2;
-
 /**
  * @brief Scene constructor
  * 
@@ -14,7 +12,6 @@ constexpr int Scene::MAX_FRAMES_IN_FLIGHT = 2;
  */
 Scene::Scene(CameraType cameraType) {
     this->_cameraType = cameraType;
-    this->_currentFrameIndex = 0;
 
     this->extensions = {
     "VK_KHR_surface",
@@ -92,11 +89,9 @@ Scene::~Scene() {
     this->_renderer.destroy();
     this->_cleanupSwapChain();
 
-    for(int i = 0; i < Scene::MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroySemaphore(this->_logicalDevice, this->_imageAvailableSemaphores[i], nullptr);
-        vkDestroySemaphore(this->_logicalDevice, this->_renderFinishedSemaphores[i], nullptr);
-        vkDestroyFence(this->_logicalDevice, this->_inFlightFences[i], nullptr);
-    }
+    vkDestroySemaphore(this->_logicalDevice, this->_imageAvailableSemaphore, nullptr);
+    vkDestroySemaphore(this->_logicalDevice, this->_renderFinishedSemaphore, nullptr);
+    vkDestroyFence(this->_logicalDevice, this->_inFlightFence, nullptr);
 
     vkDestroyCommandPool(this->_logicalDevice, this->_commandPool, nullptr);
     vkDestroyRenderPass(this->_logicalDevice, this->_renderPass, nullptr);
@@ -850,15 +845,13 @@ void Scene::_createCommandPool() {
  * @brief Creates vulkan command buffers
  */
 void Scene::_createCommandBuffers() {
-    this->_commandBuffers.resize(Scene::MAX_FRAMES_IN_FLIGHT);
-
     VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
     commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     commandBufferAllocateInfo.commandPool = this->_commandPool;
     commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    commandBufferAllocateInfo.commandBufferCount = static_cast<uint32_t>(this->_commandBuffers.size());
+    commandBufferAllocateInfo.commandBufferCount = 1;
 
-    if(vkAllocateCommandBuffers(this->_logicalDevice, &commandBufferAllocateInfo, this->_commandBuffers.data()) != VK_SUCCESS) {
+    if(vkAllocateCommandBuffers(this->_logicalDevice, &commandBufferAllocateInfo, &this->_commandBuffer) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan command buffer");
     }
 }
@@ -918,10 +911,6 @@ void Scene::_recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIn
  * @brief Creates vulkan synchronization objects
  */
 void Scene::_createSynchronizationObjects() {
-    this->_imageAvailableSemaphores.resize(Scene::MAX_FRAMES_IN_FLIGHT);
-    this->_renderFinishedSemaphores.resize(Scene::MAX_FRAMES_IN_FLIGHT);
-    this->_inFlightFences.resize(Scene::MAX_FRAMES_IN_FLIGHT);
-
     VkSemaphoreCreateInfo semaphoreCreateInfo{};
     semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -929,14 +918,12 @@ void Scene::_createSynchronizationObjects() {
     fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    for(int i = 0; i < Scene::MAX_FRAMES_IN_FLIGHT; i++) {
-        if(
-            vkCreateSemaphore(this->_logicalDevice, &semaphoreCreateInfo, nullptr, &this->_imageAvailableSemaphores[i]) != VK_SUCCESS ||
-            vkCreateSemaphore(this->_logicalDevice, &semaphoreCreateInfo, nullptr, &this->_renderFinishedSemaphores[i]) != VK_SUCCESS ||
-            vkCreateFence(this->_logicalDevice, &fenceCreateInfo, nullptr, &this->_inFlightFences[i]) != VK_SUCCESS
-        ) {
-            throw std::runtime_error("Error creating vulkan synchronization objects");
-        }
+    if(
+        vkCreateSemaphore(this->_logicalDevice, &semaphoreCreateInfo, nullptr, &this->_imageAvailableSemaphore) != VK_SUCCESS ||
+        vkCreateSemaphore(this->_logicalDevice, &semaphoreCreateInfo, nullptr, &this->_renderFinishedSemaphore) != VK_SUCCESS ||
+        vkCreateFence(this->_logicalDevice, &fenceCreateInfo, nullptr, &this->_inFlightFence) != VK_SUCCESS
+    ) {
+        throw std::runtime_error("Error creating vulkan synchronization objects");
     }
 }
 
@@ -944,14 +931,14 @@ void Scene::_createSynchronizationObjects() {
  * @brief Records and executes the command buffer, presents output to screen
  */
 void Scene::_drawFrame() {
-    vkWaitForFences(this->_logicalDevice, 1, &this->_inFlightFences[this->_currentFrameIndex], true, UINT64_MAX);
+    vkWaitForFences(this->_logicalDevice, 1, &this->_inFlightFence, true, UINT64_MAX);
 
     // Set uniform buffers used for rendering text
     vft::UniformBufferObject ubo{ this->_camera->getViewMatrix(), this->_camera->getProjectionMatrix() };
     this->_renderer.setUniformBuffers(ubo);
 
     uint32_t imageIndex;
-    VkResult result = vkAcquireNextImageKHR(this->_logicalDevice, this->_swapChain, UINT64_MAX, this->_imageAvailableSemaphores[this->_currentFrameIndex], nullptr, &imageIndex);
+    VkResult result = vkAcquireNextImageKHR(this->_logicalDevice, this->_swapChain, UINT64_MAX, this->_imageAvailableSemaphore, nullptr, &imageIndex);
     if(result == VK_ERROR_OUT_OF_DATE_KHR) {
         _recreateSwapChain();
         return;
@@ -960,13 +947,13 @@ void Scene::_drawFrame() {
         throw std::runtime_error("Error acquiring vulkan swap chain image");
     }
 
-    vkResetFences(this->_logicalDevice, 1, &this->_inFlightFences[this->_currentFrameIndex]);
+    vkResetFences(this->_logicalDevice, 1, &this->_inFlightFence);
 
-    vkResetCommandBuffer(this->_commandBuffers[this->_currentFrameIndex], 0);
-    this->_recordCommandBuffer(this->_commandBuffers[this->_currentFrameIndex], imageIndex);
+    vkResetCommandBuffer(this->_commandBuffer, 0);
+    this->_recordCommandBuffer(this->_commandBuffer, imageIndex);
 
-    VkSemaphore signalSemaphores[] = { this->_renderFinishedSemaphores[this->_currentFrameIndex] };
-    VkSemaphore waitSemaphores[] = { this->_imageAvailableSemaphores[this->_currentFrameIndex] };
+    VkSemaphore signalSemaphores[] = { this->_renderFinishedSemaphore };
+    VkSemaphore waitSemaphores[] = { this->_imageAvailableSemaphore };
     VkPipelineStageFlags waitStagees[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
     VkSubmitInfo submitInfo{};
@@ -977,9 +964,9 @@ void Scene::_drawFrame() {
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &this->_commandBuffers[this->_currentFrameIndex];
+    submitInfo.pCommandBuffers = &this->_commandBuffer;
 
-    if(vkQueueSubmit(this->_graphicsQueue, 1, &submitInfo, this->_inFlightFences[this->_currentFrameIndex]) != VK_SUCCESS) {
+    if(vkQueueSubmit(this->_graphicsQueue, 1, &submitInfo, this->_inFlightFence) != VK_SUCCESS) {
         throw std::runtime_error("Error submiting draw command buffer");
     }
 
@@ -1002,6 +989,4 @@ void Scene::_drawFrame() {
     else if(result != VK_SUCCESS) {
         throw std::runtime_error("Error presenting vulkan swap chain image");
     }
-
-    this->_currentFrameIndex = (this->_currentFrameIndex + 1) % Scene::MAX_FRAMES_IN_FLIGHT;
 }

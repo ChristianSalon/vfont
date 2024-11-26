@@ -50,7 +50,7 @@ void CombinedDrawer::draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, Vk
 
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_lineSegmentsPipeline);
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_lineSegmentsPipelineLayout, 0, 1,
-                            &(this->_uboDescriptorSets.at(i % 2)), 0, nullptr);
+                            &this->_uboDescriptorSet, 0, nullptr);
 
     VkBuffer vertexBuffers[] = {this->_vertexBuffer};
     VkDeviceSize offsets[] = {0};
@@ -76,7 +76,7 @@ void CombinedDrawer::draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, Vk
     // Draw curve segments
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_curveSegmentsPipeline);
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_curveSegmentsPipelineLayout, 0, 1,
-                            &(this->_uboDescriptorSets.at((i++) % 2)), 0, nullptr);
+                            &this->_uboDescriptorSet, 0, nullptr);
 
     // vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
     vkCmdBindIndexBuffer(commandBuffer, this->_curveSegmentsIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
