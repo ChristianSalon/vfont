@@ -75,13 +75,14 @@ Scene::Scene(CameraType cameraType) {
 
     // Initialize text renderer
     this->_renderer.init(
-        vft::TextRenderer::TessellationStrategy::CPU_AND_GPU,
+        vft::TextRenderer::TessellationStrategy::GPU_ONLY,
         this->_physicalDevice,
         this->_logicalDevice,
         this->_commandPool,
         this->_graphicsQueue,
         this->_renderPass
     );
+    this->_renderer.setViewportSize(this->_window->getWidth(), this->_window->getHeight());
 }
 
 /**
@@ -132,6 +133,8 @@ void Scene::updateWindowDimensions(int width, int height) {
             0.f, 2000.f
         );
     }
+
+    this->_renderer.setViewportSize(this->_window->getWidth(), this->_window->getHeight());
 }
 
 /**

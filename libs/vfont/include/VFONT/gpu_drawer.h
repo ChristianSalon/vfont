@@ -51,6 +51,11 @@ public:
         uint32_t lineSegmentsCount;
     };
 
+    struct ViewportPushConstants {
+        uint32_t viewportWidth;
+        uint32_t viewportHeight;
+    };
+
 protected:
     std::unordered_map<GlyphKey, std::array<uint32_t, 3>, GlyphKeyHash> _offsets;
 
@@ -58,7 +63,10 @@ protected:
     std::vector<uint32_t> _boundingBoxIndices;   /**< Index buffer */
     std::vector<uint32_t> _curveSegmentsIndices; /**< Index buffer */
     std::vector<LineSegment> _lineSegments;
-    std::vector<LineSegmentsInfo> _lineSegmentsInfo;
+    std::vector<LineSegmentsInfo> _lineSegmentsInfo;    
+
+    unsigned int _viewportWidth{0};
+    unsigned int _viewportHeight{0};
 
     VkBuffer _vertexBuffer{nullptr};                         /**< Vulkan vertex buffer */
     VkDeviceMemory _vertexBufferMemory{nullptr};             /**< Vulkan vertex buffer memory */
@@ -92,6 +100,8 @@ public:
               VkRenderPass renderPass) override;
     void draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, VkCommandBuffer commandBuffer) override;
     void recreateBuffers(std::vector<std::shared_ptr<TextBlock>> textBlocks) override;
+
+    void setViewportSize(unsigned int width, unsigned int height);
 
 protected:
     void _createVertexAndIndexBuffers(std::vector<std::shared_ptr<TextBlock>> &textBlocks);

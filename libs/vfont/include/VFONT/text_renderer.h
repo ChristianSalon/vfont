@@ -36,6 +36,8 @@ public:
     enum class TessellationStrategy { CPU_ONLY, CPU_AND_GPU, GPU_ONLY };
 
 protected:
+    TessellationStrategy _tessellationStrategy;
+
     std::vector<std::shared_ptr<TextBlock>> _blocks; /**< All text blocks to be rendered */
     std::shared_ptr<Tessellator> _tessellator;
     std::shared_ptr<Drawer> _drawer;
@@ -60,7 +62,9 @@ public:
     void destroy();
     void draw(VkCommandBuffer commandBuffer);
     void add(std::shared_ptr<TextBlock> text);
+
     void setUniformBuffers(vft::UniformBufferObject ubo);
+    void setViewportSize(unsigned int width, unsigned int height);
 
 protected:
     void _setPhysicalDevice(VkPhysicalDevice physicalDevice);

@@ -90,6 +90,11 @@ void CombinedDrawer::draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, Vk
                                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                                    sizeof(vft::CharacterPushConstants), &pushConstants);
 
+                ViewportPushConstants viewportPushConstants{this->_viewportWidth, this->_viewportHeight};
+                vkCmdPushConstants(commandBuffer, this->_curveSegmentsPipelineLayout,
+                                   VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(vft::CharacterPushConstants),
+                                   sizeof(ViewportPushConstants), &viewportPushConstants);
+
                 vkCmdDrawIndexed(commandBuffer, character.glyph.mesh.getIndexCount(GLYPH_MESH_CURVE_BUFFER_INDEX), 1,
                                  this->_offsets.at(key).at(CURVE_OFFSET_BUFFER_INDEX), 0, 0);
             }
@@ -105,6 +110,11 @@ void CombinedDrawer::recreateBuffers(std::vector<std::shared_ptr<TextBlock>> tex
 
     // Create vulkan buffers
     this->_createVertexAndIndexBuffers(textBlocks);
+}
+
+void CombinedDrawer::setViewportSize(unsigned int width, unsigned int height) {
+    this->_viewportWidth = width;
+    this->_viewportHeight = height;
 }
 
 void CombinedDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<TextBlock>> &textBlocks) {
@@ -422,17 +432,22 @@ void CombinedDrawer::_createCurveSegmentsPipeline() {
     colorBlendStateCreateInfo.attachmentCount = 1;
     colorBlendStateCreateInfo.pAttachments = &colorBlendAttachmentState;
 
-    VkPushConstantRange pushConstantRange{};
-    pushConstantRange.size = sizeof(vft::CharacterPushConstants);
-    pushConstantRange.offset = 0;
-    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    std::array<VkPushConstantRange, 2> pushConstantRanges;
+
+    pushConstantRanges[0].size = sizeof(vft::CharacterPushConstants);
+    pushConstantRanges[0].offset = 0;
+    pushConstantRanges[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    pushConstantRanges[1].size = sizeof(ViewportPushConstants);
+    pushConstantRanges[1].offset = sizeof(vft::CharacterPushConstants);
+    pushConstantRanges[1].stageFlags = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
 
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
     pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutCreateInfo.setLayoutCount = 1;
     pipelineLayoutCreateInfo.pSetLayouts = &this->_uboDescriptorSetLayout;
-    pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
-    pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
+    pipelineLayoutCreateInfo.pPushConstantRanges = pushConstantRanges.data();
+    pipelineLayoutCreateInfo.pushConstantRangeCount = pushConstantRanges.size();
 
     if (vkCreatePipelineLayout(this->_logicalDevice, &pipelineLayoutCreateInfo, nullptr,
                                &this->_curveSegmentsPipelineLayout) != VK_SUCCESS) {

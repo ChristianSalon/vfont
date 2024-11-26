@@ -33,6 +33,8 @@ void TextRenderer::init(TessellationStrategy tessellationStrategy,
                         VkCommandPool commandPool,
                         VkQueue graphicsQueue,
                         VkRenderPass renderPass) {
+    this->_tessellationStrategy = tessellationStrategy;
+
     this->_setPhysicalDevice(physicalDevice);
     this->_setLogicalDevice(logicalDevice);
     this->_setCommandPool(commandPool);
@@ -88,6 +90,14 @@ void TextRenderer::add(std::shared_ptr<TextBlock> text) {
 
 void TextRenderer::setUniformBuffers(vft::UniformBufferObject ubo) {
     this->_drawer->setUniformBuffers(ubo);
+}
+
+void TextRenderer::setViewportSize(unsigned int width, unsigned int height) {
+    if (this->_tessellationStrategy == TessellationStrategy::CPU_AND_GPU) {
+        reinterpret_cast<CombinedDrawer *>(this->_drawer.get())->setViewportSize(width, height);
+    } else if (this->_tessellationStrategy == TessellationStrategy::GPU_ONLY) {
+        reinterpret_cast<GpuDrawer *>(this->_drawer.get())->setViewportSize(width, height);
+    }
 }
 
 /**
