@@ -137,6 +137,15 @@ void TextBlock::add(std::vector<uint32_t> codePoints) {
     }
 }
 
+void TextBlock::add(std::string text) {
+    std::vector<uint32_t> codePoints;
+    for (unsigned char character : text) {
+        codePoints.push_back(character);
+    }
+
+    this->add(codePoints);
+}
+
 /**
  * @brief Remove characters from end of text block
  *

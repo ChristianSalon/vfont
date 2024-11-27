@@ -47,7 +47,7 @@ void main() {
 	float maxCurveLength = distance(startScreen, controlScreen) + distance(controlScreen, endScreen);
 	float curvature = 2 * abs(cross(controlNDC - startNDC, endNDC - startNDC).z) / (distance(startNDC, controlNDC) * distance(controlNDC, endNDC) * distance(endNDC, startNDC));
 
-	float tessellationLevel = max(2.f, maxCurveLength / curvature);
+	float tessellationLevel = max(2.f, maxCurveLength / curvature / 20.f);
 
 	// The curve is on the part of the contour that defines a filled outline
 	if(isTriangleCCW(start.xy, control.xy, end.xy)) {

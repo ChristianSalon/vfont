@@ -27,7 +27,7 @@ private:
 
 public:
 
-    EditorScene(CameraType cameraType);
+    EditorScene(CameraType cameraType, vft::Renderer::TessellationStrategy tessellationAlgorithm, bool measureTime = false);
     ~EditorScene();
 
 private:

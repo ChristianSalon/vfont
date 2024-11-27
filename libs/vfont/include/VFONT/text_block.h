@@ -62,6 +62,7 @@ public:
     void rotate(float x, float y, float z);
 
     void add(std::vector<uint32_t> codePoints);
+    void add(std::string text);
     void remove(unsigned int count = 1);
     void clear();
 

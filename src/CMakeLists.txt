@@ -10,6 +10,8 @@ set(VFONT_DEMO_SOURCES
     demo_scene.cpp
     editor_scene.h
     editor_scene.cpp
+    benchmark_scene.h
+    benchmark_scene.cpp
     window.h
     window.cpp
     kb_input.h

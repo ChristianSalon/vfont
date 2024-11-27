@@ -3,7 +3,10 @@ project(vfont VERSION 1.0)
 
 set(LIB_NAME vfont)
 set(VFONT_HEADERS
+    include/VFONT/renderer.h
+    include/VFONT/renderer_decorator.h
     include/VFONT/text_renderer.h
+    include/VFONT/timed_renderer.h
     include/VFONT/text_renderer_utils.h
     include/VFONT/glyph.h
     include/VFONT/glyph_mesh.h
@@ -22,7 +25,9 @@ set(VFONT_HEADERS
     include/VFONT/combined_drawer.h
 )
 set(VFONT_SOURCES
+    src/renderer_decorator.cpp
     src/text_renderer.cpp
+    src/timed_renderer.cpp
     src/glyph.cpp
     src/glyph_mesh.cpp
     src/glyph_compositor.cpp

@@ -20,6 +20,7 @@
 #include "glyph_cache.h"
 #include "gpu_drawer.h"
 #include "gpu_tessellator.h"
+#include "renderer.h"
 #include "tessellator.h"
 #include "text_block.h"
 #include "text_renderer_utils.h"
@@ -31,10 +32,7 @@ namespace vft {
  *
  * @brief Creates vertex and index buffers for specified characters
  */
-class TextRenderer {
-public:
-    enum class TessellationStrategy { CPU_ONLY, CPU_AND_GPU, GPU_ONLY };
-
+class TextRenderer : public Renderer {
 protected:
     TessellationStrategy _tessellationStrategy;
 
@@ -51,20 +49,20 @@ protected:
 
 public:
     TextRenderer();
-    ~TextRenderer();
+    ~TextRenderer() override;
 
     void init(TessellationStrategy tessellationStrategy,
               VkPhysicalDevice physicalDevice,
               VkDevice logicalDevice,
               VkCommandPool commandPool,
               VkQueue graphicsQueue,
-              VkRenderPass renderPass);
-    void destroy();
-    void draw(VkCommandBuffer commandBuffer);
-    void add(std::shared_ptr<TextBlock> text);
+              VkRenderPass renderPass) override;
+    void destroy() override;
+    void add(std::shared_ptr<TextBlock> text) override;
+    void draw(VkCommandBuffer commandBuffer) override;
 
-    void setUniformBuffers(vft::UniformBufferObject ubo);
-    void setViewportSize(unsigned int width, unsigned int height);
+    void setUniformBuffers(vft::UniformBufferObject ubo) override;
+    void setViewportSize(unsigned int width, unsigned int height) override;
 
 protected:
     void _setPhysicalDevice(VkPhysicalDevice physicalDevice);

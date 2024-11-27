@@ -53,7 +53,7 @@ private:
 
 public:
 
-    DemoScene(CameraType cameraType);
+    DemoScene(CameraType cameraType, vft::Renderer::TessellationStrategy tessellationAlgorithm, bool measureTime = false);
     ~DemoScene();
 
 };

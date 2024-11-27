@@ -26,6 +26,7 @@
 #include <VFONT/font.h>
 #include <VFONT/text_block.h>
 #include <VFONT/text_renderer.h>
+#include <VFONT/timed_renderer.h>
 #include <VFONT/tessellator.h>
 
 #include "window.h"
@@ -70,7 +71,8 @@ protected:
     std::vector<const char *> deviceExtensions;             /**< Selected vulkan device extensions */
     std::vector<const char *> validationLayers;             /**< Selected vulkan validation layers */
 
-    vft::TextRenderer _renderer;                            /**< Default text renderer */
+    bool _measureTime;
+    std::shared_ptr<vft::Renderer> _renderer;                            /**< Default text renderer */
     std::shared_ptr<MainWindow> _window;                    /**< Application window */
     std::unique_ptr<BaseCamera> _camera;                    /**< Camera object */
     CameraType _cameraType;                                 /**< Type of camera used for rendering */
@@ -96,7 +98,7 @@ protected:
 
 public:
 
-    Scene(CameraType cameraType);
+    Scene(CameraType cameraType, vft::Renderer::TessellationStrategy tessellationAlgorithm, bool measureTime = false);
     ~Scene();
 
     void run();

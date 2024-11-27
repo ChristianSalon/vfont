@@ -50,8 +50,6 @@ void GpuDrawer::init(VkPhysicalDevice physicalDevice,
 }
 
 void GpuDrawer::draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, VkCommandBuffer commandBuffer) {
-    static size_t i = 0;
-
     // Check if there are characters to render
     if (this->_vertices.size() == 0) {
         return;
@@ -117,8 +115,6 @@ void GpuDrawer::draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, VkComma
             }
         }
     }
-
-    i++;
 }
 
 void GpuDrawer::recreateBuffers(std::vector<std::shared_ptr<TextBlock>> textBlocks) {

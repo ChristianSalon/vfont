@@ -10,8 +10,7 @@
  * 
  * @param cameraType Type of camera used for rendering
  */
-Scene::Scene(CameraType cameraType) {
-    this->_cameraType = cameraType;
+Scene::Scene(CameraType cameraType, vft::Renderer::TessellationStrategy tessellationAlgorithm, bool measureTime) : _cameraType{ cameraType }, _measureTime { measureTime } {
 
     this->extensions = {
     "VK_KHR_surface",
@@ -70,23 +69,31 @@ Scene::Scene(CameraType cameraType) {
     // Initialize vulkan
     this->_initVulkan();
 
+    if (measureTime) {
+        vft::Renderer *renderer = new vft::TextRenderer();
+        this->_renderer = std::make_shared<vft::TimedRenderer>(renderer, this->_logicalDevice);
+    }
+    else {
+        this->_renderer = std::make_shared<vft::TextRenderer>();
+    }
+
     // Initialize text renderer
-    this->_renderer.init(
-        vft::TextRenderer::TessellationStrategy::GPU_ONLY,
+    this->_renderer->init(
+        tessellationAlgorithm,
         this->_physicalDevice,
         this->_logicalDevice,
         this->_commandPool,
         this->_graphicsQueue,
         this->_renderPass
     );
-    this->_renderer.setViewportSize(this->_window->getWidth(), this->_window->getHeight());
+    this->_renderer->setViewportSize(this->_window->getWidth(), this->_window->getHeight());
 }
 
 /**
  * @brief Scene destructor
  */
 Scene::~Scene() {
-    this->_renderer.destroy();
+    this->_renderer->destroy();
     this->_cleanupSwapChain();
 
     vkDestroySemaphore(this->_logicalDevice, this->_imageAvailableSemaphore, nullptr);
@@ -129,7 +136,7 @@ void Scene::updateWindowDimensions(int width, int height) {
         );
     }
 
-    this->_renderer.setViewportSize(this->_window->getWidth(), this->_window->getHeight());
+    this->_renderer->setViewportSize(this->_window->getWidth(), this->_window->getHeight());
 }
 
 /**
@@ -898,7 +905,7 @@ void Scene::_recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIn
     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
     
-    this->_renderer.draw(commandBuffer);
+    this->_renderer->draw(commandBuffer);
 
     vkCmdEndRenderPass(commandBuffer);
 
@@ -931,11 +938,13 @@ void Scene::_createSynchronizationObjects() {
  * @brief Records and executes the command buffer, presents output to screen
  */
 void Scene::_drawFrame() {
+    static bool printTime = true;
+
     vkWaitForFences(this->_logicalDevice, 1, &this->_inFlightFence, true, UINT64_MAX);
 
     // Set uniform buffers used for rendering text
     vft::UniformBufferObject ubo{ this->_camera->getViewMatrix(), this->_camera->getProjectionMatrix() };
-    this->_renderer.setUniformBuffers(ubo);
+    this->_renderer->setUniformBuffers(ubo);
 
     uint32_t imageIndex;
     VkResult result = vkAcquireNextImageKHR(this->_logicalDevice, this->_swapChain, UINT64_MAX, this->_imageAvailableSemaphore, nullptr, &imageIndex);
@@ -988,5 +997,11 @@ void Scene::_drawFrame() {
     }
     else if(result != VK_SUCCESS) {
         throw std::runtime_error("Error presenting vulkan swap chain image");
+    }
+
+    if (this->_measureTime && printTime) {
+        float time = reinterpret_cast<vft::TimedRenderer*>(this->_renderer.get())->readTimestamps(this->_commandBuffer);
+        std::cout << "Time: " << time << std::endl;
+        printTime = false;
     }
 }
