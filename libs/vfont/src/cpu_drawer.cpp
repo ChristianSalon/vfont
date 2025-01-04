@@ -17,16 +17,12 @@ CpuDrawer::~CpuDrawer() {
     if (this->_vertexBuffer != nullptr)
         this->_destroyBuffer(this->_vertexBuffer, this->_vertexBufferMemory);
 
-    vkDestroyPipeline(this->_logicalDevice, this->_pipeline, nullptr);
-    vkDestroyPipelineLayout(this->_logicalDevice, this->_pipelineLayout, nullptr);
+    vkDestroyPipeline(this->_vulkanContext.logicalDevice, this->_pipeline, nullptr);
+    vkDestroyPipelineLayout(this->_vulkanContext.logicalDevice, this->_pipelineLayout, nullptr);
 }
 
-void CpuDrawer::init(VkPhysicalDevice physicalDevice,
-                     VkDevice logicalDevice,
-                     VkCommandPool commandPool,
-                     VkQueue graphicsQueue,
-                     VkRenderPass renderPass) {
-    Drawer::init(physicalDevice, logicalDevice, commandPool, graphicsQueue, renderPass);
+void CpuDrawer::init(VulkanContext vulkanContext) {
+    Drawer::init(vulkanContext);
 
     this->_createPipeline();
 }
@@ -49,7 +45,8 @@ void CpuDrawer::draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, VkComma
     for (int i = 0; i < textBlocks.size(); i++) {
         for (Character &character : textBlocks[i]->getCharacters()) {
             if (character.glyph.mesh.getVertexCount() > 0) {
-                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint()};
+                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint(),
+                             textBlocks.at(i)->getFontSize()};
 
                 vft::CharacterPushConstants pushConstants{character.getModelMatrix(), textBlocks.at(i)->getColor()};
                 vkCmdPushConstants(commandBuffer, this->_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
@@ -80,7 +77,8 @@ void CpuDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<TextBlo
 
     for (int i = 0; i < textBlocks.size(); i++) {
         for (Character &character : textBlocks[i]->getCharacters()) {
-            GlyphKey key{textBlocks[i]->getFont()->getFontFamily(), character.getUnicodeCodePoint()};
+            GlyphKey key{textBlocks[i]->getFont()->getFontFamily(), character.getUnicodeCodePoint(),
+                         textBlocks.at(i)->getFontSize()};
             if (!this->_offsets.contains(key)) {
                 this->_offsets.insert({key, indexCount});
 
@@ -208,8 +206,8 @@ void CpuDrawer::_createPipeline() {
     pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
     pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 
-    if (vkCreatePipelineLayout(this->_logicalDevice, &pipelineLayoutCreateInfo, nullptr, &this->_pipelineLayout) !=
-        VK_SUCCESS) {
+    if (vkCreatePipelineLayout(this->_vulkanContext.logicalDevice, &pipelineLayoutCreateInfo, nullptr,
+                               &this->_pipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan pipeline layout");
     }
 
@@ -226,16 +224,16 @@ void CpuDrawer::_createPipeline() {
     graphicsPipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
     graphicsPipelineCreateInfo.pDynamicState = &dynamicStateCreateInfo;
     graphicsPipelineCreateInfo.layout = this->_pipelineLayout;
-    graphicsPipelineCreateInfo.renderPass = this->_renderPass;
+    graphicsPipelineCreateInfo.renderPass = this->_vulkanContext.renderPass;
     graphicsPipelineCreateInfo.subpass = 0;
 
-    if (vkCreateGraphicsPipelines(this->_logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr,
+    if (vkCreateGraphicsPipelines(this->_vulkanContext.logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr,
                                   &this->_pipeline) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan graphics pipeline");
     }
 
-    vkDestroyShaderModule(this->_logicalDevice, vertexShaderModule, nullptr);
-    vkDestroyShaderModule(this->_logicalDevice, fragmentShaderModule, nullptr);
+    vkDestroyShaderModule(this->_vulkanContext.logicalDevice, vertexShaderModule, nullptr);
+    vkDestroyShaderModule(this->_vulkanContext.logicalDevice, fragmentShaderModule, nullptr);
 }
 
 }  // namespace vft

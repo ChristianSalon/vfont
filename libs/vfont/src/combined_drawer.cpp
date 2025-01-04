@@ -22,19 +22,15 @@ CombinedDrawer::~CombinedDrawer() {
     if (this->_vertexBuffer != nullptr)
         this->_destroyBuffer(this->_vertexBuffer, this->_vertexBufferMemory);
 
-    vkDestroyPipeline(this->_logicalDevice, this->_lineSegmentsPipeline, nullptr);
-    vkDestroyPipelineLayout(this->_logicalDevice, this->_lineSegmentsPipelineLayout, nullptr);
+    vkDestroyPipeline(this->_vulkanContext.logicalDevice, this->_lineSegmentsPipeline, nullptr);
+    vkDestroyPipelineLayout(this->_vulkanContext.logicalDevice, this->_lineSegmentsPipelineLayout, nullptr);
 
-    vkDestroyPipeline(this->_logicalDevice, this->_curveSegmentsPipeline, nullptr);
-    vkDestroyPipelineLayout(this->_logicalDevice, this->_curveSegmentsPipelineLayout, nullptr);
+    vkDestroyPipeline(this->_vulkanContext.logicalDevice, this->_curveSegmentsPipeline, nullptr);
+    vkDestroyPipelineLayout(this->_vulkanContext.logicalDevice, this->_curveSegmentsPipelineLayout, nullptr);
 }
 
-void CombinedDrawer::init(VkPhysicalDevice physicalDevice,
-                          VkDevice logicalDevice,
-                          VkCommandPool commandPool,
-                          VkQueue graphicsQueue,
-                          VkRenderPass renderPass) {
-    Drawer::init(physicalDevice, logicalDevice, commandPool, graphicsQueue, renderPass);
+void CombinedDrawer::init(VulkanContext vulkanContext) {
+    Drawer::init(vulkanContext);
 
     this->_createLineSegmentsPipeline();
     this->_createCurveSegmentsPipeline();
@@ -59,7 +55,7 @@ void CombinedDrawer::draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, Vk
     for (int i = 0; i < textBlocks.size(); i++) {
         for (Character &character : textBlocks[i]->getCharacters()) {
             if (character.glyph.mesh.getVertexCount() > 0) {
-                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint()};
+                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint(), 0};
 
                 vft::CharacterPushConstants pushConstants{character.getModelMatrix(), textBlocks.at(i)->getColor()};
                 vkCmdPushConstants(commandBuffer, this->_lineSegmentsPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
@@ -81,7 +77,7 @@ void CombinedDrawer::draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, Vk
     for (int i = 0; i < textBlocks.size(); i++) {
         for (Character &character : textBlocks[i]->getCharacters()) {
             if (character.glyph.mesh.getVertexCount() > 0) {
-                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint()};
+                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint(), 0};
 
                 vft::CharacterPushConstants pushConstants{character.getModelMatrix(), textBlocks.at(i)->getColor()};
                 vkCmdPushConstants(commandBuffer, this->_curveSegmentsPipelineLayout,
@@ -127,7 +123,7 @@ void CombinedDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<Te
 
     for (int i = 0; i < textBlocks.size(); i++) {
         for (Character &character : textBlocks[i]->getCharacters()) {
-            GlyphKey key{textBlocks[i]->getFont()->getFontFamily(), character.getUnicodeCodePoint()};
+            GlyphKey key{textBlocks[i]->getFont()->getFontFamily(), character.getUnicodeCodePoint(), 0};
             if (!this->_offsets.contains(key)) {
                 this->_offsets.insert({key, {lineSegmentsIndexCount, curveSegmentsIndexCount}});
 
@@ -280,7 +276,7 @@ void CombinedDrawer::_createLineSegmentsPipeline() {
     pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
     pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 
-    if (vkCreatePipelineLayout(this->_logicalDevice, &pipelineLayoutCreateInfo, nullptr,
+    if (vkCreatePipelineLayout(this->_vulkanContext.logicalDevice, &pipelineLayoutCreateInfo, nullptr,
                                &this->_lineSegmentsPipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan pipeline layout");
     }
@@ -298,16 +294,16 @@ void CombinedDrawer::_createLineSegmentsPipeline() {
     graphicsPipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
     graphicsPipelineCreateInfo.pDynamicState = &dynamicStateCreateInfo;
     graphicsPipelineCreateInfo.layout = this->_lineSegmentsPipelineLayout;
-    graphicsPipelineCreateInfo.renderPass = this->_renderPass;
+    graphicsPipelineCreateInfo.renderPass = this->_vulkanContext.renderPass;
     graphicsPipelineCreateInfo.subpass = 0;
 
-    if (vkCreateGraphicsPipelines(this->_logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr,
+    if (vkCreateGraphicsPipelines(this->_vulkanContext.logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr,
                                   &this->_lineSegmentsPipeline) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan graphics pipeline");
     }
 
-    vkDestroyShaderModule(this->_logicalDevice, vertexShaderModule, nullptr);
-    vkDestroyShaderModule(this->_logicalDevice, fragmentShaderModule, nullptr);
+    vkDestroyShaderModule(this->_vulkanContext.logicalDevice, vertexShaderModule, nullptr);
+    vkDestroyShaderModule(this->_vulkanContext.logicalDevice, fragmentShaderModule, nullptr);
 }
 
 void CombinedDrawer::_createCurveSegmentsPipeline() {
@@ -447,7 +443,7 @@ void CombinedDrawer::_createCurveSegmentsPipeline() {
     pipelineLayoutCreateInfo.pPushConstantRanges = pushConstantRanges.data();
     pipelineLayoutCreateInfo.pushConstantRangeCount = pushConstantRanges.size();
 
-    if (vkCreatePipelineLayout(this->_logicalDevice, &pipelineLayoutCreateInfo, nullptr,
+    if (vkCreatePipelineLayout(this->_vulkanContext.logicalDevice, &pipelineLayoutCreateInfo, nullptr,
                                &this->_curveSegmentsPipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan pipeline layout");
     }
@@ -466,18 +462,18 @@ void CombinedDrawer::_createCurveSegmentsPipeline() {
     graphicsPipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
     graphicsPipelineCreateInfo.pDynamicState = &dynamicStateCreateInfo;
     graphicsPipelineCreateInfo.layout = this->_curveSegmentsPipelineLayout;
-    graphicsPipelineCreateInfo.renderPass = this->_renderPass;
+    graphicsPipelineCreateInfo.renderPass = this->_vulkanContext.renderPass;
     graphicsPipelineCreateInfo.subpass = 0;
 
-    if (vkCreateGraphicsPipelines(this->_logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr,
+    if (vkCreateGraphicsPipelines(this->_vulkanContext.logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr,
                                   &this->_curveSegmentsPipeline) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan graphics pipeline");
     }
 
-    vkDestroyShaderModule(this->_logicalDevice, vertexShaderModule, nullptr);
-    vkDestroyShaderModule(this->_logicalDevice, tcsShaderModule, nullptr);
-    vkDestroyShaderModule(this->_logicalDevice, tesShaderModule, nullptr);
-    vkDestroyShaderModule(this->_logicalDevice, fragmentShaderModule, nullptr);
+    vkDestroyShaderModule(this->_vulkanContext.logicalDevice, vertexShaderModule, nullptr);
+    vkDestroyShaderModule(this->_vulkanContext.logicalDevice, tcsShaderModule, nullptr);
+    vkDestroyShaderModule(this->_vulkanContext.logicalDevice, tesShaderModule, nullptr);
+    vkDestroyShaderModule(this->_vulkanContext.logicalDevice, fragmentShaderModule, nullptr);
 }
 
 }  // namespace vft

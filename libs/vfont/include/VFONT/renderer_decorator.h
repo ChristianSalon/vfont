@@ -8,6 +8,7 @@
 #include <vulkan/vulkan.h>
 
 #include "renderer.h"
+#include "text_renderer_utils.h"
 
 namespace vft {
 
@@ -22,20 +23,20 @@ protected:
 
 public:
     RendererDecorator(Renderer *renderer);
-    virtual ~RendererDecorator() = default;
+    virtual ~RendererDecorator();
 
-    void init(TessellationStrategy tessellationStrategy,
-              VkPhysicalDevice physicalDevice,
-              VkDevice logicalDevice,
-              VkCommandPool commandPool,
-              VkQueue graphicsQueue,
-              VkRenderPass renderPass) override;
+    void init(TessellationStrategy tessellationStrategy, VulkanContext vulkanContext) override;
     void destroy() override;
     void add(std::shared_ptr<TextBlock> text) override;
     void draw(VkCommandBuffer commandBuffer) override;
 
     void setUniformBuffers(UniformBufferObject ubo) override;
     void setViewportSize(unsigned int width, unsigned int height) override;
+
+    VulkanContext getVulkanContext() override;
+
+    void setCache(GlyphCache &cache) override;
+    void setCacheSize(unsigned long maxSize) override;
 };
 
 }  // namespace vft

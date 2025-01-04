@@ -32,7 +32,7 @@ public:
     CombinedTessellator(GlyphCache &cache);
     ~CombinedTessellator() = default;
 
-    Glyph composeGlyph(uint32_t codePoint, std::shared_ptr<vft::Font> font) override;
+    Glyph composeGlyph(uint32_t codePoint, std::shared_ptr<vft::Font> font, unsigned int fontSize = 0) override;
 
 protected:
     int _combineContours(std::vector<glm::vec2> &vertices, std::vector<Edge> &edges);

@@ -40,7 +40,7 @@ public:
     Tessellator(GlyphCache &cache);
     ~Tessellator() = default;
 
-    virtual Glyph composeGlyph(uint32_t codePoint, std::shared_ptr<vft::Font> font) = 0;
+    virtual Glyph composeGlyph(uint32_t codePoint, std::shared_ptr<vft::Font> font, unsigned int fontSize = 0) = 0;
 
 protected:
     Glyph _composeGlyph(uint32_t codePoint, std::shared_ptr<vft::Font> font);

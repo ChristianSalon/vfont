@@ -69,23 +69,24 @@ Scene::Scene(CameraType cameraType, vft::Renderer::TessellationStrategy tessella
     // Initialize vulkan
     this->_initVulkan();
 
+    // Initialize text renderer
     if (measureTime) {
         vft::Renderer *renderer = new vft::TextRenderer();
-        this->_renderer = std::make_shared<vft::TimedRenderer>(renderer, this->_logicalDevice);
+        this->_renderer = std::make_shared<vft::TimedRenderer>(renderer);
     }
     else {
         this->_renderer = std::make_shared<vft::TextRenderer>();
     }
 
-    // Initialize text renderer
-    this->_renderer->init(
-        tessellationAlgorithm,
+    vft::VulkanContext vulkanContext{
         this->_physicalDevice,
         this->_logicalDevice,
-        this->_commandPool,
         this->_graphicsQueue,
+        this->_commandPool,
         this->_renderPass
-    );
+    };
+
+    this->_renderer->init(tessellationAlgorithm, vulkanContext);
     this->_renderer->setViewportSize(this->_window->getWidth(), this->_window->getHeight());
 }
 
@@ -131,7 +132,7 @@ void Scene::updateWindowDimensions(int width, int height) {
     else {
         reinterpret_cast<PerspectiveCamera *>(this->_camera.get())->setProjection(
             50.f,
-            static_cast<float>(width) / static_cast<float>(height),
+            static_cast<float>(this->_window->getWidth()) / static_cast<float>(this->_window->getHeight()),
             0.f, 2000.f
         );
     }
@@ -877,6 +878,10 @@ void Scene::_recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIn
         throw std::runtime_error("Error while recording vulkan command buffer");
     }
 
+    if(this->_measureTime) {
+        reinterpret_cast<vft::TimedRenderer*>(this->_renderer.get())->resetQueryPool(commandBuffer);
+    }
+
     VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
 
     VkRenderPassBeginInfo renderPassBeginInfo{};
@@ -938,8 +943,6 @@ void Scene::_createSynchronizationObjects() {
  * @brief Records and executes the command buffer, presents output to screen
  */
 void Scene::_drawFrame() {
-    static bool printTime = true;
-
     vkWaitForFences(this->_logicalDevice, 1, &this->_inFlightFence, true, UINT64_MAX);
 
     // Set uniform buffers used for rendering text
@@ -999,9 +1002,9 @@ void Scene::_drawFrame() {
         throw std::runtime_error("Error presenting vulkan swap chain image");
     }
 
-    if (this->_measureTime && printTime) {
-        float time = reinterpret_cast<vft::TimedRenderer*>(this->_renderer.get())->readTimestamps(this->_commandBuffer);
-        std::cout << "Time: " << time << std::endl;
-        printTime = false;
+    if(this->_measureTime) {
+        // Time in milliseconds
+        float time = reinterpret_cast<vft::TimedRenderer*>(this->_renderer.get())->readTimestamps(this->_commandBuffer) / 10e+3;
+        std::cout << "Draw time: " << time << " milliseconds" << std::endl;
     }
 }

@@ -98,4 +98,25 @@ public:
     UniformBufferObject() : view{glm::mat4(1.f)}, projection{glm::mat4(1.f)} {}
 };
 
+class VulkanContext {
+public:
+    VkPhysicalDevice physicalDevice{nullptr};  /// Vulkan physical device
+    VkDevice logicalDevice{nullptr};           /// Vulkan logical device
+    VkQueue graphicsQueue{nullptr};            /// Vulkan graphics queue
+    VkCommandPool commandPool{nullptr};        /// Vulkan command pool
+    VkRenderPass renderPass{nullptr};          /// Vulkan render pass
+
+    VulkanContext(VkPhysicalDevice physicalDevice,
+                  VkDevice logicalDevice,
+                  VkQueue graphicsQueue,
+                  VkCommandPool commandPool,
+                  VkRenderPass renderPass)
+        : physicalDevice{physicalDevice},
+          logicalDevice{logicalDevice},
+          graphicsQueue{graphicsQueue},
+          commandPool{commandPool},
+          renderPass{renderPass} {}
+    VulkanContext() {}
+};
+
 }  // namespace vft

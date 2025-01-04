@@ -9,13 +9,13 @@ namespace vft {
 
 RendererDecorator::RendererDecorator(Renderer *renderer) : _renderer{renderer} {}
 
-void RendererDecorator::init(TessellationStrategy tessellationStrategy,
-                             VkPhysicalDevice physicalDevice,
-                             VkDevice logicalDevice,
-                             VkCommandPool commandPool,
-                             VkQueue graphicsQueue,
-                             VkRenderPass renderPass) {
-    this->_renderer->init(tessellationStrategy, physicalDevice, logicalDevice, commandPool, graphicsQueue, renderPass);
+RendererDecorator::~RendererDecorator() {
+    delete this->_renderer;
+    std::cout << "~RendererDecorator\n";
+}
+
+void RendererDecorator::init(TessellationStrategy tessellationStrategy, VulkanContext vulkanContext) {
+    this->_renderer->init(tessellationStrategy, vulkanContext);
 }
 
 void RendererDecorator::destroy() {
@@ -35,6 +35,18 @@ void RendererDecorator::setUniformBuffers(UniformBufferObject ubo) {
 
 void RendererDecorator::setViewportSize(unsigned int width, unsigned int height) {
     this->_renderer->setViewportSize(width, height);
+}
+
+void RendererDecorator::setCache(GlyphCache &cache) {
+    this->_renderer->setCache(cache);
+}
+
+void RendererDecorator::setCacheSize(unsigned long maxSize) {
+    this->_renderer->setCacheSize(maxSize);
+}
+
+VulkanContext RendererDecorator::getVulkanContext() {
+    return this->_renderer->getVulkanContext();
 }
 
 }  // namespace vft

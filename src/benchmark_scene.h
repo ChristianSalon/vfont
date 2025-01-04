@@ -7,6 +7,8 @@
 
 #include <memory>
 #include <string>
+#include <chrono>
+#include <iostream>
 
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
@@ -33,6 +35,13 @@ private:
 	std::shared_ptr<vft::TextBlock> _block4;
 	std::shared_ptr<vft::TextBlock> _block5;
 	std::shared_ptr<vft::TextBlock> _block6;
+
+	std::shared_ptr<vft::TextBlock> _block7;
+	std::shared_ptr<vft::TextBlock> _block8;
+	std::shared_ptr<vft::TextBlock> _block9;
+	std::shared_ptr<vft::TextBlock> _block10;
+	std::shared_ptr<vft::TextBlock> _block11;
+	std::shared_ptr<vft::TextBlock> _block12;
 
 public:
 

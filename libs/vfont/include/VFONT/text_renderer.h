@@ -41,28 +41,24 @@ protected:
     std::shared_ptr<Drawer> _drawer;
     GlyphCache _cache;
 
-    VkPhysicalDevice _physicalDevice{nullptr}; /**< Vulkan physical device */
-    VkDevice _logicalDevice{nullptr};          /**< Vulkan logical device */
-    VkQueue _graphicsQueue{nullptr};           /**< Vulkan graphics queue */
-    VkCommandPool _commandPool{nullptr};       /**< Vulkan command pool */
-    VkRenderPass _renderPass{nullptr};
+    VulkanContext _vulkanContext;
 
 public:
     TextRenderer();
     ~TextRenderer() override;
 
-    void init(TessellationStrategy tessellationStrategy,
-              VkPhysicalDevice physicalDevice,
-              VkDevice logicalDevice,
-              VkCommandPool commandPool,
-              VkQueue graphicsQueue,
-              VkRenderPass renderPass) override;
+    void init(TessellationStrategy tessellationStrategy, VulkanContext vulkanContext) override;
     void destroy() override;
     void add(std::shared_ptr<TextBlock> text) override;
     void draw(VkCommandBuffer commandBuffer) override;
 
     void setUniformBuffers(vft::UniformBufferObject ubo) override;
     void setViewportSize(unsigned int width, unsigned int height) override;
+
+    void setCache(GlyphCache &cache) override;
+    void setCacheSize(unsigned long maxSize) override;
+
+    VulkanContext getVulkanContext();
 
 protected:
     void _setPhysicalDevice(VkPhysicalDevice physicalDevice);

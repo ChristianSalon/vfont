@@ -12,20 +12,12 @@ Drawer::Drawer(GlyphCache &cache) : _cache{cache} {};
 Drawer::~Drawer() {
     this->_destroyBuffer(this->_ubo, this->_uboMemory);
 
-    vkDestroyDescriptorPool(this->_logicalDevice, this->_descriptorPool, nullptr);
-    vkDestroyDescriptorSetLayout(this->_logicalDevice, this->_uboDescriptorSetLayout, nullptr);
+    vkDestroyDescriptorPool(this->_vulkanContext.logicalDevice, this->_descriptorPool, nullptr);
+    vkDestroyDescriptorSetLayout(this->_vulkanContext.logicalDevice, this->_uboDescriptorSetLayout, nullptr);
 }
 
-void Drawer::init(VkPhysicalDevice physicalDevice,
-                  VkDevice logicalDevice,
-                  VkCommandPool commandPool,
-                  VkQueue graphicsQueue,
-                  VkRenderPass renderPass) {
-    this->_physicalDevice = physicalDevice;
-    this->_logicalDevice = logicalDevice;
-    this->_commandPool = commandPool;
-    this->_graphicsQueue = graphicsQueue;
-    this->_renderPass = renderPass;
+void Drawer::init(VulkanContext vulkanContext) {
+    this->_vulkanContext = vulkanContext;
 
     this->_createUbo();
 
@@ -42,7 +34,7 @@ void Drawer::setUniformBuffers(vft::UniformBufferObject ubo) {
 
 uint32_t Drawer::_selectMemoryType(uint32_t memoryType, VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties memoryProperties;
-    vkGetPhysicalDeviceMemoryProperties(this->_physicalDevice, &memoryProperties);
+    vkGetPhysicalDeviceMemoryProperties(this->_vulkanContext.physicalDevice, &memoryProperties);
 
     for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++) {
         if ((memoryType & (1 << i)) && (memoryProperties.memoryTypes[i].propertyFlags & properties) == properties) {
@@ -64,34 +56,35 @@ void Drawer::_createBuffer(VkDeviceSize size,
     bufferCreateInfo.usage = usage;
     bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateBuffer(this->_logicalDevice, &bufferCreateInfo, nullptr, &buffer) != VK_SUCCESS) {
+    if (vkCreateBuffer(this->_vulkanContext.logicalDevice, &bufferCreateInfo, nullptr, &buffer) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan buffer");
     }
 
     VkMemoryRequirements memoryRequirements;
-    vkGetBufferMemoryRequirements(this->_logicalDevice, buffer, &memoryRequirements);
+    vkGetBufferMemoryRequirements(this->_vulkanContext.logicalDevice, buffer, &memoryRequirements);
 
     VkMemoryAllocateInfo memoryAllocateInfo{};
     memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     memoryAllocateInfo.allocationSize = memoryRequirements.size;
     memoryAllocateInfo.memoryTypeIndex = _selectMemoryType(memoryRequirements.memoryTypeBits, properties);
 
-    if (vkAllocateMemory(this->_logicalDevice, &memoryAllocateInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+    if (vkAllocateMemory(this->_vulkanContext.logicalDevice, &memoryAllocateInfo, nullptr, &bufferMemory) !=
+        VK_SUCCESS) {
         throw std::runtime_error("Error allocating vulkan buffer memory");
     }
 
-    vkBindBufferMemory(this->_logicalDevice, buffer, bufferMemory, 0);
+    vkBindBufferMemory(this->_vulkanContext.logicalDevice, buffer, bufferMemory, 0);
 }
 
 void Drawer::_copyBuffer(VkBuffer sourceBuffer, VkBuffer destinationBuffer, VkDeviceSize bufferSize) {
     VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
     commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    commandBufferAllocateInfo.commandPool = this->_commandPool;
+    commandBufferAllocateInfo.commandPool = this->_vulkanContext.commandPool;
     commandBufferAllocateInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(this->_logicalDevice, &commandBufferAllocateInfo, &commandBuffer);
+    vkAllocateCommandBuffers(this->_vulkanContext.logicalDevice, &commandBufferAllocateInfo, &commandBuffer);
 
     VkCommandBufferBeginInfo commandBufferBeginInfo{};
     commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -112,10 +105,10 @@ void Drawer::_copyBuffer(VkBuffer sourceBuffer, VkBuffer destinationBuffer, VkDe
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    vkQueueSubmit(this->_graphicsQueue, 1, &submitInfo, nullptr);
-    vkQueueWaitIdle(this->_graphicsQueue);
+    vkQueueSubmit(this->_vulkanContext.graphicsQueue, 1, &submitInfo, nullptr);
+    vkQueueWaitIdle(this->_vulkanContext.graphicsQueue);
 
-    vkFreeCommandBuffers(this->_logicalDevice, this->_commandPool, 1, &commandBuffer);
+    vkFreeCommandBuffers(this->_vulkanContext.logicalDevice, this->_vulkanContext.commandPool, 1, &commandBuffer);
 }
 
 void Drawer::_stageAndCreateVulkanBuffer(void *data,
@@ -132,9 +125,9 @@ void Drawer::_stageAndCreateVulkanBuffer(void *data,
 
     // Copy data from CPU to staging buffer
     void *buffer;
-    vkMapMemory(this->_logicalDevice, stagingBufferMemory, 0, size, 0, &buffer);
+    vkMapMemory(this->_vulkanContext.logicalDevice, stagingBufferMemory, 0, size, 0, &buffer);
     memcpy(buffer, data, size);
-    vkUnmapMemory(this->_logicalDevice, stagingBufferMemory);
+    vkUnmapMemory(this->_vulkanContext.logicalDevice, stagingBufferMemory);
 
     // Copy data from staging buffer to newly created vulkan buffer
     this->_createBuffer(size, destinationUsage | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -142,18 +135,18 @@ void Drawer::_stageAndCreateVulkanBuffer(void *data,
     this->_copyBuffer(stagingBuffer, destinationBuffer, size);
 
     // Destroy and deallocate memory from the staging buffer
-    vkDestroyBuffer(this->_logicalDevice, stagingBuffer, nullptr);
-    vkFreeMemory(this->_logicalDevice, stagingBufferMemory, nullptr);
+    vkDestroyBuffer(this->_vulkanContext.logicalDevice, stagingBuffer, nullptr);
+    vkFreeMemory(this->_vulkanContext.logicalDevice, stagingBufferMemory, nullptr);
 }
 
 void Drawer::_destroyBuffer(VkBuffer &buffer, VkDeviceMemory &bufferMemory) {
     if (buffer == nullptr)
         return;
 
-    vkDeviceWaitIdle(this->_logicalDevice);
+    vkDeviceWaitIdle(this->_vulkanContext.logicalDevice);
 
-    vkDestroyBuffer(this->_logicalDevice, buffer, nullptr);
-    vkFreeMemory(this->_logicalDevice, bufferMemory, nullptr);
+    vkDestroyBuffer(this->_vulkanContext.logicalDevice, buffer, nullptr);
+    vkFreeMemory(this->_vulkanContext.logicalDevice, bufferMemory, nullptr);
 
     buffer = nullptr;
     bufferMemory = nullptr;
@@ -184,7 +177,8 @@ VkShaderModule Drawer::_createShaderModule(const std::vector<char> &shaderCode) 
 
     VkShaderModule shaderModule;
 
-    if (vkCreateShaderModule(this->_logicalDevice, &shaderModuleCreateInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+    if (vkCreateShaderModule(this->_vulkanContext.logicalDevice, &shaderModuleCreateInfo, nullptr, &shaderModule) !=
+        VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan shader module");
     }
 
@@ -198,7 +192,7 @@ void Drawer::_createUbo() {
                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, this->_ubo,
                         this->_uboMemory);
 
-    vkMapMemory(this->_logicalDevice, this->_uboMemory, 0, bufferSize, 0, &this->_mappedUbo);
+    vkMapMemory(this->_vulkanContext.logicalDevice, this->_uboMemory, 0, bufferSize, 0, &this->_mappedUbo);
 }
 
 void Drawer::_createDescriptorPool() {
@@ -212,8 +206,8 @@ void Drawer::_createDescriptorPool() {
     poolCreateInfo.pPoolSizes = &poolSize;
     poolCreateInfo.maxSets = static_cast<uint32_t>(2);
 
-    if (vkCreateDescriptorPool(this->_logicalDevice, &poolCreateInfo, nullptr, &(this->_descriptorPool)) !=
-        VK_SUCCESS) {
+    if (vkCreateDescriptorPool(this->_vulkanContext.logicalDevice, &poolCreateInfo, nullptr,
+                               &(this->_descriptorPool)) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan descriptor pool");
     }
 }
@@ -231,8 +225,8 @@ void Drawer::_createUboDescriptorSetLayout() {
     layoutCreateInfo.bindingCount = 1;
     layoutCreateInfo.pBindings = &layoutBinding;
 
-    if (vkCreateDescriptorSetLayout(this->_logicalDevice, &layoutCreateInfo, nullptr, &this->_uboDescriptorSetLayout) !=
-        VK_SUCCESS) {
+    if (vkCreateDescriptorSetLayout(this->_vulkanContext.logicalDevice, &layoutCreateInfo, nullptr,
+                                    &this->_uboDescriptorSetLayout) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan descriptor set layout");
     }
 }
@@ -244,7 +238,8 @@ void Drawer::_createUboDescriptorSet() {
     allocateInfo.descriptorSetCount = 1;
     allocateInfo.pSetLayouts = &this->_uboDescriptorSetLayout;
 
-    if (vkAllocateDescriptorSets(this->_logicalDevice, &allocateInfo, &this->_uboDescriptorSet) != VK_SUCCESS) {
+    if (vkAllocateDescriptorSets(this->_vulkanContext.logicalDevice, &allocateInfo, &this->_uboDescriptorSet) !=
+        VK_SUCCESS) {
         throw std::runtime_error("Error allocating vulkan descriptor sets");
     }
 
@@ -262,7 +257,7 @@ void Drawer::_createUboDescriptorSet() {
     writeDescriptorSet.descriptorCount = 1;
     writeDescriptorSet.pBufferInfo = &descriptorBufferInfo;
 
-    vkUpdateDescriptorSets(this->_logicalDevice, 1, &writeDescriptorSet, 0, nullptr);
+    vkUpdateDescriptorSets(this->_vulkanContext.logicalDevice, 1, &writeDescriptorSet, 0, nullptr);
 }
 
 }  // namespace vft

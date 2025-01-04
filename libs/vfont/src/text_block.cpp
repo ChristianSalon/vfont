@@ -84,7 +84,7 @@ void TextBlock::rotate(float x, float y, float z) {
 void TextBlock::add(std::vector<uint32_t> codePoints) {
     for (uint32_t codePoint : codePoints) {
         // Creates glyph info if not set
-        Glyph glyph = this->_tessellator->composeGlyph(codePoint, this->_font);
+        Glyph glyph = this->_tessellator->composeGlyph(codePoint, this->_font, this->_fontSize);
 
         if (codePoint == vft::U_ENTER) {
             this->_penX = 0;
@@ -130,10 +130,10 @@ void TextBlock::add(std::vector<uint32_t> codePoints) {
             this->_penX += this->_characters.back().glyph.getAdvanceX() * scale.x;
             this->_penY += this->_characters.back().glyph.getAdvanceY() * scale.y;
         }
+    }
 
-        if (this->onTextChange) {
-            this->onTextChange();
-        }
+    if (this->onTextChange) {
+        this->onTextChange();
     }
 }
 

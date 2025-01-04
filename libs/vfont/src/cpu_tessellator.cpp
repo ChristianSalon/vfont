@@ -132,14 +132,14 @@ FT_Outline_ConicToFunc CpuTessellator::_conicToFunc = [](const FT_Vector *contro
     return 0;
 };
 
-Glyph CpuTessellator::composeGlyph(uint32_t codePoint, std::shared_ptr<vft::Font> font) {
-    GlyphKey key{font->getFontFamily(), codePoint};
+Glyph CpuTessellator::composeGlyph(uint32_t codePoint, std::shared_ptr<vft::Font> font, unsigned int fontSize) {
+    GlyphKey key{font->getFontFamily(), codePoint, fontSize};
     if (this->_cache.exists(key)) {
         return this->_cache.getGlyph(key);
     }
 
     this->_font = font;
-    this->_fontSize = 64;
+    this->_fontSize = fontSize;
     this->_edges.clear();
     Glyph glyph = this->_composeGlyph(codePoint, font);
     if (CpuTessellator::_currentGlyphData.contourCount >= 2) {

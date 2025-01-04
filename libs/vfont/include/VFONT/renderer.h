@@ -25,18 +25,18 @@ public:
 
     virtual ~Renderer() = default;
 
-    virtual void init(TessellationStrategy tessellationStrategy,
-                      VkPhysicalDevice physicalDevice,
-                      VkDevice logicalDevice,
-                      VkCommandPool commandPool,
-                      VkQueue graphicsQueue,
-                      VkRenderPass renderPass) = 0;
+    virtual void init(TessellationStrategy tessellationStrategy, VulkanContext vulkanContext) = 0;
     virtual void destroy() = 0;
     virtual void add(std::shared_ptr<TextBlock> text) = 0;
     virtual void draw(VkCommandBuffer commandBuffer) = 0;
 
     virtual void setUniformBuffers(UniformBufferObject ubo) = 0;
     virtual void setViewportSize(unsigned int width, unsigned int height) = 0;
+
+    virtual VulkanContext getVulkanContext() = 0;
+
+    virtual void setCache(GlyphCache &cache) = 0;
+    virtual void setCacheSize(unsigned long maxSize) = 0;
 };
 
 }  // namespace vft

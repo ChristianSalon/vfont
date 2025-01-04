@@ -97,7 +97,7 @@ LRESULT CALLBACK MainWindow::_wndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARA
         // Handle window resize
         case WM_SIZE: {
             pThis = reinterpret_cast<MainWindow *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-            if(!pThis) {
+            if (!pThis) {
                 throw std::runtime_error("Error getting window data");
             }
 
@@ -109,6 +109,11 @@ LRESULT CALLBACK MainWindow::_wndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARA
             pThis->_resized = true;
             pThis->_setWidth(LOWORD(lParam));
             pThis->_setHeight(HIWORD(lParam));
+
+            // Window maximization or restoration
+            if (wParam == SIZE_MAXIMIZED || wParam == SIZE_RESTORED) {
+                pThis->_resizeCallback(pThis->_width, pThis->_height);
+            }
 
             break;
         }

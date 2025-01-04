@@ -17,15 +17,23 @@ namespace vft {
 
 class TimedRenderer : public RendererDecorator {
 protected:
-    VkDevice _logicalDevice{nullptr};
+    double _timestampPeriod{1e-9};
+
     VkQueryPool _queryPool{nullptr};
 
 public:
-    TimedRenderer(Renderer *renderer, VkDevice logicalDevice);
+    TimedRenderer(Renderer *renderer);
     ~TimedRenderer() override;
 
+    void init(TessellationStrategy tessellationStrategy, VulkanContext vulkanContext) override;
+    void destroy() override;
     void draw(VkCommandBuffer commandBuffer) override;
+
     double readTimestamps(VkCommandBuffer commandBuffer);
+    void resetQueryPool(VkCommandBuffer commandBuffer);
+
+protected:
+    double _getTimestampPeriod();
 };
 
 }  // namespace vft

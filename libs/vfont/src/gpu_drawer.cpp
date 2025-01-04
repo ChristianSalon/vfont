@@ -26,21 +26,17 @@ GpuDrawer::~GpuDrawer() {
     if (this->_vertexBuffer != nullptr)
         this->_destroyBuffer(this->_vertexBuffer, this->_vertexBufferMemory);
 
-    vkDestroyDescriptorSetLayout(this->_logicalDevice, this->_lineSegmentsDescriptorSetLayout, nullptr);
+    vkDestroyDescriptorSetLayout(this->_vulkanContext.logicalDevice, this->_lineSegmentsDescriptorSetLayout, nullptr);
 
-    vkDestroyPipeline(this->_logicalDevice, this->_lineSegmentsPipeline, nullptr);
-    vkDestroyPipelineLayout(this->_logicalDevice, this->_lineSegmentsPipelineLayout, nullptr);
+    vkDestroyPipeline(this->_vulkanContext.logicalDevice, this->_lineSegmentsPipeline, nullptr);
+    vkDestroyPipelineLayout(this->_vulkanContext.logicalDevice, this->_lineSegmentsPipelineLayout, nullptr);
 
-    vkDestroyPipeline(this->_logicalDevice, this->_curveSegmentsPipeline, nullptr);
-    vkDestroyPipelineLayout(this->_logicalDevice, this->_curveSegmentsPipelineLayout, nullptr);
+    vkDestroyPipeline(this->_vulkanContext.logicalDevice, this->_curveSegmentsPipeline, nullptr);
+    vkDestroyPipelineLayout(this->_vulkanContext.logicalDevice, this->_curveSegmentsPipelineLayout, nullptr);
 }
 
-void GpuDrawer::init(VkPhysicalDevice physicalDevice,
-                     VkDevice logicalDevice,
-                     VkCommandPool commandPool,
-                     VkQueue graphicsQueue,
-                     VkRenderPass renderPass) {
-    Drawer::init(physicalDevice, logicalDevice, commandPool, graphicsQueue, renderPass);
+void GpuDrawer::init(VulkanContext vulkanContext) {
+    Drawer::init(vulkanContext);
 
     this->_createLineSegmentsDescriptorSetLayout();
     this->_createLineSegmentsDescriptorSet();
@@ -70,7 +66,7 @@ void GpuDrawer::draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, VkComma
     for (int i = 0; i < textBlocks.size(); i++) {
         for (Character &character : textBlocks[i]->getCharacters()) {
             if (character.glyph.mesh.getVertexCount() > 0) {
-                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint()};
+                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint(), 0};
 
                 LineSegmentsInfo segmentsInfo =
                     this->_lineSegmentsInfo.at(this->_offsets.at(key).at(LINE_SEGMENTS_INFO_OFFSET_BUFFER_INDEX));
@@ -98,7 +94,7 @@ void GpuDrawer::draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, VkComma
     for (int i = 0; i < textBlocks.size(); i++) {
         for (Character &character : textBlocks[i]->getCharacters()) {
             if (character.glyph.mesh.getVertexCount() > 0) {
-                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint()};
+                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint(), 0};
 
                 vft::CharacterPushConstants pushConstants{character.getModelMatrix(), textBlocks.at(i)->getColor()};
                 vkCmdPushConstants(commandBuffer, this->_curveSegmentsPipelineLayout,
@@ -149,7 +145,7 @@ void GpuDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<TextBlo
 
     for (int i = 0; i < textBlocks.size(); i++) {
         for (Character &character : textBlocks[i]->getCharacters()) {
-            GlyphKey key{textBlocks[i]->getFont()->getFontFamily(), character.getUnicodeCodePoint()};
+            GlyphKey key{textBlocks[i]->getFont()->getFontFamily(), character.getUnicodeCodePoint(), 0};
             if (!this->_offsets.contains(key)) {
                 this->_offsets.insert({key, {boundingBoxIndexCount, curveSegmentsIndexCount, lineSegmentsInfoCount}});
 
@@ -242,8 +238,8 @@ void GpuDrawer::_createDescriptorPool() {
     poolCreateInfo.pPoolSizes = poolSizes.data();
     poolCreateInfo.maxSets = static_cast<uint32_t>(4);
 
-    if (vkCreateDescriptorPool(this->_logicalDevice, &poolCreateInfo, nullptr, &(this->_descriptorPool)) !=
-        VK_SUCCESS) {
+    if (vkCreateDescriptorPool(this->_vulkanContext.logicalDevice, &poolCreateInfo, nullptr,
+                               &(this->_descriptorPool)) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan descriptor pool");
     }
 }
@@ -269,7 +265,8 @@ void GpuDrawer::_createSsbo() {
     writeDescriptorSets[0].descriptorCount = 1;
     writeDescriptorSets[0].pBufferInfo = &lineSegmentsBufferInfo;
 
-    vkUpdateDescriptorSets(this->_logicalDevice, writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
+    vkUpdateDescriptorSets(this->_vulkanContext.logicalDevice, writeDescriptorSets.size(), writeDescriptorSets.data(),
+                           0, nullptr);
 }
 
 void GpuDrawer::_createLineSegmentsDescriptorSetLayout() {
@@ -285,7 +282,7 @@ void GpuDrawer::_createLineSegmentsDescriptorSetLayout() {
     layoutCreateInfo.bindingCount = layoutBindings.size();
     layoutCreateInfo.pBindings = layoutBindings.data();
 
-    if (vkCreateDescriptorSetLayout(this->_logicalDevice, &layoutCreateInfo, nullptr,
+    if (vkCreateDescriptorSetLayout(this->_vulkanContext.logicalDevice, &layoutCreateInfo, nullptr,
                                     &(this->_lineSegmentsDescriptorSetLayout)) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan descriptor set layout");
     }
@@ -298,8 +295,8 @@ void GpuDrawer::_createLineSegmentsDescriptorSet() {
     allocateInfo.descriptorSetCount = 1;
     allocateInfo.pSetLayouts = &this->_lineSegmentsDescriptorSetLayout;
 
-    if (vkAllocateDescriptorSets(this->_logicalDevice, &allocateInfo, &this->_lineSegmentsDescriptorSet) !=
-        VK_SUCCESS) {
+    if (vkAllocateDescriptorSets(this->_vulkanContext.logicalDevice, &allocateInfo,
+                                 &this->_lineSegmentsDescriptorSet) != VK_SUCCESS) {
         throw std::runtime_error("Error allocating vulkan descriptor sets");
     }
 }
@@ -399,7 +396,7 @@ void GpuDrawer::_createLineSegmentsPipeline() {
     pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
     pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 
-    if (vkCreatePipelineLayout(this->_logicalDevice, &pipelineLayoutCreateInfo, nullptr,
+    if (vkCreatePipelineLayout(this->_vulkanContext.logicalDevice, &pipelineLayoutCreateInfo, nullptr,
                                &this->_lineSegmentsPipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan pipeline layout");
     }
@@ -417,16 +414,16 @@ void GpuDrawer::_createLineSegmentsPipeline() {
     graphicsPipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
     graphicsPipelineCreateInfo.pDynamicState = &dynamicStateCreateInfo;
     graphicsPipelineCreateInfo.layout = this->_lineSegmentsPipelineLayout;
-    graphicsPipelineCreateInfo.renderPass = this->_renderPass;
+    graphicsPipelineCreateInfo.renderPass = this->_vulkanContext.renderPass;
     graphicsPipelineCreateInfo.subpass = 0;
 
-    if (vkCreateGraphicsPipelines(this->_logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr,
+    if (vkCreateGraphicsPipelines(this->_vulkanContext.logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr,
                                   &this->_lineSegmentsPipeline) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan graphics pipeline");
     }
 
-    vkDestroyShaderModule(this->_logicalDevice, vertexShaderModule, nullptr);
-    vkDestroyShaderModule(this->_logicalDevice, fragmentShaderModule, nullptr);
+    vkDestroyShaderModule(this->_vulkanContext.logicalDevice, vertexShaderModule, nullptr);
+    vkDestroyShaderModule(this->_vulkanContext.logicalDevice, fragmentShaderModule, nullptr);
 }
 
 void GpuDrawer::_createCurveSegmentsPipeline() {
@@ -566,7 +563,7 @@ void GpuDrawer::_createCurveSegmentsPipeline() {
     pipelineLayoutCreateInfo.pPushConstantRanges = pushConstantRanges.data();
     pipelineLayoutCreateInfo.pushConstantRangeCount = pushConstantRanges.size();
 
-    if (vkCreatePipelineLayout(this->_logicalDevice, &pipelineLayoutCreateInfo, nullptr,
+    if (vkCreatePipelineLayout(this->_vulkanContext.logicalDevice, &pipelineLayoutCreateInfo, nullptr,
                                &this->_curveSegmentsPipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan pipeline layout");
     }
@@ -585,18 +582,18 @@ void GpuDrawer::_createCurveSegmentsPipeline() {
     graphicsPipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
     graphicsPipelineCreateInfo.pDynamicState = &dynamicStateCreateInfo;
     graphicsPipelineCreateInfo.layout = this->_curveSegmentsPipelineLayout;
-    graphicsPipelineCreateInfo.renderPass = this->_renderPass;
+    graphicsPipelineCreateInfo.renderPass = this->_vulkanContext.renderPass;
     graphicsPipelineCreateInfo.subpass = 0;
 
-    if (vkCreateGraphicsPipelines(this->_logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr,
+    if (vkCreateGraphicsPipelines(this->_vulkanContext.logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr,
                                   &this->_curveSegmentsPipeline) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan graphics pipeline");
     }
 
-    vkDestroyShaderModule(this->_logicalDevice, vertexShaderModule, nullptr);
-    vkDestroyShaderModule(this->_logicalDevice, tcsShaderModule, nullptr);
-    vkDestroyShaderModule(this->_logicalDevice, tesShaderModule, nullptr);
-    vkDestroyShaderModule(this->_logicalDevice, fragmentShaderModule, nullptr);
+    vkDestroyShaderModule(this->_vulkanContext.logicalDevice, vertexShaderModule, nullptr);
+    vkDestroyShaderModule(this->_vulkanContext.logicalDevice, tcsShaderModule, nullptr);
+    vkDestroyShaderModule(this->_vulkanContext.logicalDevice, tesShaderModule, nullptr);
+    vkDestroyShaderModule(this->_vulkanContext.logicalDevice, fragmentShaderModule, nullptr);
 }
 
 }  // namespace vft

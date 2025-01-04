@@ -27,14 +27,9 @@ class Drawer {
 protected:
     GlyphCache &_cache;
 
-    VkPhysicalDevice _physicalDevice{nullptr}; /**< Vulkan physical device */
-    VkDevice _logicalDevice{nullptr};          /**< Vulkan logical device */
-    VkCommandPool _commandPool{nullptr};       /**< Vulkan command pool */
-    VkQueue _graphicsQueue{nullptr};           /**< Vulkan graphics queue */
-    VkRenderPass _renderPass{nullptr};
+    VulkanContext _vulkanContext;
 
     VkDescriptorPool _descriptorPool{nullptr};
-
     VkDescriptorSetLayout _uboDescriptorSetLayout{nullptr};
     VkDescriptorSet _uboDescriptorSet;
 
@@ -46,11 +41,7 @@ public:
     Drawer(GlyphCache &cache);
     ~Drawer();
 
-    virtual void init(VkPhysicalDevice physicalDevice,
-                      VkDevice logicalDevice,
-                      VkCommandPool commandPool,
-                      VkQueue graphicsQueue,
-                      VkRenderPass renderPass);
+    virtual void init(VulkanContext vulkanContext);
     void setUniformBuffers(vft::UniformBufferObject ubo);
 
     virtual void draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, VkCommandBuffer commandBuffer) = 0;

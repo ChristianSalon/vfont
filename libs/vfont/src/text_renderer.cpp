@@ -17,6 +17,7 @@ TextRenderer::TextRenderer() {}
  */
 TextRenderer::~TextRenderer() {
     this->destroy();
+    std::cout << "~TextRenderer\n";
 }
 
 /**
@@ -27,19 +28,14 @@ TextRenderer::~TextRenderer() {
  * @param commandPool Vulkan command pool
  * @param graphicsQueue Vulkan graphics queue
  */
-void TextRenderer::init(TessellationStrategy tessellationStrategy,
-                        VkPhysicalDevice physicalDevice,
-                        VkDevice logicalDevice,
-                        VkCommandPool commandPool,
-                        VkQueue graphicsQueue,
-                        VkRenderPass renderPass) {
+void TextRenderer::init(TessellationStrategy tessellationStrategy, VulkanContext vulkanContext) {
     this->_tessellationStrategy = tessellationStrategy;
 
-    this->_setPhysicalDevice(physicalDevice);
-    this->_setLogicalDevice(logicalDevice);
-    this->_setCommandPool(commandPool);
-    this->_setGraphicsQueue(graphicsQueue);
-    this->_setRenderPass(renderPass);
+    this->_setPhysicalDevice(vulkanContext.physicalDevice);
+    this->_setLogicalDevice(vulkanContext.logicalDevice);
+    this->_setCommandPool(vulkanContext.commandPool);
+    this->_setGraphicsQueue(vulkanContext.graphicsQueue);
+    this->_setRenderPass(vulkanContext.renderPass);
 
     if (tessellationStrategy == TessellationStrategy::CPU_ONLY) {
         this->_tessellator = std::make_shared<CpuTessellator>(this->_cache);
@@ -54,7 +50,7 @@ void TextRenderer::init(TessellationStrategy tessellationStrategy,
         throw std::runtime_error("Invalid tessellation strategy.");
     }
 
-    this->_drawer->init(physicalDevice, logicalDevice, commandPool, graphicsQueue, renderPass);
+    this->_drawer->init(vulkanContext);
 }
 
 /**
@@ -84,8 +80,6 @@ void TextRenderer::add(std::shared_ptr<TextBlock> text) {
     this->_blocks.push_back(text);
 
     text->onTextChange = [this]() { this->_drawer->recreateBuffers(this->_blocks); };
-
-    this->_drawer->recreateBuffers(this->_blocks);
 }
 
 void TextRenderer::setUniformBuffers(vft::UniformBufferObject ubo) {
@@ -100,6 +94,18 @@ void TextRenderer::setViewportSize(unsigned int width, unsigned int height) {
     }
 }
 
+void TextRenderer::setCache(GlyphCache &cache) {
+    this->_cache = cache;
+}
+
+void TextRenderer::setCacheSize(unsigned long maxSize) {
+    this->_cache.setMaxSize(maxSize);
+}
+
+VulkanContext TextRenderer::getVulkanContext() {
+    return this->_vulkanContext;
+}
+
 /**
  * @brief Setter for vulkan physical device
  *
@@ -109,7 +115,7 @@ void TextRenderer::_setPhysicalDevice(VkPhysicalDevice physicalDevice) {
     if (physicalDevice == nullptr)
         throw std::runtime_error("Vulkan physical device is not initialized");
 
-    this->_physicalDevice = physicalDevice;
+    this->_vulkanContext.physicalDevice = physicalDevice;
 }
 
 /**
@@ -121,7 +127,7 @@ void TextRenderer::_setLogicalDevice(VkDevice logicalDevice) {
     if (logicalDevice == nullptr)
         throw std::runtime_error("Vulkan logical device is not initialized");
 
-    this->_logicalDevice = logicalDevice;
+    this->_vulkanContext.logicalDevice = logicalDevice;
 }
 
 /**
@@ -133,7 +139,7 @@ void TextRenderer::_setCommandPool(VkCommandPool commandPool) {
     if (commandPool == nullptr)
         throw std::runtime_error("Vulkan command pool is not initialized");
 
-    this->_commandPool = commandPool;
+    this->_vulkanContext.commandPool = commandPool;
 }
 
 /**
@@ -145,14 +151,14 @@ void TextRenderer::_setGraphicsQueue(VkQueue graphicsQueue) {
     if (graphicsQueue == nullptr)
         throw std::runtime_error("Vulkan graphics queue is not initialized");
 
-    this->_graphicsQueue = graphicsQueue;
+    this->_vulkanContext.graphicsQueue = graphicsQueue;
 }
 
 void TextRenderer::_setRenderPass(VkRenderPass renderPass) {
     if (renderPass == nullptr)
         throw std::runtime_error("Vulkan render pass is not initialized");
 
-    this->_renderPass = renderPass;
+    this->_vulkanContext.renderPass = renderPass;
 }
 
 }  // namespace vft

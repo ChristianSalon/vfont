@@ -62,11 +62,7 @@ public:
     CombinedDrawer(GlyphCache &cache);
     ~CombinedDrawer();
 
-    void init(VkPhysicalDevice physicalDevice,
-              VkDevice logicalDevice,
-              VkCommandPool commandPool,
-              VkQueue graphicsQueue,
-              VkRenderPass renderPass) override;
+    void init(VulkanContext vulkanContext) override;
     void draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, VkCommandBuffer commandBuffer) override;
     void recreateBuffers(std::vector<std::shared_ptr<TextBlock>> textBlocks) override;
     
