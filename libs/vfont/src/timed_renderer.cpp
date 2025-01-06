@@ -9,9 +9,7 @@ namespace vft {
 
 TimedRenderer::TimedRenderer(Renderer *renderer) : RendererDecorator{renderer}, _queryPool{nullptr} {}
 
-TimedRenderer::~TimedRenderer() {
-    std::cout << "~TimedRenderer\n";
-}
+TimedRenderer::~TimedRenderer() {}
 
 void TimedRenderer::init(TessellationStrategy tessellationStrategy, VulkanContext vulkanContext) {
     RendererDecorator::init(tessellationStrategy, vulkanContext);

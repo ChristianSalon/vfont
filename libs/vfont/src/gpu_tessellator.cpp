@@ -33,17 +33,6 @@ Glyph GpuTessellator::composeGlyph(uint32_t codePoint, std::shared_ptr<vft::Font
         newVertexIndex++;
     }
 
-    // Make line segments continuous
-    for (vft::Curve curve : curveSegments) {
-        if (GpuTessellator::_isOnRightSide(vertices.at(curve.start), vertices.at(curve.end),
-                                           vertices.at(curve.control))) {
-            lineSegments.push_back({curve.start, curve.control});
-            lineSegments.push_back({curve.control, curve.end});
-        } else {
-            lineSegments.push_back({curve.start, curve.end});
-        }
-    }
-
     // Create line segments index buffer
     std::vector<uint32_t> lineIndices;
     for (vft::Edge edge : lineSegments) {

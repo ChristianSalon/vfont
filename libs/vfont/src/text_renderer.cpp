@@ -17,7 +17,6 @@ TextRenderer::TextRenderer() {}
  */
 TextRenderer::~TextRenderer() {
     this->destroy();
-    std::cout << "~TextRenderer\n";
 }
 
 /**

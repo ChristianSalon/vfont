@@ -31,16 +31,23 @@ public:
     static constexpr unsigned int GLYPH_MESH_LINE_BUFFER_INDEX = 2;
 
     static constexpr unsigned int BOUNDING_BOX_OFFSET_BUFFER_INDEX = 0;
-    static constexpr unsigned int CURVE_OFFSET_BUFFER_INDEX = 1;
-    static constexpr unsigned int LINE_SEGMENTS_INFO_OFFSET_BUFFER_INDEX = 2;
+    static constexpr unsigned int SEGMENTS_INFO_OFFSET_BUFFER_INDEX = 1;
 
-    struct LineSegmentsInfo {
-        uint32_t startIndex;
-        uint32_t count;
+    struct SegmentsInfo {
+        uint32_t lineSegmentsStartIndex;
+        uint32_t lineSegmentsCount;
+        uint32_t curveSegmentsStartIndex;
+        uint32_t curveSegmentsCount;
     };
 
     struct LineSegment {
         glm::vec2 start;
+        glm::vec2 end;
+    };
+
+    struct CurveSegment {
+        glm::vec2 start;
+        glm::vec2 control;
         glm::vec2 end;
     };
 
@@ -49,6 +56,8 @@ public:
         glm::vec4 color;
         uint32_t lineSegmentsStartIndex;
         uint32_t lineSegmentsCount;
+        uint32_t curveSegmentsStartIndex;
+        uint32_t curveSegmentsCount;
     };
 
     struct ViewportPushConstants {
@@ -57,33 +66,28 @@ public:
     };
 
 protected:
-    std::unordered_map<GlyphKey, std::array<uint32_t, 3>, GlyphKeyHash> _offsets;
+    std::unordered_map<GlyphKey, std::array<uint32_t, 2>, GlyphKeyHash> _offsets;
 
-    std::vector<glm::vec2> _vertices;            /**< Vertex buffer */
-    std::vector<uint32_t> _boundingBoxIndices;   /**< Index buffer */
-    std::vector<uint32_t> _curveSegmentsIndices; /**< Index buffer */
-    std::vector<LineSegment> _lineSegments;
-    std::vector<LineSegmentsInfo> _lineSegmentsInfo;
+    std::vector<glm::vec2> _vertices;          /**< Vertex buffer */
+    std::vector<uint32_t> _boundingBoxIndices; /**< Index buffer */
+    std::vector<glm::vec2> _segments;
+    std::vector<SegmentsInfo> _segmentsInfo;
 
     unsigned int _viewportWidth{0};
     unsigned int _viewportHeight{0};
 
-    VkBuffer _vertexBuffer{nullptr};                         /**< Vulkan vertex buffer */
-    VkDeviceMemory _vertexBufferMemory{nullptr};             /**< Vulkan vertex buffer memory */
-    VkBuffer _boundingBoxIndexBuffer{nullptr};               /**< Vulkan index buffer */
-    VkDeviceMemory _boundingBoxIndexBufferMemory{nullptr};   /**< Vulkan index buffer memory */
-    VkBuffer _curveSegmentsIndexBuffer{nullptr};             /**< Vulkan index buffer */
-    VkDeviceMemory _curveSegmentsIndexBufferMemory{nullptr}; /**< Vulkan index buffer memory */
-    VkBuffer _lineSegmentsBuffer{nullptr};                   /**< Vulkan vertex buffer */
-    VkDeviceMemory _lineSegmentsBufferMemory{nullptr};       /**< Vulkan vertex buffer memory */
+    VkBuffer _vertexBuffer{nullptr};                       /**< Vulkan vertex buffer */
+    VkDeviceMemory _vertexBufferMemory{nullptr};           /**< Vulkan vertex buffer memory */
+    VkBuffer _boundingBoxIndexBuffer{nullptr};             /**< Vulkan index buffer */
+    VkDeviceMemory _boundingBoxIndexBufferMemory{nullptr}; /**< Vulkan index buffer memory */
+    VkBuffer _segmentsBuffer{nullptr};                     /**< Vulkan vertex buffer */
+    VkDeviceMemory _segmentsBufferMemory{nullptr};         /**< Vulkan vertex buffer memory */
 
-    VkPipelineLayout _lineSegmentsPipelineLayout{nullptr};
-    VkPipeline _lineSegmentsPipeline{nullptr};
-    VkPipelineLayout _curveSegmentsPipelineLayout{nullptr};
-    VkPipeline _curveSegmentsPipeline{nullptr};
+    VkPipelineLayout _segmentsPipelineLayout{nullptr};
+    VkPipeline _segmentsPipeline{nullptr};
 
-    VkDescriptorSetLayout _lineSegmentsDescriptorSetLayout{nullptr};
-    VkDescriptorSet _lineSegmentsDescriptorSet;
+    VkDescriptorSetLayout _segmentsDescriptorSetLayout{nullptr};
+    VkDescriptorSet _segmentsDescriptorSet;
 
     VkBuffer _ssbo;
     VkDeviceMemory _ssboMemory;
@@ -104,11 +108,10 @@ protected:
     void _createSsbo();
 
     void _createDescriptorPool() override;
-    void _createLineSegmentsDescriptorSetLayout();
-    void _createLineSegmentsDescriptorSet();
+    void _createSegmentsDescriptorSetLayout();
+    void _createSegmentsDescriptorSet();
 
-    void _createLineSegmentsPipeline();
-    void _createCurveSegmentsPipeline();
+    void _createSegmentsPipeline();
 };
 
 }  // namespace vft

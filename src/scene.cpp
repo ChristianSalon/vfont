@@ -1003,8 +1003,7 @@ void Scene::_drawFrame() {
     }
 
     if(this->_measureTime) {
-        // Time in milliseconds
         float time = reinterpret_cast<vft::TimedRenderer*>(this->_renderer.get())->readTimestamps(this->_commandBuffer) / 10e+3;
-        std::cout << "Draw time: " << time << " milliseconds" << std::endl;
+        std::cout << "Draw time: " << time << " microseconds" << std::endl;
     }
 }

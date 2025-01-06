@@ -9,15 +9,12 @@ layout(push_constant) uniform constants {
     vec4 color;
     uint lineSegmentsStartIndex;
     uint lineSegmentsCount;
+    uint curveSegmentsStartIndex;
+    uint curveSegmentsCount;
 } PushConstants;
 
-struct LineSegment {
-    vec2 start;
-    vec2 end;
-};
-
-layout(set = 1, binding = 0) buffer LineSegments {
-    LineSegment lineSegments[];
+layout(set = 1, binding = 0) buffer Segments {
+    vec2 segments[];
 };
 
 float rayIntersectsLineSegment(vec2 position, vec2 start, vec2 end) {
@@ -103,11 +100,90 @@ float rayIntersectsLineSegment(vec2 position, vec2 start, vec2 end) {
     return 0.f;
 }
 
+float getQuadraticDerivativeWinding(double t, double a, double b) {
+    double d = 2 * a * t + b;
+
+    if(d > 0) {
+        // Curve is pointing up
+       return 1;
+    }
+    else if(d < 0) {
+        // Curve is pointing down
+        return -1;
+    }
+
+    return 0;
+}
+
+float getWindingForQuadraticRoot(double t, vec2 position, vec2 start, vec2 control, vec2 end, double a, double b) {
+    float winding = 0;
+
+    // Check if intersection is on curve start or end points
+    // If true return winding 0.5 or -0.5
+    if(position.y == start.y && position.x <= start.x && t >= -0.1 && t <= 0.1) {
+        return getQuadraticDerivativeWinding(0, a, b) / 2;
+    }
+    else if(position.y == end.y && position.x <= start.x && t >= 0.9 && t <= 1.1) {
+        return getQuadraticDerivativeWinding(1, a, b) / 2;
+    }
+
+    // Check if root is in range (0, 1)
+    if(t > 0 && t < 1) {
+        // X coordinate of intersection
+        double x = (1 - t) * (1 - t) * start.x + 2 * (1 - t) * t * control.x + t * t * end.x;
+
+        // Check if intersection is on the right from ray
+        if(x >= position.x) {
+            winding += getQuadraticDerivativeWinding(t, a, b);
+        }
+    }
+
+    return winding;
+}
+
+float rayIntersectsCurveSegment(vec2 position, vec2 start, vec2 control, vec2 end) {
+    float winding = 0.f;
+
+    // Check if ray is above or below curve
+    if(
+        (position.y < start.y && position.y < control.y && position.y < end.y) ||
+        (position.y > start.y && position.y > control.y && position.y > end.y)
+    ) {
+        return winding;
+    }
+
+    // Quadratic formula coefficients
+    double a = start.y - 2 * control.y + end.y;
+    double b = 2 * (control.y - start.y);
+    double c = start.y - position.y;
+
+    // Curve is actually a line
+    if(a == 0) {
+        return rayIntersectsLineSegment(position, start, end);
+    }
+
+    // Quadratic formula roots
+    double t0 = (-b + sqrt(b * b - 4 * a * c)) / (2 * a);
+    double t1 = (-b - sqrt(b * b - 4 * a * c)) / (2 * a);
+
+    // Compute winding for roots
+    winding += getWindingForQuadraticRoot(t0, position, start, control, end, a, b);
+    winding += getWindingForQuadraticRoot(t1, position, start, control, end, a, b);
+
+    return winding;
+}
+
 void main() {
     float windingNumber = 0;
-    for(uint i = PushConstants.lineSegmentsStartIndex; i < PushConstants.lineSegmentsStartIndex + PushConstants.lineSegmentsCount; i++) {
-        LineSegment segment = lineSegments[i];
-        windingNumber += rayIntersectsLineSegment(fragmentPosition, segment.start, segment.end);
+
+    // Compute winding for line segments
+    for(uint i = PushConstants.lineSegmentsStartIndex; i < PushConstants.lineSegmentsStartIndex + 2 * PushConstants.lineSegmentsCount; i += 2) {
+        windingNumber += rayIntersectsLineSegment(fragmentPosition, segments[i], segments[i + 1]);
+    }
+    
+    // Compute winding for curve segments
+    for(uint i = PushConstants.curveSegmentsStartIndex; i < PushConstants.curveSegmentsStartIndex + 3 * PushConstants.curveSegmentsCount; i += 3) {
+        windingNumber += rayIntersectsCurveSegment(fragmentPosition, segments[i], segments[i + 1], segments[i + 2]);
     }
 
     if(windingNumber != 0) {

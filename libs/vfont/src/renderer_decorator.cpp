@@ -11,7 +11,6 @@ RendererDecorator::RendererDecorator(Renderer *renderer) : _renderer{renderer} {
 
 RendererDecorator::~RendererDecorator() {
     delete this->_renderer;
-    std::cout << "~RendererDecorator\n";
 }
 
 void RendererDecorator::init(TessellationStrategy tessellationStrategy, VulkanContext vulkanContext) {
