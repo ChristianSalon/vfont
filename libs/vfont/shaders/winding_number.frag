@@ -117,23 +117,24 @@ float getQuadraticDerivativeWinding(double t, double a, double b) {
 
 float getWindingForQuadraticRoot(double t, vec2 position, vec2 start, vec2 control, vec2 end, double a, double b) {
     float winding = 0;
+    
+    // X coordinate of intersection
+    double xIntersection = (1 - t) * (1 - t) * start.x + 2 * (1 - t) * t * control.x + t * t * end.x;
 
     // Check if intersection is on curve start or end points
     // If true return winding 0.5 or -0.5
-    if(position.y == start.y && position.x <= start.x && t >= -0.1 && t <= 0.1) {
+    if(position.y == start.y && xIntersection >= position.x && t >= -0.1 && t <= 0.1) {
         return getQuadraticDerivativeWinding(0, a, b) / 2;
     }
-    else if(position.y == end.y && position.x <= start.x && t >= 0.9 && t <= 1.1) {
+    else if(position.y == end.y && xIntersection >= position.x && t >= 0.9 && t <= 1.1) {
         return getQuadraticDerivativeWinding(1, a, b) / 2;
     }
 
     // Check if root is in range (0, 1)
     if(t > 0 && t < 1) {
-        // X coordinate of intersection
-        double x = (1 - t) * (1 - t) * start.x + 2 * (1 - t) * t * control.x + t * t * end.x;
 
         // Check if intersection is on the right from ray
-        if(x >= position.x) {
+        if(xIntersection >= position.x) {
             winding += getQuadraticDerivativeWinding(t, a, b);
         }
     }
@@ -163,8 +164,9 @@ float rayIntersectsCurveSegment(vec2 position, vec2 start, vec2 control, vec2 en
     }
 
     // Quadratic formula roots
-    double t0 = (-b + sqrt(b * b - 4 * a * c)) / (2 * a);
-    double t1 = (-b - sqrt(b * b - 4 * a * c)) / (2 * a);
+    double sqrtD = sqrt(b * b - 4 * a * c);
+    double t0 = (-b + sqrtD) / (2 * a);
+    double t1 = (-b - sqrtD) / (2 * a);
 
     // Compute winding for roots
     winding += getWindingForQuadraticRoot(t0, position, start, control, end, a, b);
