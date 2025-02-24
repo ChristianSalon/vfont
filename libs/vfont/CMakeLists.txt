@@ -14,7 +14,9 @@ set(VFONT_HEADERS
     include/VFONT/glyph_cache.h
     include/VFONT/character.h
     include/VFONT/font.h
+    include/VFONT/shaper.h
     include/VFONT/text_block.h
+    include/VFONT/text_segment.h
     include/VFONT/tessellator.h
     include/VFONT/cpu_tessellator.h
     include/VFONT/gpu_tessellator.h
@@ -34,7 +36,9 @@ set(VFONT_SOURCES
     src/glyph_cache.cpp
     src/character.cpp
     src/font.cpp
+    src/shaper.cpp
     src/text_block.cpp
+    src/text_segment.cpp
     src/tessellator.cpp
     src/cpu_tessellator.cpp
     src/gpu_tessellator.cpp
@@ -69,6 +73,9 @@ target_link_libraries(${LIB_NAME} PRIVATE CDT::CDT)
 # link glm
 target_link_libraries(${LIB_NAME} PUBLIC glm::glm)
 add_compile_definitions(GLM_FORCE_DEPTH_ZERO_TO_ONE)
+
+# link harfbuzz
+target_link_libraries(${LIB_NAME} PUBLIC harfbuzz)
 
 # compile vertex and fragment shaders with glslc
 message(STATUS "vfont - compiling shaders")

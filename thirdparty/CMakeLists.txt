@@ -14,3 +14,6 @@ add_subdirectory(glm)
 
 # CDT initialization
 add_subdirectory(CDT/CDT)
+
+# harfbuzz initialization
+add_subdirectory(harfbuzz)

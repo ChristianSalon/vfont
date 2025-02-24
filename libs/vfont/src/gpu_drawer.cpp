@@ -59,7 +59,7 @@ void GpuDrawer::draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, VkComma
     for (int i = 0; i < textBlocks.size(); i++) {
         for (Character &character : textBlocks[i]->getCharacters()) {
             if (character.glyph.mesh.getVertexCount() > 0) {
-                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint(), 0};
+                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getCodePoint(), 0};
 
                 SegmentsInfo segmentsInfo =
                     this->_segmentsInfo.at(this->_offsets.at(key).at(SEGMENTS_INFO_OFFSET_BUFFER_INDEX));
@@ -108,7 +108,7 @@ void GpuDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<TextBlo
 
     for (int i = 0; i < textBlocks.size(); i++) {
         for (Character &character : textBlocks[i]->getCharacters()) {
-            GlyphKey key{textBlocks[i]->getFont()->getFontFamily(), character.getUnicodeCodePoint(), 0};
+            GlyphKey key{textBlocks[i]->getFont()->getFontFamily(), character.getCodePoint(), 0};
             if (!this->_offsets.contains(key)) {
                 this->_offsets.insert({key, {boundingBoxIndexCount, segmentsInfoCount}});
 

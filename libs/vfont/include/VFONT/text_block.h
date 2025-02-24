@@ -8,6 +8,9 @@
 #include <cstdint>
 #include <functional>
 #include <iostream>
+#include <iterator>
+#include <list>
+#include <map>
 #include <memory>
 #include <vector>
 
@@ -18,9 +21,17 @@
 
 #include "character.h"
 #include "font.h"
+#include "shaper.h"
 #include "tessellator.h"
+#include "text_segment.h"
 
 namespace vft {
+
+typedef struct {
+    unsigned int maxFontSize;
+    int x;
+    int y;
+} LineData;
 
 /**
  * @class TextBlock
@@ -38,14 +49,17 @@ protected:
     bool _wrapping;         /**< Indicates whether to use wrapping in text block */
     unsigned int _fontSize; /**< Font size in text block */
     int _width;             /**< Width of text block. -1 indicates unlimited width */
-    int _penX;              /**< X coordinate of current pen position */
-    int _penY;              /**< Y coordinate of current pen position */
+
+    int _penX; /**< X coordinate of current pen position */
+    int _penY; /**< Y coordinate of current pen position */
 
     glm::mat4 _transform; /**< Transform matrix of text block */
     glm::vec4 _color;     /**< Color of text */
     glm::vec3 _position;  /**< Position of text block */
 
-    std::vector<Character> _characters; /**< Characters to render */
+    std::list<TextSegment> _segments; /**< Text segments which include characters to render */
+    std::map<unsigned int, LineData> _lines;
+
     std::shared_ptr<Tessellator> _tessellator;
 
 public:
@@ -61,22 +75,27 @@ public:
     void translate(float x, float y, float z);
     void rotate(float x, float y, float z);
 
-    void add(std::vector<uint32_t> codePoints);
-    void add(std::string text);
-    void remove(unsigned int count = 1);
+    void add(std::vector<uint32_t> codePoints, unsigned int start = std::numeric_limits<unsigned int>::max());
+    void add(std::string text, unsigned int start = std::numeric_limits<unsigned int>::max());
+    void remove(unsigned int start = std::numeric_limits<unsigned int>::max(), unsigned int count = 1);
     void clear();
 
     void setFont(std::shared_ptr<Font> font);
+    void setFontSize(unsigned int fontSize);
     void setColor(glm::vec4 color);
+
     void setPosition(glm::vec3 position);
     void setTransform(glm::mat4 transform);
     void setWidth(int width);
     void setKerning(bool kerning);
     void setWrapping(bool wrapping);
-    void setFontSize(unsigned int fontSize);
     void setTessellationStrategy(std::shared_ptr<Tessellator> tessellator);
 
-    std::vector<Character> &getCharacters();
+    std::vector<Character> getCharacters();
+    unsigned int getCharacterCount();
+    std::vector<uint32_t> getCodePoints();
+    unsigned int getCodePointCount();
+
     std::shared_ptr<Font> getFont() const;
     glm::vec4 getColor() const;
     glm::vec3 getPosition() const;
@@ -89,6 +108,23 @@ public:
 protected:
     void _updateCharacters();
     void _updateTransform();
+
+    void _updateLineData(unsigned int start);
+    void _updateCharacterPositions(unsigned int start);
+    std::list<TextSegment>::iterator _mergeSegmentsIfPossible(std::list<TextSegment>::iterator first,
+                                                              std::list<TextSegment>::iterator second);
+
+    std::pair<unsigned int, LineData> _getLineDataBasedOnCharacterGlobalIndex(unsigned int index);
+    TextSegment &_getSegmentBasedOnCodePointGlobalIndex(unsigned int index);
+    std::list<TextSegment>::iterator _getSegmentIteratorBasedOnCodePointGlobalIndex(unsigned int index);
+    TextSegment &_getSegmentBasedOnCharacterGlobalIndex(unsigned int index);
+    std::list<TextSegment>::iterator _getSegmentIteratorBasedOnCharacterGlobalIndex(unsigned int index);
+    Character &_getCharacterBasedOnCharacterGlobalIndex(unsigned int index);
+    std::vector<Character>::iterator _getCharacterIteratorBasedOnCharacterGlobalIndex(unsigned int index);
+
+    unsigned int _getCodePointGlobalIndexBasedOnSegment(const TextSegment &segment);
+    unsigned int _getCharacterGlobalIndexBasedOnSegment(const TextSegment &segment);
+    unsigned int _getCharacterGlobalIndexBasedOnCharacter(const Character &character);
 };
 
 }  // namespace vft

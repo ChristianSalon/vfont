@@ -55,7 +55,7 @@ void CombinedDrawer::draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, Vk
     for (int i = 0; i < textBlocks.size(); i++) {
         for (Character &character : textBlocks[i]->getCharacters()) {
             if (character.glyph.mesh.getVertexCount() > 0) {
-                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint(), 0};
+                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getCodePoint(), 0};
 
                 vft::CharacterPushConstants pushConstants{character.getModelMatrix(), textBlocks.at(i)->getColor()};
                 vkCmdPushConstants(commandBuffer, this->_lineSegmentsPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
@@ -77,7 +77,7 @@ void CombinedDrawer::draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, Vk
     for (int i = 0; i < textBlocks.size(); i++) {
         for (Character &character : textBlocks[i]->getCharacters()) {
             if (character.glyph.mesh.getVertexCount() > 0) {
-                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint(), 0};
+                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getCodePoint(), 0};
 
                 vft::CharacterPushConstants pushConstants{character.getModelMatrix(), textBlocks.at(i)->getColor()};
                 vkCmdPushConstants(commandBuffer, this->_curveSegmentsPipelineLayout,
@@ -123,7 +123,7 @@ void CombinedDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<Te
 
     for (int i = 0; i < textBlocks.size(); i++) {
         for (Character &character : textBlocks[i]->getCharacters()) {
-            GlyphKey key{textBlocks[i]->getFont()->getFontFamily(), character.getUnicodeCodePoint(), 0};
+            GlyphKey key{textBlocks[i]->getFont()->getFontFamily(), character.getCodePoint(), 0};
             if (!this->_offsets.contains(key)) {
                 this->_offsets.insert({key, {lineSegmentsIndexCount, curveSegmentsIndexCount}});
 

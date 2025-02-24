@@ -129,12 +129,9 @@ FT_Outline_CubicToFunc Tessellator::_cubicToFunc =
  * @param codePoint Unicode code point of glyph to triangulate
  * @param font Font to use for triangulation
  */
-Glyph Tessellator::_composeGlyph(uint32_t codePoint, std::shared_ptr<Font> font) {
-    // If code point is TAB, then it is rendered as four SPACE characters
-    uint32_t newCodePoint = codePoint == vft::U_TAB ? vft::U_SPACE : codePoint;
-
+Glyph Tessellator::_composeGlyph(uint32_t glyphId, std::shared_ptr<Font> font) {
     // Get glyph from .ttf file
-    if (FT_Load_Char(font->getFace(), codePoint, FT_LOAD_NO_SCALE)) {
+    if (FT_Load_Glyph(font->getFace(), glyphId, FT_LOAD_NO_SCALE)) {
         throw std::runtime_error("Error loading glyph");
     }
     FT_GlyphSlot slot = font->getFace()->glyph;

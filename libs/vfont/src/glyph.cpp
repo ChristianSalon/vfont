@@ -79,6 +79,22 @@ void Glyph::setAdvanceY(long advanceY) {
     this->_advanceY = advanceY;
 }
 
+long Glyph::getWidth() const {
+    return this->_width;
+}
+
+long Glyph::getHeight() const {
+    return this->_height;
+}
+
+long Glyph::getBearingX() const {
+    return this->_bearingX;
+}
+
+long Glyph::getBearingY() const {
+    return this->_bearingY;
+}
+
 /**
  * @brief Get by how much should the X coordinate update after rendering glyph
  *

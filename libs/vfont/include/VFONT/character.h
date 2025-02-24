@@ -11,6 +11,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
+#include <glm/vec4.hpp>
 
 #include "font.h"
 #include "glyph.h"
@@ -24,30 +25,38 @@ namespace vft {
  */
 class Character {
 public:
-    const Glyph glyph; /**< Reference to glyph data */
+    Glyph glyph; /**< Reference to glyph data */
 
 protected:
-    uint32_t _unicodeCodePoint; /**< Unicode code point of character */
+    uint32_t _codePoint; /**< Unicode code point of character */
 
-    // Coordinates represent the lower left corner of character
-    glm::vec2 _position;    /**< Character position */
-    glm::mat4 _modelMatrix; /**< Character model matrix */
+    std::shared_ptr<Font> _font;
+    unsigned int _fontSize;
+
+    glm::vec2 _advance;
+
+    glm::vec2 _position;         /**< Character position, coordinates represent the lower left corner of character */
+    glm::mat4 _modelMatrix{1.f}; /**< Character model matrix */
+    glm::mat4 _parentMatrix{1.f};
 
 public:
     Character(const Glyph glyph,
               uint32_t codePoint,
               std::shared_ptr<Font> font,
-              unsigned int fontSize,
-              glm::vec2 position,
-              glm::mat4 transform);
+              unsigned int fontSize);
 
-    void setUnicodeCodePoint(uint32_t unicodeCodePoint);
-    void setModelMatrix(glm::mat4 modelMatrix);
-    void transform(glm::mat4 transform, std::shared_ptr<Font> font, unsigned int fontSize);
+    void setCodePoint(uint32_t codePoint);
+    void setAdvance(glm::vec2 advance);
+    void setPosition(glm::vec2 position);
+    void setTransform(glm::mat4 transform);
 
-    uint32_t getUnicodeCodePoint() const;
+    uint32_t getCodePoint() const;
+    glm::vec2 getAdvance() const;
     glm::vec2 getPosition() const;
     glm::mat4 getModelMatrix() const;
+
+protected:
+    void _updateModelMatrix();
 };
 
 }  // namespace vft

@@ -10,20 +10,17 @@ namespace vft {
 /**
  * @brief Character constructor
  *
+ * @param glyph Glyph of character
  * @param codePoint Unicode code point
  * @param font Font of character
  * @param fontSize Font size of character
+ * @param color Color of character
  * @param position Position of character relative to text block
- * @param transform Character transform matrix
+ * @param transform Text block model matrix
  */
-Character::Character(const Glyph glyph,
-                     uint32_t codePoint,
-                     std::shared_ptr<Font> font,
-                     unsigned int fontSize,
-                     glm::vec2 position,
-                     glm::mat4 transform)
-    : glyph{glyph}, _unicodeCodePoint{codePoint}, _position{position} {
-    this->transform(transform, font, fontSize);
+Character::Character(const Glyph glyph, uint32_t codePoint, std::shared_ptr<Font> font, unsigned int fontSize)
+    : glyph{glyph}, _codePoint{codePoint}, _font{font}, _fontSize{fontSize} {
+    this->_updateModelMatrix();
 }
 
 /**
@@ -31,8 +28,22 @@ Character::Character(const Glyph glyph,
  *
  * @param unicodeCodePoint Unicode code point of character
  */
-void Character::setUnicodeCodePoint(uint32_t unicodeCodePoint) {
-    this->_unicodeCodePoint = unicodeCodePoint;
+void Character::setCodePoint(uint32_t codePoint) {
+    this->_codePoint = codePoint;
+}
+
+void Character::setAdvance(glm::vec2 advance) {
+    this->_advance = advance;
+}
+
+void Character::setPosition(glm::vec2 position) {
+    this->_position = position;
+    this->_updateModelMatrix();
+}
+
+void Character::setTransform(glm::mat4 transform) {
+    this->_parentMatrix = transform;
+    this->_updateModelMatrix();
 }
 
 /**
@@ -40,31 +51,12 @@ void Character::setUnicodeCodePoint(uint32_t unicodeCodePoint) {
  *
  * @return Unicode code point of character
  */
-uint32_t Character::getUnicodeCodePoint() const {
-    return this->_unicodeCodePoint;
+uint32_t Character::getCodePoint() const {
+    return this->_codePoint;
 }
 
-/**
- * @brief Setter for character model matrix
- *
- * @param modelMatrix New model matrix
- */
-void Character::setModelMatrix(glm::mat4 modelMatrix) {
-    this->_modelMatrix = modelMatrix;
-}
-
-/**
- * @brief Set model matrix of character
- *
- * @param transform Transform of text block
- * @param font Font
- * @param fontSize Font size of character
- */
-void Character::transform(glm::mat4 transform, std::shared_ptr<Font> font, unsigned int fontSize) {
-    glm::vec2 scale = font->getScalingVector(fontSize);
-    this->_modelMatrix = transform * glm::translate(glm::mat4(1.f), glm::vec3(this->_position, 0.f)) *
-                         glm::rotate(glm::mat4(1.f), glm::radians(180.f), glm::vec3(1.f, 0.f, 0.f)) *
-                         glm::scale(glm::mat4(1.f), glm::vec3(scale.x, scale.y, 0.f));
+glm::vec2 Character::getAdvance() const {
+    return this->_advance;
 }
 
 /**
@@ -83,6 +75,16 @@ glm::vec2 Character::getPosition() const {
  */
 glm::mat4 Character::getModelMatrix() const {
     return this->_modelMatrix;
+}
+
+/**
+ * @brief Updates the model matrix of character
+ */
+void Character::_updateModelMatrix() {
+    glm::vec2 scale = this->_font->getScalingVector(this->_fontSize);
+    this->_modelMatrix = this->_parentMatrix * glm::translate(glm::mat4(1.f), glm::vec3(this->_position, 0.f)) *
+                         glm::rotate(glm::mat4(1.f), glm::radians(180.f), glm::vec3(1.f, 0.f, 0.f)) *
+                         glm::scale(glm::mat4(1.f), glm::vec3(scale.x, scale.y, 0.f));
 }
 
 }  // namespace vft

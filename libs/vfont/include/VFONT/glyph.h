@@ -68,6 +68,10 @@ public:
     uint32_t getLineSegmentsIndexCount() const;
     uint32_t getCurveSegmentsIndexCount() const;
 
+    long getWidth() const;
+    long getHeight() const;
+    long getBearingX() const;
+    long getBearingY() const;
     long getAdvanceX() const;
     long getAdvanceY() const;
 };

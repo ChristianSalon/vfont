@@ -45,7 +45,7 @@ void CpuDrawer::draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, VkComma
     for (int i = 0; i < textBlocks.size(); i++) {
         for (Character &character : textBlocks[i]->getCharacters()) {
             if (character.glyph.mesh.getVertexCount() > 0) {
-                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getUnicodeCodePoint(),
+                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getCodePoint(),
                              textBlocks.at(i)->getFontSize()};
 
                 vft::CharacterPushConstants pushConstants{character.getModelMatrix(), textBlocks.at(i)->getColor()};
@@ -77,7 +77,7 @@ void CpuDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<TextBlo
 
     for (int i = 0; i < textBlocks.size(); i++) {
         for (Character &character : textBlocks[i]->getCharacters()) {
-            GlyphKey key{textBlocks[i]->getFont()->getFontFamily(), character.getUnicodeCodePoint(),
+            GlyphKey key{textBlocks[i]->getFont()->getFontFamily(), character.getCodePoint(),
                          textBlocks.at(i)->getFontSize()};
             if (!this->_offsets.contains(key)) {
                 this->_offsets.insert({key, indexCount});

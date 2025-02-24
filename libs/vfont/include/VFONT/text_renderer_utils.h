@@ -15,7 +15,8 @@
 namespace vft {
 
 const uint32_t U_BACKSPACE = 0x00000008;
-const uint32_t U_ENTER = 0x0000000d;
+const uint32_t U_CR = 0x0000000d;
+const uint32_t U_LF = 0x0000000a;
 const uint32_t U_SPACE = 0x00000020;
 const uint32_t U_TAB = 0x00000009;
 

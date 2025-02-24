@@ -25,7 +25,7 @@ public:
     GpuTessellator(GlyphCache &cache);
     ~GpuTessellator() = default;
 
-    Glyph composeGlyph(uint32_t codePoint, std::shared_ptr<vft::Font> font, unsigned int fontSize = 0) override;
+    Glyph composeGlyph(uint32_t glyphId, std::shared_ptr<vft::Font> font, unsigned int fontSize = 0) override;
 };
 
 }  // namespace vft

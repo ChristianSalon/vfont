@@ -112,14 +112,14 @@ FT_Outline_ConicToFunc CombinedTessellator::_conicToFunc = [](const FT_Vector *c
 
 CombinedTessellator::CombinedTessellator(GlyphCache &cache) : Tessellator{cache} {}
 
-Glyph CombinedTessellator::composeGlyph(uint32_t codePoint, std::shared_ptr<vft::Font> font, unsigned int fontSize) {
-    GlyphKey key{font->getFontFamily(), codePoint, 0};
+Glyph CombinedTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<vft::Font> font, unsigned int fontSize) {
+    GlyphKey key{font->getFontFamily(), glyphId, 0};
     if (this->_cache.exists(key)) {
         return this->_cache.getGlyph(key);
     }
 
     this->_edges.clear();
-    Glyph glyph = CombinedTessellator::_composeGlyph(codePoint, font);
+    Glyph glyph = CombinedTessellator::_composeGlyph(glyphId, font);
     if (CombinedTessellator::_currentGlyphData.contourCount >= 2) {
         std::vector<glm::vec2> vertices = glyph.mesh.getVertices();
         this->_combineContours(vertices, this->_edges);

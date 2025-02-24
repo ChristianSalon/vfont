@@ -7,3 +7,6 @@
 [submodule "thirdparty/CDT"]
 	path = thirdparty/CDT
 	url = https://github.com/artem-ogre/CDT.git
+[submodule "thirdparty/harfbuzz"]
+	path = thirdparty/harfbuzz
+	url = https://github.com/harfbuzz/harfbuzz.git
