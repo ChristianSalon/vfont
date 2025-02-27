@@ -109,7 +109,9 @@ void TextBlock::add(std::vector<uint32_t> codePoints, unsigned int start) {
     }
 
     // Calculate new line data
-    this->_updateLineData(newSegmentCharacterGlobalIndex);
+    this->_lineDivider.setCharacters(this->getCharacters());
+    this->_lineDivider.divide(newSegmentCharacterGlobalIndex);
+
     // Set character positions
     this->_updateCharacterPositions(newSegmentCharacterGlobalIndex);
 
@@ -206,7 +208,9 @@ void TextBlock::remove(unsigned int start, unsigned int count) {
         }
 
         // Calculate new line data
-        this->_updateLineData(segmentCharacterGlobalIndex);
+        this->_lineDivider.setCharacters(this->getCharacters());
+        this->_lineDivider.divide(segmentCharacterGlobalIndex);
+
         // Set character positions
         this->_updateCharacterPositions(segmentCharacterGlobalIndex);
     }
@@ -316,6 +320,7 @@ void TextBlock::setTransform(glm::mat4 transform) {
  */
 void TextBlock::setWidth(int width) {
     this->_width = width;
+    this->_lineDivider.setMaxLineSize(this->_width);
     this->_updateCharacters();
 }
 
@@ -492,78 +497,10 @@ void TextBlock::_updateTransform() {
     }
 }
 
-void TextBlock::_updateLineData(unsigned int start) {
-    // Get line for first character
-    auto lineIterator = this->_lines.upper_bound(start);
-    if (!this->_lines.empty()) {
-        if (lineIterator != this->_lines.begin()) {
-            // Get line at which is character at position start - 1
-            lineIterator = std::prev(lineIterator);
-            // Erase all lines after line at which is character at position start - 1
-            this->_lines.erase(std::next(lineIterator), this->_lines.end());
-        }
-    } else {
-        // If there are no lines create one
-        this->_lines.insert({0, LineData{this->_fontSize, 0, static_cast<int>(this->_fontSize)}});
-        lineIterator = this->_lines.begin();
-    }
-
-    // Restore pen position
-    glm::vec2 pen{0, lineIterator->second.y};
-    if (start != 0) {
-        glm::vec2 scale = this->_getSegmentBasedOnCharacterGlobalIndex(start - 1).getFont()->getScalingVector(
-            this->_getSegmentBasedOnCharacterGlobalIndex(start - 1).getFontSize());
-        pen = this->_getCharacterBasedOnCharacterGlobalIndex(start - 1).getPosition() +
-              this->_getCharacterBasedOnCharacterGlobalIndex(start - 1).getAdvance();
-    }
-
-    // First segment that needs recalculating position
-    auto segmentIterator = this->_getSegmentIteratorBasedOnCharacterGlobalIndex(start);
-    unsigned int globalCharacterIndex = this->_getCharacterGlobalIndexBasedOnSegment(*segmentIterator);
-
-    // Calculate new line data
-    while (segmentIterator != this->_segments.end()) {
-        for (Character &character : segmentIterator->getCharacters()) {
-            if ((this->_width >= 0 && pen.x + character.glyph.getWidth() > this->_width) ||
-                character.getCodePoint() == vft::U_LF) {
-                // Set pen position to start of new line
-                pen.x = 0;
-                pen.y += segmentIterator->getFontSize();
-
-                globalCharacterIndex++;
-
-                // Character should be on new line
-                this->_lines.insert(
-                    {globalCharacterIndex, LineData{segmentIterator->getFontSize(), 0, static_cast<int>(pen.y)}});
-
-                continue;
-            }
-
-            pen += character.getAdvance();
-
-            // Check if font size of current character is bigger than maxFontSize of the line on which the current
-            // character is
-            if (segmentIterator->getFontSize() > this->_lines.rbegin()->second.maxFontSize) {
-                // Update maxFontSize and y coordinate of line
-                this->_lines.rbegin()->second.y +=
-                    segmentIterator->getFontSize() - this->_lines.rbegin()->second.maxFontSize;
-                this->_lines.rbegin()->second.maxFontSize = segmentIterator->getFontSize();
-
-                // Update y coordinate of pen
-                pen.y += segmentIterator->getFontSize() - pen.y;
-            }
-
-            globalCharacterIndex++;
-        }
-
-        segmentIterator = std::next(segmentIterator);
-    }
-}
-
 void TextBlock::_updateCharacterPositions(unsigned int start) {
     // Index of first character that needs recalculating position
     // Index of first character on line
-    unsigned int globalCharacterIndex = this->_getLineDataBasedOnCharacterGlobalIndex(start).first;
+    unsigned int globalCharacterIndex = this->_lineDivider.getLineOfCharacter(start).first;
 
     // Restore pen position
     int penX = 0;
@@ -571,7 +508,7 @@ void TextBlock::_updateCharacterPositions(unsigned int start) {
 
     // Apply calculated positions by shaper and LineData to characters
     while (globalCharacterIndex < this->getCharacterCount()) {
-        auto line = this->_getLineDataBasedOnCharacterGlobalIndex(globalCharacterIndex);
+        auto line = this->_lineDivider.getLineOfCharacter(globalCharacterIndex);
 
         if (line.first == globalCharacterIndex) {
             // Character is first on current line, restore pen position
@@ -726,19 +663,6 @@ std::vector<Character>::iterator TextBlock::_getCharacterIteratorBasedOnCharacte
     }
 
     throw std::runtime_error("_getCharacterIteratorBasedOnCharacterGlobalIndex(): Such character does not exist");
-}
-
-std::pair<unsigned int, LineData> TextBlock::_getLineDataBasedOnCharacterGlobalIndex(unsigned int index) {
-    if (this->_lines.empty()) {
-        throw std::out_of_range("_getLineDataBasedOnCharacterGlobalIndex(): Range exceeds available characters");
-    }
-
-    auto lineIterator = this->_lines.upper_bound(index);
-    if (lineIterator != this->_lines.begin()) {
-        return *std::prev(lineIterator);
-    }
-
-    throw std::runtime_error("_getLineDataBasedOnCharacterGlobalIndex(): Such line does not exist");
 }
 
 unsigned int TextBlock::_getCodePointGlobalIndexBasedOnSegment(const TextSegment &segment) {

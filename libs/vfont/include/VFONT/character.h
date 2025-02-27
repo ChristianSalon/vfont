@@ -54,6 +54,8 @@ public:
     glm::vec2 getAdvance() const;
     glm::vec2 getPosition() const;
     glm::mat4 getModelMatrix() const;
+    std::shared_ptr<Font> getFont() const;
+    unsigned int getFontSize() const;
 
 protected:
     void _updateModelMatrix();

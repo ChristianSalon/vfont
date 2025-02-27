@@ -77,6 +77,14 @@ glm::mat4 Character::getModelMatrix() const {
     return this->_modelMatrix;
 }
 
+std::shared_ptr<Font> Character::getFont() const {
+    return this->_font;
+}
+
+unsigned int Character::getFontSize() const {
+    return this->_fontSize;
+}
+
 /**
  * @brief Updates the model matrix of character
  */

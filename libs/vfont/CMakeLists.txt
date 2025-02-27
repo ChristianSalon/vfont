@@ -17,6 +17,7 @@ set(VFONT_HEADERS
     include/VFONT/shaper.h
     include/VFONT/text_block.h
     include/VFONT/text_segment.h
+    include/VFONT/line_divider.h
     include/VFONT/tessellator.h
     include/VFONT/cpu_tessellator.h
     include/VFONT/gpu_tessellator.h
@@ -39,6 +40,7 @@ set(VFONT_SOURCES
     src/shaper.cpp
     src/text_block.cpp
     src/text_segment.cpp
+    src/line_divider.cpp
     src/tessellator.cpp
     src/cpu_tessellator.cpp
     src/gpu_tessellator.cpp

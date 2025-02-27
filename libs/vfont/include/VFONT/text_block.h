@@ -21,17 +21,12 @@
 
 #include "character.h"
 #include "font.h"
+#include "line_divider.h"
 #include "shaper.h"
 #include "tessellator.h"
 #include "text_segment.h"
 
 namespace vft {
-
-typedef struct {
-    unsigned int maxFontSize;
-    int x;
-    int y;
-} LineData;
 
 /**
  * @class TextBlock
@@ -58,7 +53,7 @@ protected:
     glm::vec3 _position;  /**< Position of text block */
 
     std::list<TextSegment> _segments; /**< Text segments which include characters to render */
-    std::map<unsigned int, LineData> _lines;
+    LineDivider _lineDivider;
 
     std::shared_ptr<Tessellator> _tessellator;
 
@@ -109,12 +104,10 @@ protected:
     void _updateCharacters();
     void _updateTransform();
 
-    void _updateLineData(unsigned int start);
     void _updateCharacterPositions(unsigned int start);
     std::list<TextSegment>::iterator _mergeSegmentsIfPossible(std::list<TextSegment>::iterator first,
                                                               std::list<TextSegment>::iterator second);
 
-    std::pair<unsigned int, LineData> _getLineDataBasedOnCharacterGlobalIndex(unsigned int index);
     TextSegment &_getSegmentBasedOnCodePointGlobalIndex(unsigned int index);
     std::list<TextSegment>::iterator _getSegmentIteratorBasedOnCodePointGlobalIndex(unsigned int index);
     TextSegment &_getSegmentBasedOnCharacterGlobalIndex(unsigned int index);
