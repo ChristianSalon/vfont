@@ -17,34 +17,40 @@ const std::map<unsigned int, LineData> &LineDivider::divide(unsigned int startCh
         return this->_lines;
     }
 
-    // Get line for first character
-    auto lineIterator = this->_lines.upper_bound(startCharacterIndex);
+    unsigned int firstCharacterOnLineIndex = 0;
     if (!this->_lines.empty()) {
+        // One line after the line of character at start index
+        auto lineIterator = this->_lines.upper_bound(startCharacterIndex);
         if (lineIterator != this->_lines.begin()) {
-            // Get line at which is character at position start - 1
+            // Line of character at start index
             lineIterator = std::prev(lineIterator);
-            // Erase all lines after line at which is character at position start - 1
-            this->_lines.erase(std::next(lineIterator), this->_lines.end());
+
+            firstCharacterOnLineIndex = lineIterator->first;
+
+            // Erase all lines after and including the line at which is character at start index
+            this->_lines.erase(lineIterator, this->_lines.end());
         }
-    } else {
-        // If there are no lines create one
-        this->_lines.insert({0, LineData{0, 0, 0, 0}});
-        lineIterator = this->_lines.begin();
     }
 
-    // Restore pen position
-    glm::vec2 pen{0, lineIterator->second.y};
-    if (startCharacterIndex != 0) {
-        const Character &previousCharacter = this->_characters.at(startCharacterIndex);
-        glm::vec2 scale = previousCharacter.getFont()->getScalingVector(previousCharacter.getFontSize());
-        pen = previousCharacter.getPosition() + previousCharacter.getAdvance();
-    }
+    // Process first character on the first line that needs updating
+    // Inserting now ensures that at least one line exists, avoids invalid line iterators
+    this->_lines.insert(
+        {firstCharacterOnLineIndex,
+         LineData{this->_characters[firstCharacterOnLineIndex].getAdvance().x,
+                  static_cast<double>(this->_characters[firstCharacterOnLineIndex].getFontSize()), 0,
+                  this->_lines.empty()
+                      ? static_cast<double>(this->_characters[firstCharacterOnLineIndex].getFontSize())
+                      : this->_lines.rbegin()->second.y +
+                            static_cast<double>(this->_characters[firstCharacterOnLineIndex].getFontSize())}});
 
-    for (unsigned int characterIndex = startCharacterIndex; characterIndex < this->_characters.size();
+    // Restore pen position with respect to newly added line
+    glm::vec2 pen{this->_lines.rbegin()->second.width, this->_lines.rbegin()->second.y};
+
+    for (unsigned int characterIndex = firstCharacterOnLineIndex + 1; characterIndex < this->_characters.size();
          characterIndex++) {
         Character &character = this->_characters[characterIndex];
 
-        if ((this->_maxLineSize > 0 && pen.x + character.glyph.getWidth() > this->_maxLineSize) ||
+        if ((this->_maxLineSize > 0 && pen.x + character.getAdvance().x > this->_maxLineSize) ||
             character.getCodePoint() == vft::U_LF) {
             // Set pen position to start of new line
             pen.x = 0;
@@ -70,7 +76,7 @@ const std::map<unsigned int, LineData> &LineDivider::divide(unsigned int startCh
             this->_lines.rbegin()->second.height = character.getFontSize();
 
             // Update y coordinate of pen
-            pen.y += character.getFontSize() - pen.y;
+            pen.y = this->_lines.rbegin()->second.y;
         }
     }
 
