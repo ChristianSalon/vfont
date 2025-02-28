@@ -25,6 +25,7 @@
 #include "shaper.h"
 #include "tessellator.h"
 #include "text_segment.h"
+#include "text_align_strategy.h"
 
 namespace vft {
 
@@ -51,6 +52,8 @@ protected:
     glm::mat4 _transform; /**< Transform matrix of text block */
     glm::vec4 _color;     /**< Color of text */
     glm::vec3 _position;  /**< Position of text block */
+
+    std::unique_ptr<TextAlignStrategy> _textAlign;
 
     std::list<TextSegment> _segments; /**< Text segments which include characters to render */
     LineDivider _lineDivider;
@@ -85,6 +88,7 @@ public:
     void setKerning(bool kerning);
     void setWrapping(bool wrapping);
     void setTessellationStrategy(std::shared_ptr<Tessellator> tessellator);
+    void setTextAlign(std::unique_ptr<TextAlignStrategy> textAlign);
 
     std::vector<Character> getCharacters();
     unsigned int getCharacterCount();

@@ -36,6 +36,7 @@ TextBlock::TextBlock(std::shared_ptr<Font> font,
     this->setWidth(width);
     this->setColor(color);
     this->setPosition(position);
+    this->setTextAlign(std::make_unique<LeftTextAlign>());
 }
 
 void TextBlock::add(std::vector<uint32_t> codePoints, unsigned int start) {
@@ -357,6 +358,10 @@ void TextBlock::setTessellationStrategy(std::shared_ptr<Tessellator> tessellator
     this->_tessellator = tessellator;
 }
 
+void TextBlock::setTextAlign(std::unique_ptr<TextAlignStrategy> textAlign) {
+    this->_textAlign = std::move(textAlign);
+}
+
 /**
  * @brief Get all characters in text block
  *
@@ -498,13 +503,17 @@ void TextBlock::_updateTransform() {
 }
 
 void TextBlock::_updateCharacterPositions(unsigned int start) {
+    std::pair<unsigned int, LineData> firstLine = this->_lineDivider.getLineOfCharacter(start);
+
     // Index of first character that needs recalculating position
     // Index of first character on line
-    unsigned int globalCharacterIndex = this->_lineDivider.getLineOfCharacter(start).first;
+    unsigned int globalCharacterIndex = firstLine.first;
 
     // Restore pen position
-    int penX = 0;
-    int penY = 0;
+    glm::vec2 pen{0, firstLine.second.y};
+    if (this->_width > 0) {
+        pen += this->_textAlign->getLineOffset(firstLine.second.width, this->_width);
+    }
 
     // Apply calculated positions by shaper and LineData to characters
     while (globalCharacterIndex < this->getCharacterCount()) {
@@ -512,17 +521,21 @@ void TextBlock::_updateCharacterPositions(unsigned int start) {
 
         if (line.first == globalCharacterIndex) {
             // Character is first on current line, restore pen position
-            penX = 0;
-            penY = line.second.y;
+            pen.x = 0;
+            pen.y = line.second.y;
+
+            // Check if text block has a width bigger than 0, that indicates to use wrapping and apply text align
+            if (this->_width > 0) {
+                pen += this->_textAlign->getLineOffset(line.second.width, this->_width);
+            }
         }
 
         // Set character position
         Character &character = this->_getCharacterBasedOnCharacterGlobalIndex(globalCharacterIndex);
-        character.setPosition(glm::vec2(penX, penY));
+        character.setPosition(pen);
 
         // Update pen position
-        penX += character.getAdvance().x;
-        penY += character.getAdvance().y;
+        pen += character.getAdvance();
 
         globalCharacterIndex++;
     }
