@@ -18,30 +18,24 @@ namespace vft {
  * @param kerning Indicates whether to use kerning in block
  * @param wrapping Indicates whether to use wrapping in block
  */
-TextBlock::TextBlock(std::shared_ptr<Font> font,
-                     unsigned int fontSize,
-                     glm::vec4 color,
-                     glm::vec3 position,
-                     int width,
-                     bool kerning,
-                     bool wrapping)
-    : _font{font},
-      _fontSize{fontSize},
-      _penX{0},
-      _penY{static_cast<int>(fontSize)},
-      _transform{glm::mat4(1.f)},
-      _position{glm::vec3(0, 0, 0)} {
-    this->setKerning(kerning);
-    this->setWrapping(wrapping);
-    this->setWidth(width);
-    this->setColor(color);
-    this->setPosition(position);
+TextBlock::TextBlock()
+    : _font{nullptr},
+      _kerning{false} {
+    this->setFontSize(0);
+    this->setWidth(-1);
+    this->setColor(glm::vec4(1, 1, 1, 1));
+    this->setPosition(glm::vec3(0, 0, 0));
     this->setTextAlign(std::make_unique<LeftTextAlign>());
 }
 
 void TextBlock::add(std::vector<uint32_t> codePoints, unsigned int start) {
     if (codePoints.size() == 0) {
         return;
+    }
+
+    // If font is not set, characters can not be processed
+    if (this->_font == nullptr) {
+        throw std::runtime_error("TextBlock::add(): Font must be set before adding text to text block");
     }
 
     // Check if parameter start was set
@@ -272,6 +266,10 @@ void TextBlock::rotate(float x, float y, float z) {
  * @param font Font
  */
 void TextBlock::setFont(std::shared_ptr<Font> font) {
+    if (font == nullptr) {
+        throw std::invalid_argument("TextBlock::setFont(): Font must not be null");
+    }
+
     this->_font = font;
 }
 
@@ -338,18 +336,6 @@ void TextBlock::setKerning(bool kerning) {
 
     if (this->getKerning() != kerning) {
         this->_kerning = kerning;
-        this->_updateCharacters();
-    }
-}
-
-/**
- * @brief Set whether to use wrapping in text block
- *
- * @param kerning Indicates whether to use wrapping in text block
- */
-void TextBlock::setWrapping(bool wrapping) {
-    if (this->getWrapping() != wrapping) {
-        this->_wrapping = wrapping;
         this->_updateCharacters();
     }
 }
@@ -464,15 +450,6 @@ glm::mat4 TextBlock::getTransform() const {
  */
 bool TextBlock::getKerning() const {
     return this->_kerning;
-}
-
-/**
- * @brief Get whether wrapping is used in text block
- *
- * @return True if wrapping is used, else false
- */
-bool TextBlock::getWrapping() const {
-    return this->_wrapping;
 }
 
 /**

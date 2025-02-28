@@ -24,8 +24,8 @@
 #include "line_divider.h"
 #include "shaper.h"
 #include "tessellator.h"
-#include "text_segment.h"
 #include "text_align_strategy.h"
+#include "text_segment.h"
 
 namespace vft {
 
@@ -40,20 +40,15 @@ public:
 
 protected:
     std::shared_ptr<Font> _font; /**< Font of text in text block */
+    unsigned int _fontSize;      /**< Font size in text block */
 
-    bool _kerning;          /**< Indicates whether to use kerning in text block */
-    bool _wrapping;         /**< Indicates whether to use wrapping in text block */
-    unsigned int _fontSize; /**< Font size in text block */
-    int _width;             /**< Width of text block. -1 indicates unlimited width */
-
-    int _penX; /**< X coordinate of current pen position */
-    int _penY; /**< Y coordinate of current pen position */
-
-    glm::mat4 _transform; /**< Transform matrix of text block */
-    glm::vec4 _color;     /**< Color of text */
-    glm::vec3 _position;  /**< Position of text block */
-
+    int _width;    /**< Width of text block. -1 indicates unlimited width */
+    bool _kerning; /**< Indicates whether to use kerning in text block */
     std::unique_ptr<TextAlignStrategy> _textAlign;
+
+    glm::vec4 _color{glm::vec4{1.f, 1.f, 1.f, 1.f}}; /**< Color of text */
+    glm::vec3 _position{glm::vec3{0.f, 0.f, 0.f}};   /**< Position of text block */
+    glm::mat4 _transform{glm::mat4(1.f)};            /**< Transform matrix of text block */
 
     std::list<TextSegment> _segments; /**< Text segments which include characters to render */
     LineDivider _lineDivider;
@@ -61,13 +56,7 @@ protected:
     std::shared_ptr<Tessellator> _tessellator;
 
 public:
-    TextBlock(std::shared_ptr<Font> font,
-              unsigned int fontSize,
-              glm::vec4 color,
-              glm::vec3 position,
-              int width = -1,
-              bool kerning = true,
-              bool wrapping = false);
+    TextBlock();
 
     void scale(float x, float y, float z);
     void translate(float x, float y, float z);
@@ -81,14 +70,12 @@ public:
     void setFont(std::shared_ptr<Font> font);
     void setFontSize(unsigned int fontSize);
     void setColor(glm::vec4 color);
-
     void setPosition(glm::vec3 position);
     void setTransform(glm::mat4 transform);
     void setWidth(int width);
     void setKerning(bool kerning);
-    void setWrapping(bool wrapping);
-    void setTessellationStrategy(std::shared_ptr<Tessellator> tessellator);
     void setTextAlign(std::unique_ptr<TextAlignStrategy> textAlign);
+    void setTessellationStrategy(std::shared_ptr<Tessellator> tessellator);
 
     std::vector<Character> getCharacters();
     unsigned int getCharacterCount();
@@ -96,13 +83,12 @@ public:
     unsigned int getCodePointCount();
 
     std::shared_ptr<Font> getFont() const;
+    unsigned int getFontSize() const;
     glm::vec4 getColor() const;
     glm::vec3 getPosition() const;
     glm::mat4 getTransform() const;
     int getWidth() const;
     bool getKerning() const;
-    bool getWrapping() const;
-    unsigned int getFontSize() const;
 
 protected:
     void _updateCharacters();

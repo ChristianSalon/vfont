@@ -29,13 +29,61 @@ DemoScene::DemoScene(CameraType cameraType, vft::Renderer::TessellationStrategy 
     this->_notosansjp = std::make_shared<vft::Font>(DemoScene::NOTO_SANS_JP_PATH);
     this->_notoemoji = std::make_shared<vft::Font>(DemoScene::NOTO_EMOJI_PATH);
 
-    this->_block1 = std::make_shared<vft::TextBlock>(this->_roboto, 64, glm::vec4(1.f, 1.f, 1.f, 1.f), glm::vec3(0.f, 0.f, 0.f), -1, false, false);
-    this->_block2 = std::make_shared<vft::TextBlock>(this->_roboto, 32, glm::vec4(1.f, 0.f, 0.f, 1.f), glm::vec3(0.f, 64.f, 0.f), -1);
-    this->_block3 = std::make_shared<vft::TextBlock>(this->_robotomono, 32, glm::vec4(0.f, 1.f, 0.f, 1.f), glm::vec3(0.f, 96.f, 0.f), -1, false, false);
-    this->_block4 = std::make_shared<vft::TextBlock>(this->_crimsontext, 32, glm::vec4(0.f, 0.f, 1.f, 0.5f), glm::vec3(0.f, 128.f, 0.f), -1, false, false);
-    this->_block5 = std::make_shared<vft::TextBlock>(this->_jersey, 32, glm::vec4(1.f, 1.f, 0.f, 1.f), glm::vec3(0.f, 160.f, 0.f), -1);
-    this->_block6 = std::make_shared<vft::TextBlock>(this->_notosansjp, 32, glm::vec4(1.f, 1.f, 1.f, 1.f), glm::vec3(0.f, 192.f, 0.f), -1, false, false);
-    this->_block7 = std::make_shared<vft::TextBlock>(this->_notoemoji, 32, glm::vec4(0.f, 1.f, 1.f, 1.f), glm::vec3(0.f, 224.f, 0.f), -1, false, false);
+    this->_block1 = vft::TextBlockBuilder()
+        .setFont(this->_roboto)
+        .setFontSize(64)
+        .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
+        .setPosition(glm::vec3(0.f, 0.f, 0.f))
+        .setKerning(true)
+        .build();
+
+    this->_block2 = vft::TextBlockBuilder()
+        .setFont(this->_roboto)
+        .setFontSize(32)
+        .setColor(glm::vec4(1.f, 0.f, 0.f, 1.f))
+        .setPosition(glm::vec3(0.f, 64.f, 0.f))
+        .setKerning(true)
+        .build();
+
+    this->_block3 = vft::TextBlockBuilder()
+        .setFont(this->_robotomono)
+        .setFontSize(32)
+        .setColor(glm::vec4(0.f, 1.f, 0.f, 1.f))
+        .setPosition(glm::vec3(0.f, 96.f, 0.f))
+        .setKerning(true)
+        .build();
+
+    this->_block4 = vft::TextBlockBuilder()
+        .setFont(this->_crimsontext)
+        .setFontSize(32)
+        .setColor(glm::vec4(0.f, 0.f, 1.f, 0.5f))
+        .setPosition(glm::vec3(0.f, 128.f, 0.f))
+        .setKerning(true)
+        .build();
+
+    this->_block5 = vft::TextBlockBuilder()
+        .setFont(this->_jersey)
+        .setFontSize(32)
+        .setColor(glm::vec4(0.f, 0.f, 1.f, 0.5f))
+        .setPosition(glm::vec3(0.f, 160.f, 0.f))
+        .setKerning(true)
+        .build();
+
+    this->_block6 = vft::TextBlockBuilder()
+        .setFont(this->_notosansjp)
+        .setFontSize(32)
+        .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
+        .setPosition(glm::vec3(0.f, 192.f, 0.f))
+        .setKerning(false)
+        .build();
+
+    this->_block7 = vft::TextBlockBuilder()
+        .setFont(this->_notoemoji)
+        .setFontSize(32)
+        .setColor(glm::vec4(0.f, 1.f, 1.f, 1.f))
+        .setPosition(glm::vec3(0.f, 224.f, 0.f))
+        .setKerning(false)
+        .build();
 
     this->_renderer->add(this->_block1);
     this->_renderer->add(this->_block2);

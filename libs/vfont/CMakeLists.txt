@@ -16,6 +16,7 @@ set(VFONT_HEADERS
     include/VFONT/font.h
     include/VFONT/shaper.h
     include/VFONT/text_block.h
+    include/VFONT/text_block_builder.h
     include/VFONT/text_segment.h
     include/VFONT/line_divider.h
     include/VFONT/text_align_strategy.h
@@ -40,6 +41,7 @@ set(VFONT_SOURCES
     src/font.cpp
     src/shaper.cpp
     src/text_block.cpp
+    src/text_block_builder.cpp
     src/text_segment.cpp
     src/line_divider.cpp
     src/text_align_strategy.cpp

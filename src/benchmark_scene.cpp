@@ -3,8 +3,6 @@
  * @author Christian Saloň
  */
 
-#include <VFONT/timed_renderer.h>
-
 #include "benchmark_scene.h"
 
 const std::string BenchmarkScene::ROBOTO_PATH = "assets/Roboto-Regular.ttf";
@@ -16,19 +14,101 @@ BenchmarkScene::BenchmarkScene(CameraType cameraType, vft::Renderer::Tessellatio
 
     this->_roboto = std::make_shared<vft::Font>(BenchmarkScene::ROBOTO_PATH);
 
-    this->_block1 = std::make_shared<vft::TextBlock>(this->_roboto, 256, glm::vec4(1.f, 1.f, 1.f, 1.f), glm::vec3(0.f, 0.f, 0.f), -1, false, false);
-    this->_block2 = std::make_shared<vft::TextBlock>(this->_roboto, 128, glm::vec4(1.f, 1.f, 1.f, 1.f), glm::vec3(0.f, 256.f, 0.f), -1, false, false);
-    this->_block3 = std::make_shared<vft::TextBlock>(this->_roboto, 64, glm::vec4(1.f, 1.f, 1.f, 1.f), glm::vec3(0.f, 384.f, 0.f), -1, false, false);
-    this->_block4 = std::make_shared<vft::TextBlock>(this->_roboto, 32, glm::vec4(1.f, 1.f, 1.f, 1.f), glm::vec3(0.f, 448.f, 0.f), -1, false, false);
-    this->_block5 = std::make_shared<vft::TextBlock>(this->_roboto, 16, glm::vec4(1.f, 1.f, 1.f, 1.f), glm::vec3(0.f, 480.f, 0.f), -1, false, false);
-    this->_block6 = std::make_shared<vft::TextBlock>(this->_roboto, 8, glm::vec4(1.f, 1.f, 1.f, 1.f), glm::vec3(0.f, 496.f, 0.f), -1, false, false);
+    this->_block1 = vft::TextBlockBuilder()
+        .setFont(this->_roboto)
+        .setFontSize(256)
+        .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
+        .setPosition(glm::vec3(0.f, 0.f, 0.f))
+        .setKerning(true)
+        .build();
 
-    this->_block7 = std::make_shared<vft::TextBlock>(this->_roboto, 256, glm::vec4(1.f, 1.f, 1.f, 1.f), glm::vec3(0.f, 504.f, 0.f), -1, false, false);
-    this->_block8 = std::make_shared<vft::TextBlock>(this->_roboto, 128, glm::vec4(1.f, 1.f, 1.f, 1.f), glm::vec3(0.f, 760.f, 0.f), -1, false, false);
-    this->_block9 = std::make_shared<vft::TextBlock>(this->_roboto, 64, glm::vec4(1.f, 1.f, 1.f, 1.f), glm::vec3(0.f, 888.f, 0.f), -1, false, false);
-    this->_block10 = std::make_shared<vft::TextBlock>(this->_roboto, 32, glm::vec4(1.f, 1.f, 1.f, 1.f), glm::vec3(0.f, 952.f, 0.f), -1, false, false);
-    this->_block11 = std::make_shared<vft::TextBlock>(this->_roboto, 16, glm::vec4(1.f, 1.f, 1.f, 1.f), glm::vec3(0.f, 984.f, 0.f), -1, false, false);
-    this->_block12 = std::make_shared<vft::TextBlock>(this->_roboto, 8, glm::vec4(1.f, 1.f, 1.f, 1.f), glm::vec3(0.f, 1000.f, 0.f), -1, false, false);
+    this->_block2 = vft::TextBlockBuilder()
+        .setFont(this->_roboto)
+        .setFontSize(128)
+        .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
+        .setPosition(glm::vec3(0.f, 256.f, 0.f))
+        .setKerning(true)
+        .build();
+
+    this->_block3 = vft::TextBlockBuilder()
+        .setFont(this->_roboto)
+        .setFontSize(64)
+        .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
+        .setPosition(glm::vec3(0.f, 384.f, 0.f))
+        .setKerning(true)
+        .build();
+
+    this->_block4 = vft::TextBlockBuilder()
+        .setFont(this->_roboto)
+        .setFontSize(32)
+        .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
+        .setPosition(glm::vec3(0.f, 448.f, 0.f))
+        .setKerning(true)
+        .build();
+
+    this->_block5 = vft::TextBlockBuilder()
+        .setFont(this->_roboto)
+        .setFontSize(16)
+        .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
+        .setPosition(glm::vec3(0.f, 480.f, 0.f))
+        .setKerning(true)
+        .build();
+
+    this->_block6 = vft::TextBlockBuilder()
+        .setFont(this->_roboto)
+        .setFontSize(8)
+        .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
+        .setPosition(glm::vec3(0.f, 496.f, 0.f))
+        .setKerning(true)
+        .build();
+
+    this->_block7 = vft::TextBlockBuilder()
+        .setFont(this->_roboto)
+        .setFontSize(256)
+        .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
+        .setPosition(glm::vec3(0.f, 504.f, 0.f))
+        .setKerning(true)
+        .build();
+
+    this->_block8 = vft::TextBlockBuilder()
+        .setFont(this->_roboto)
+        .setFontSize(128)
+        .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
+        .setPosition(glm::vec3(0.f, 760.f, 0.f))
+        .setKerning(true)
+        .build();
+
+    this->_block9 = vft::TextBlockBuilder()
+        .setFont(this->_roboto)
+        .setFontSize(64)
+        .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
+        .setPosition(glm::vec3(0.f, 888.f, 0.f))
+        .setKerning(true)
+        .build();
+
+    this->_block10 = vft::TextBlockBuilder()
+        .setFont(this->_roboto)
+        .setFontSize(32)
+        .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
+        .setPosition(glm::vec3(0.f, 952.f, 0.f))
+        .setKerning(true)
+        .build();
+
+    this->_block11 = vft::TextBlockBuilder()
+        .setFont(this->_roboto)
+        .setFontSize(16)
+        .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
+        .setPosition(glm::vec3(0.f, 984.f, 0.f))
+        .setKerning(true)
+        .build();
+
+    this->_block12 = vft::TextBlockBuilder()
+        .setFont(this->_roboto)
+        .setFontSize(8)
+        .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
+        .setPosition(glm::vec3(0.f, 1000.f, 0.f))
+        .setKerning(true)
+        .build();
 
     this->_renderer->add(this->_block1);
     this->_renderer->add(this->_block2);

@@ -13,6 +13,12 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
+#include <VFONT/font.h>
+#include <VFONT/text_block.h>
+#include <VFONT/renderer.h>
+#include <VFONT/text_block_builder.h>
+#include <VFONT/timed_renderer.h>
+
 #include "scene.h"
 
  /**

@@ -1,0 +1,35 @@
+﻿/**
+ * @file text_block_builder.h
+ * @author Christian Saloň
+ */
+
+#pragma once
+
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
+
+#include "font.h"
+#include "text_align_strategy.h"
+#include "text_block.h"
+
+namespace vft {
+
+class TextBlockBuilder {
+protected:
+    TextBlock _block;
+
+public:
+    TextBlockBuilder();
+
+    TextBlockBuilder &setFont(std::shared_ptr<Font> font);
+    TextBlockBuilder &setFontSize(unsigned int fontSize);
+    TextBlockBuilder &setWidth(int width);
+    TextBlockBuilder &setKerning(bool kerning);
+    TextBlockBuilder &setColor(glm::vec4 color);
+    TextBlockBuilder &setPosition(glm::vec3 position);
+    TextBlockBuilder &setTextAlign(std::unique_ptr<TextAlignStrategy> textAlign);
+
+    std::shared_ptr<TextBlock> build();
+};
+
+}  // namespace vft
