@@ -14,8 +14,8 @@
 #include <vulkan/vulkan.h>
 #include <glm/vec2.hpp>
 
-#include "cpu_tessellator.h"
 #include "glyph_cache.h"
+#include "triangulation_tessellator.h"
 #include "vulkan_text_renderer.h"
 
 namespace vft {

@@ -10,7 +10,7 @@ namespace vft {
 void VulkanTriangulationTextRenderer::initialize() {
     VulkanTextRenderer::initialize();
 
-    this->_tessellator = std::make_unique<CpuTessellator>();
+    this->_tessellator = std::make_unique<TriangulationTessellator>();
     this->_createPipeline();
 }
 

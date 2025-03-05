@@ -13,8 +13,8 @@
 
 #include <vulkan/vulkan.h>
 
-#include "combined_tessellator.h"
 #include "glyph_cache.h"
+#include "tessellation_shaders_tessellator.h"
 #include "vulkan_text_renderer.h"
 
 namespace vft {

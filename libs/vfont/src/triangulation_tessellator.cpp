@@ -1,38 +1,40 @@
 ﻿/**
- * @file cpu_tessellator.cpp
+ * @file triangulation_tessellator.cpp
  * @author Christian Saloň
  */
 
 #include "CDT.h"
 
-#include "cpu_tessellator.h"
+#include "triangulation_tessellator.h"
 
 namespace vft {
 
-CpuTessellator::CpuTessellator() {}
+TriangulationTessellator::TriangulationTessellator() {}
 
-FT_Outline_MoveToFunc CpuTessellator::_moveToFunc = [](const FT_Vector *to, void *user) {
-    CpuTessellator *pThis = reinterpret_cast<CpuTessellator *>(user);
+FT_Outline_MoveToFunc TriangulationTessellator::_moveToFunc = [](const FT_Vector *to, void *user) {
+    TriangulationTessellator *pThis = reinterpret_cast<TriangulationTessellator *>(user);
 
     // Combine two contours into one
-    if (CpuTessellator::_currentGlyphData.contourCount >= 2) {
+    if (TriangulationTessellator::_currentGlyphData.contourCount >= 2) {
         pThis->_combineContours();
     }
 
     // Start processing new contour
     glm::vec2 newVertex = glm::vec2(static_cast<float>(to->x), static_cast<float>(to->y));
-    int newVertexIndex = Tessellator::_getVertexIndex(CpuTessellator::_currentGlyph.mesh.getVertices(), newVertex);
+    int newVertexIndex =
+        Tessellator::_getVertexIndex(TriangulationTessellator::_currentGlyph.mesh.getVertices(), newVertex);
 
     if (newVertexIndex == -1) {
-        CpuTessellator::_currentGlyph.mesh.addVertex(newVertex);
-        CpuTessellator::_currentGlyphData.contourStartVertexId = CpuTessellator::_currentGlyphData.vertexId;
-        CpuTessellator::_currentGlyphData.vertexId++;
+        TriangulationTessellator::_currentGlyph.mesh.addVertex(newVertex);
+        TriangulationTessellator::_currentGlyphData.contourStartVertexId =
+            TriangulationTessellator::_currentGlyphData.vertexId;
+        TriangulationTessellator::_currentGlyphData.vertexId++;
     } else {
-        CpuTessellator::_currentGlyphData.contourStartVertexId = newVertexIndex;
+        TriangulationTessellator::_currentGlyphData.contourStartVertexId = newVertexIndex;
     }
 
-    CpuTessellator::_currentGlyphData.lastVertex = newVertex;
-    CpuTessellator::_currentGlyphData.contourCount++;
+    TriangulationTessellator::_currentGlyphData.lastVertex = newVertex;
+    TriangulationTessellator::_currentGlyphData.contourCount++;
     return 0;
 };
 
@@ -45,58 +47,64 @@ FT_Outline_MoveToFunc CpuTessellator::_moveToFunc = [](const FT_Vector *to, void
  *
  * @return Exit code
  */
-FT_Outline_LineToFunc CpuTessellator::_lineToFunc = [](const FT_Vector *to, void *user) {
-    CpuTessellator *pThis = reinterpret_cast<CpuTessellator *>(user);
+FT_Outline_LineToFunc TriangulationTessellator::_lineToFunc = [](const FT_Vector *to, void *user) {
+    TriangulationTessellator *pThis = reinterpret_cast<TriangulationTessellator *>(user);
 
-    uint32_t lastVertexIndex = CpuTessellator::_getVertexIndex(CpuTessellator::_currentGlyph.mesh.getVertices(),
-                                                               CpuTessellator::_currentGlyphData.lastVertex);
+    uint32_t lastVertexIndex =
+        TriangulationTessellator::_getVertexIndex(TriangulationTessellator::_currentGlyph.mesh.getVertices(),
+                                                  TriangulationTessellator::_currentGlyphData.lastVertex);
 
     glm::vec2 newVertex = glm::vec2(static_cast<float>(to->x), static_cast<float>(to->y));
-    int newVertexIndex = CpuTessellator::_getVertexIndex(CpuTessellator::_currentGlyph.mesh.getVertices(), newVertex);
+    int newVertexIndex = TriangulationTessellator::_getVertexIndex(
+        TriangulationTessellator::_currentGlyph.mesh.getVertices(), newVertex);
     if (newVertexIndex == -1) {
-        CpuTessellator::_currentGlyph.mesh.addVertex(newVertex);
-        newVertexIndex = CpuTessellator::_currentGlyphData.vertexId;
-        CpuTessellator::_currentGlyphData.vertexId++;
+        TriangulationTessellator::_currentGlyph.mesh.addVertex(newVertex);
+        newVertexIndex = TriangulationTessellator::_currentGlyphData.vertexId;
+        TriangulationTessellator::_currentGlyphData.vertexId++;
     }
 
     vft::Edge lineSegment{lastVertexIndex, static_cast<uint32_t>(newVertexIndex)};
-    CpuTessellator::_currentGlyph.addLineSegment(lineSegment);
+    TriangulationTessellator::_currentGlyph.addLineSegment(lineSegment);
     pThis->_edges.push_back(lineSegment);
 
-    CpuTessellator::_currentGlyphData.lastVertex = newVertex;
+    TriangulationTessellator::_currentGlyphData.lastVertex = newVertex;
     return 0;
 };
 
-FT_Outline_ConicToFunc CpuTessellator::_conicToFunc = [](const FT_Vector *control, const FT_Vector *to, void *user) {
-    CpuTessellator *pThis = reinterpret_cast<CpuTessellator *>(user);
+FT_Outline_ConicToFunc TriangulationTessellator::_conicToFunc = [](const FT_Vector *control,
+                                                                   const FT_Vector *to,
+                                                                   void *user) {
+    TriangulationTessellator *pThis = reinterpret_cast<TriangulationTessellator *>(user);
 
-    uint32_t startPointIndex = CpuTessellator::_getVertexIndex(CpuTessellator::_currentGlyph.mesh.getVertices(),
-                                                               CpuTessellator::_currentGlyphData.lastVertex);
-    glm::vec2 startPoint = CpuTessellator::_currentGlyph.mesh.getVertices().at(startPointIndex);
+    uint32_t startPointIndex =
+        TriangulationTessellator::_getVertexIndex(TriangulationTessellator::_currentGlyph.mesh.getVertices(),
+                                                  TriangulationTessellator::_currentGlyphData.lastVertex);
+    glm::vec2 startPoint = TriangulationTessellator::_currentGlyph.mesh.getVertices().at(startPointIndex);
 
     glm::vec2 controlPoint = glm::vec2(static_cast<float>(control->x), static_cast<float>(control->y));
-    int controlPointIndex =
-        CpuTessellator::_getVertexIndex(CpuTessellator::_currentGlyph.mesh.getVertices(), controlPoint);
+    int controlPointIndex = TriangulationTessellator::_getVertexIndex(
+        TriangulationTessellator::_currentGlyph.mesh.getVertices(), controlPoint);
     if (controlPointIndex == -1) {
-        CpuTessellator::_currentGlyph.mesh.addVertex(controlPoint);
-        controlPointIndex = CpuTessellator::_currentGlyphData.vertexId;
-        CpuTessellator::_currentGlyphData.vertexId++;
+        TriangulationTessellator::_currentGlyph.mesh.addVertex(controlPoint);
+        controlPointIndex = TriangulationTessellator::_currentGlyphData.vertexId;
+        TriangulationTessellator::_currentGlyphData.vertexId++;
     }
 
     glm::vec2 endPoint = glm::vec2(static_cast<float>(to->x), static_cast<float>(to->y));
-    int endPointIndex = CpuTessellator::_getVertexIndex(CpuTessellator::_currentGlyph.mesh.getVertices(), endPoint);
+    int endPointIndex =
+        TriangulationTessellator::_getVertexIndex(TriangulationTessellator::_currentGlyph.mesh.getVertices(), endPoint);
     if (endPointIndex == -1) {
-        CpuTessellator::_currentGlyph.mesh.addVertex(endPoint);
-        endPointIndex = CpuTessellator::_currentGlyphData.vertexId;
-        CpuTessellator::_currentGlyphData.vertexId++;
+        TriangulationTessellator::_currentGlyph.mesh.addVertex(endPoint);
+        endPointIndex = TriangulationTessellator::_currentGlyphData.vertexId;
+        TriangulationTessellator::_currentGlyphData.vertexId++;
     }
 
     // Generate quadratic bezier curve segment for tessellation
     Curve curveSegment{startPointIndex, static_cast<uint32_t>(controlPointIndex), static_cast<uint32_t>(endPointIndex)};
-    CpuTessellator::_currentGlyph.addCurveSegment(curveSegment);
+    TriangulationTessellator::_currentGlyph.addCurveSegment(curveSegment);
 
     // Adaptive subdivision of quadratic bezier curve
-    std::vector<glm::vec2> vertices = CpuTessellator::_currentGlyph.mesh.getVertices();
+    std::vector<glm::vec2> vertices = TriangulationTessellator::_currentGlyph.mesh.getVertices();
     std::array<glm::vec2, 3> curve = {
         pThis->_font->getScalingVector(pThis->_fontSize) * vertices.at(curveSegment.start),
         pThis->_font->getScalingVector(pThis->_fontSize) * vertices.at(curveSegment.control),
@@ -105,7 +113,7 @@ FT_Outline_ConicToFunc CpuTessellator::_conicToFunc = [](const FT_Vector *contro
     if (newVertices.size() == 2) {
         pThis->_edges.push_back(vft::Edge{curveSegment.start, curveSegment.end});
     } else {
-        int lastVertexIndex = CpuTessellator::_getVertexIndex(vertices, vertices.at(startPointIndex));
+        int lastVertexIndex = TriangulationTessellator::_getVertexIndex(vertices, vertices.at(startPointIndex));
 
         for (float t : newVertices) {
             if (t == 0) {
@@ -115,11 +123,11 @@ FT_Outline_ConicToFunc CpuTessellator::_conicToFunc = [](const FT_Vector *contro
             glm::vec2 newVertex{(1 - t) * (1 - t) * vertices.at(curveSegment.start) +
                                 2 * (1 - t) * t * vertices.at(curveSegment.control) +
                                 (t * t) * vertices.at(curveSegment.end)};
-            int newVertexIndex = CpuTessellator::_getVertexIndex(vertices, newVertex);
+            int newVertexIndex = TriangulationTessellator::_getVertexIndex(vertices, newVertex);
             if (newVertexIndex < 0) {
-                CpuTessellator::_currentGlyph.mesh.addVertex(newVertex);
-                newVertexIndex = CpuTessellator::_currentGlyphData.vertexId;
-                CpuTessellator::_currentGlyphData.vertexId++;
+                TriangulationTessellator::_currentGlyph.mesh.addVertex(newVertex);
+                newVertexIndex = TriangulationTessellator::_currentGlyphData.vertexId;
+                TriangulationTessellator::_currentGlyphData.vertexId++;
             }
 
             pThis->_edges.push_back(
@@ -128,11 +136,11 @@ FT_Outline_ConicToFunc CpuTessellator::_conicToFunc = [](const FT_Vector *contro
         }
     }
 
-    CpuTessellator::_currentGlyphData.lastVertex = endPoint;
+    TriangulationTessellator::_currentGlyphData.lastVertex = endPoint;
     return 0;
 };
 
-Glyph CpuTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<vft::Font> font, unsigned int fontSize) {
+Glyph TriangulationTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<vft::Font> font, unsigned int fontSize) {
     this->_font = font;
     this->_fontSize = fontSize;
     this->_edges.clear();
@@ -140,7 +148,7 @@ Glyph CpuTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<vft::Font> 
     GlyphKey key{font->getFontFamily(), glyphId, fontSize};
     Glyph glyph = this->_composeGlyph(glyphId, font);
 
-    if (CpuTessellator::_currentGlyphData.contourCount >= 2) {
+    if (TriangulationTessellator::_currentGlyphData.contourCount >= 2) {
         std::vector<glm::vec2> vertices = glyph.mesh.getVertices();
         this->_combineContours(vertices, this->_edges);
         glyph.mesh.setVertices(vertices);
@@ -155,13 +163,13 @@ Glyph CpuTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<vft::Font> 
     return glyph;
 }
 
-int CpuTessellator::_combineContours(std::vector<glm::vec2> &vertices, std::vector<Edge> &edges) {
+int TriangulationTessellator::_combineContours(std::vector<glm::vec2> &vertices, std::vector<Edge> &edges) {
     std::set<uint32_t> intersections;
-    CpuTessellator::_removeInverseEdges(edges, intersections);
-    intersections = CpuTessellator::_resolveIntersectingEdges(vertices, edges);
-    CpuTessellator::_removeInverseEdges(edges, intersections);
-    CpuTessellator::_resolveSharedVertices(vertices, edges, intersections);
-    CpuTessellator::_walkContours(vertices, edges, intersections);
+    TriangulationTessellator::_removeInverseEdges(edges, intersections);
+    intersections = TriangulationTessellator::_resolveIntersectingEdges(vertices, edges);
+    TriangulationTessellator::_removeInverseEdges(edges, intersections);
+    TriangulationTessellator::_resolveSharedVertices(vertices, edges, intersections);
+    TriangulationTessellator::_walkContours(vertices, edges, intersections);
 
     // Remove duplicate vertices
     CDT::DuplicatesInfo info = CDT::RemoveDuplicatesAndRemapEdges<float>(
@@ -174,13 +182,13 @@ int CpuTessellator::_combineContours(std::vector<glm::vec2> &vertices, std::vect
     return info.duplicates.size();
 }
 
-int CpuTessellator::_combineContours() {
-    std::vector<glm::vec2> vertices = CpuTessellator::_currentGlyph.mesh.getVertices();
+int TriangulationTessellator::_combineContours() {
+    std::vector<glm::vec2> vertices = TriangulationTessellator::_currentGlyph.mesh.getVertices();
     std::vector<vft::Edge> edges = this->_edges;
     int duplicates = this->_combineContours(vertices, edges);
 
-    CpuTessellator::_currentGlyphData.vertexId -= duplicates;
-    CpuTessellator::_currentGlyph.mesh.setVertices(vertices);
+    TriangulationTessellator::_currentGlyphData.vertexId -= duplicates;
+    TriangulationTessellator::_currentGlyph.mesh.setVertices(vertices);
     this->_edges = edges;
 
     return duplicates;
@@ -193,7 +201,7 @@ int CpuTessellator::_combineContours() {
  * @param controlPoint Bezier curve control point
  * @param endPoint Bezier curve ending point
  */
-std::set<float> CpuTessellator::_subdivideQuadraticBezier(const std::array<glm::vec2, 3> curve) {
+std::set<float> TriangulationTessellator::_subdivideQuadraticBezier(const std::array<glm::vec2, 3> curve) {
     std::set<float> newVertices{0.f, 1.f};
     this->_subdivide(curve, 0.5f, 0.5f, newVertices);
 
@@ -210,10 +218,10 @@ std::set<float> CpuTessellator::_subdivideQuadraticBezier(const std::array<glm::
  * @param delta Indicates distance between current point and computed points in the previous step
  * @param vertices Created vertices by dividing bezier curve into line segments
  */
-void CpuTessellator::_subdivide(const std::array<glm::vec2, 3> curve,
-                                float t,
-                                float delta,
-                                std::set<float> &newVertices) {
+void TriangulationTessellator::_subdivide(const std::array<glm::vec2, 3> curve,
+                                          float t,
+                                          float delta,
+                                          std::set<float> &newVertices) {
     // Get bezier curve points
     glm::vec2 startPoint = curve.at(0);
     glm::vec2 controlPoint = curve.at(1);
@@ -244,16 +252,16 @@ void CpuTessellator::_subdivide(const std::array<glm::vec2, 3> curve,
     }
 }
 
-FT_Outline_MoveToFunc CpuTessellator::_getMoveToFunc() {
-    return CpuTessellator::_moveToFunc;
+FT_Outline_MoveToFunc TriangulationTessellator::_getMoveToFunc() {
+    return TriangulationTessellator::_moveToFunc;
 }
 
-FT_Outline_LineToFunc CpuTessellator::_getLineToFunc() {
-    return CpuTessellator::_lineToFunc;
+FT_Outline_LineToFunc TriangulationTessellator::_getLineToFunc() {
+    return TriangulationTessellator::_lineToFunc;
 }
 
-FT_Outline_ConicToFunc CpuTessellator::_getConicToFunc() {
-    return CpuTessellator::_conicToFunc;
+FT_Outline_ConicToFunc TriangulationTessellator::_getConicToFunc() {
+    return TriangulationTessellator::_conicToFunc;
 }
 
 }  // namespace vft

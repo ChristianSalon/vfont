@@ -10,7 +10,7 @@ namespace vft {
 void VulkanTessellationShadersTextRenderer::initialize() {
     VulkanTextRenderer::initialize();
 
-    this->_tessellator = std::make_unique<CombinedTessellator>();
+    this->_tessellator = std::make_unique<TessellationShadersTessellator>();
     this->_createLineSegmentsPipeline();
     this->_createCurveSegmentsPipeline();
 }
@@ -66,7 +66,7 @@ void VulkanTessellationShadersTextRenderer::draw() {
                                    0, sizeof(vft::CharacterPushConstants), &pushConstants);
 
                 vkCmdDrawIndexed(this->_commandBuffer,
-                                 glyph.mesh.getIndexCount(CombinedTessellator::GLYPH_MESH_TRIANGLE_BUFFER_INDEX), 1,
+                                 glyph.mesh.getIndexCount(TessellationShadersTessellator::GLYPH_MESH_TRIANGLE_BUFFER_INDEX), 1,
                                  this->_offsets.at(key).at(LINE_OFFSET_BUFFER_INDEX), 0, 0);
             }
         }
@@ -96,7 +96,7 @@ void VulkanTessellationShadersTextRenderer::draw() {
                                    sizeof(ViewportPushConstants), &viewportPushConstants);
 
                 vkCmdDrawIndexed(this->_commandBuffer,
-                                 glyph.mesh.getIndexCount(CombinedTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX), 1,
+                                 glyph.mesh.getIndexCount(TessellationShadersTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX), 1,
                                  this->_offsets.at(key).at(CURVE_OFFSET_BUFFER_INDEX), 0, 0);
             }
         }
@@ -148,12 +148,12 @@ void VulkanTessellationShadersTextRenderer::_createVertexAndIndexBuffers() {
                                        glyph.mesh.getVertices().end());
                 this->_lineSegmentsIndices.insert(
                     this->_lineSegmentsIndices.end(),
-                    glyph.mesh.getIndices(CombinedTessellator::GLYPH_MESH_TRIANGLE_BUFFER_INDEX).begin(),
-                    glyph.mesh.getIndices(CombinedTessellator::GLYPH_MESH_TRIANGLE_BUFFER_INDEX).end());
+                    glyph.mesh.getIndices(TessellationShadersTessellator::GLYPH_MESH_TRIANGLE_BUFFER_INDEX).begin(),
+                    glyph.mesh.getIndices(TessellationShadersTessellator::GLYPH_MESH_TRIANGLE_BUFFER_INDEX).end());
                 this->_curveSegmentsIndices.insert(
                     this->_curveSegmentsIndices.end(),
-                    glyph.mesh.getIndices(CombinedTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX).begin(),
-                    glyph.mesh.getIndices(CombinedTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX).end());
+                    glyph.mesh.getIndices(TessellationShadersTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX).begin(),
+                    glyph.mesh.getIndices(TessellationShadersTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX).end());
 
                 // Add an offset to line segment indices of current character
                 for (int j = lineSegmentsIndexCount; j < this->_lineSegmentsIndices.size(); j++) {
@@ -167,8 +167,8 @@ void VulkanTessellationShadersTextRenderer::_createVertexAndIndexBuffers() {
 
                 vertexCount += glyph.mesh.getVertexCount();
                 lineSegmentsIndexCount +=
-                    glyph.mesh.getIndexCount(CombinedTessellator::GLYPH_MESH_TRIANGLE_BUFFER_INDEX);
-                curveSegmentsIndexCount += glyph.mesh.getIndexCount(CombinedTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX);
+                    glyph.mesh.getIndexCount(TessellationShadersTessellator::GLYPH_MESH_TRIANGLE_BUFFER_INDEX);
+                curveSegmentsIndexCount += glyph.mesh.getIndexCount(TessellationShadersTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX);
             }
         }
     }

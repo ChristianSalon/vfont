@@ -10,7 +10,7 @@ namespace vft {
 void VulkanWindingNumberTextRenderer::initialize() {
     VulkanTextRenderer::initialize();
 
-    this->_tessellator = std::make_unique<GpuTessellator>();
+    this->_tessellator = std::make_unique<WindingNumberTessellator>();
     this->_createSegmentsDescriptorSetLayout();
     this->_createSegmentsDescriptorSet();
     this->_createSegmentsPipeline();
@@ -73,7 +73,7 @@ void VulkanWindingNumberTextRenderer::draw() {
                                    &pushConstants);
 
                 vkCmdDrawIndexed(this->_commandBuffer,
-                                 glyph.mesh.getIndexCount(GpuTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX), 1,
+                                 glyph.mesh.getIndexCount(WindingNumberTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX), 1,
                                  this->_offsets.at(key).at(BOUNDING_BOX_OFFSET_BUFFER_INDEX), 0, 0);
             }
         }
@@ -127,13 +127,13 @@ void VulkanWindingNumberTextRenderer::_createVertexAndIndexBuffers() {
                                        glyph.mesh.getVertices().end());
                 this->_boundingBoxIndices.insert(
                     this->_boundingBoxIndices.end(),
-                    glyph.mesh.getIndices(GpuTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX).begin(),
-                    glyph.mesh.getIndices(GpuTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX).end());
+                    glyph.mesh.getIndices(WindingNumberTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX).begin(),
+                    glyph.mesh.getIndices(WindingNumberTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX).end());
 
                 std::vector<glm::vec2> vertices = glyph.mesh.getVertices();
 
                 std::vector<uint32_t> lineSegments =
-                    glyph.mesh.getIndices(GpuTessellator::GLYPH_MESH_LINE_BUFFER_INDEX);
+                    glyph.mesh.getIndices(WindingNumberTessellator::GLYPH_MESH_LINE_BUFFER_INDEX);
                 uint32_t lineCount = lineSegments.size() / 2;
                 for (int j = 0; j < lineSegments.size(); j += 2) {
                     this->_segments.push_back(vertices.at(lineSegments.at(j)));
@@ -141,7 +141,7 @@ void VulkanWindingNumberTextRenderer::_createVertexAndIndexBuffers() {
                 }
 
                 std::vector<uint32_t> curveSegments =
-                    glyph.mesh.getIndices(GpuTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX);
+                    glyph.mesh.getIndices(WindingNumberTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX);
                 uint32_t curveCount = curveSegments.size() / 3;
                 for (int j = 0; j < curveSegments.size(); j += 3) {
                     this->_segments.push_back(vertices.at(curveSegments.at(j)));
@@ -158,7 +158,7 @@ void VulkanWindingNumberTextRenderer::_createVertexAndIndexBuffers() {
                 }
 
                 vertexCount += glyph.mesh.getVertexCount();
-                boundingBoxIndexCount += glyph.mesh.getIndexCount(GpuTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX);
+                boundingBoxIndexCount += glyph.mesh.getIndexCount(WindingNumberTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX);
                 segmentsCount += lineSegments.size() + curveSegments.size();
                 segmentsInfoCount++;
             }

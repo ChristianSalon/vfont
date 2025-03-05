@@ -25,9 +25,9 @@ set(VFONT_HEADERS
     include/VFONT/line_divider.h
     include/VFONT/text_align_strategy.h
     include/VFONT/tessellator.h
-    include/VFONT/cpu_tessellator.h
-    include/VFONT/gpu_tessellator.h
-    include/VFONT/combined_tessellator.h
+    include/VFONT/triangulation_tessellator.h
+    include/VFONT/winding_number_tessellator.h
+    include/VFONT/tessellation_shaders_tessellator.h
 )
 set(VFONT_SOURCES
     src/text_renderer.cpp
@@ -50,9 +50,9 @@ set(VFONT_SOURCES
     src/line_divider.cpp
     src/text_align_strategy.cpp
     src/tessellator.cpp
-    src/cpu_tessellator.cpp
-    src/gpu_tessellator.cpp
-    src/combined_tessellator.cpp
+    src/triangulation_tessellator.cpp
+    src/winding_number_tessellator.cpp
+    src/tessellation_shaders_tessellator.cpp
 )
 
 add_library(${LIB_NAME} STATIC ${VFONT_HEADERS} ${VFONT_SOURCES})

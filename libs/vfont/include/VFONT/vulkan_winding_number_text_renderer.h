@@ -14,8 +14,8 @@
 #include <vulkan/vulkan.h>
 
 #include "glyph_cache.h"
-#include "gpu_tessellator.h"
 #include "vulkan_text_renderer.h"
+#include "winding_number_tessellator.h"
 
 namespace vft {
 
