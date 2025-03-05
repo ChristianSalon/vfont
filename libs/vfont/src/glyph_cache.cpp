@@ -7,8 +7,8 @@
 
 namespace vft {
 
-GlyphKey::GlyphKey(std::string fontName, uint32_t codePoint, unsigned int fontSize)
-    : fontName{fontName}, codePoint{codePoint}, fontSize{fontSize} {}
+GlyphKey::GlyphKey(std::string fontName, uint32_t glyphId, unsigned int fontSize)
+    : fontName{fontName}, glyphId{glyphId}, fontSize{fontSize} {}
 
 GlyphCache::GlyphCache(unsigned long maxSize) : _maxSize{maxSize} {}
 

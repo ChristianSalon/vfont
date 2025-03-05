@@ -1,11 +1,10 @@
 ﻿/**
- * @file combined_drawer.h
+ * @file vulkan_tessellation_shaders_text_renderer.h
  * @author Christian Saloň
  */
 
 #pragma once
 
-#include <array>
 #include <cstdint>
 #include <memory>
 #include <stdexcept>
@@ -13,21 +12,15 @@
 #include <vector>
 
 #include <vulkan/vulkan.h>
-#include <glm/mat4x4.hpp>
-#include <glm/vec2.hpp>
 
-#include "drawer.h"
+#include "combined_tessellator.h"
 #include "glyph_cache.h"
-#include "text_block.h"
-#include "text_renderer_utils.h"
+#include "vulkan_text_renderer.h"
 
 namespace vft {
 
-class CombinedDrawer : public Drawer {
+class VulkanTessellationShadersTextRenderer : public VulkanTextRenderer {
 public:
-    static constexpr unsigned int GLYPH_MESH_TRIANGLE_BUFFER_INDEX = 0;
-    static constexpr unsigned int GLYPH_MESH_CURVE_BUFFER_INDEX = 1;
-
     static constexpr unsigned int LINE_OFFSET_BUFFER_INDEX = 0;
     static constexpr unsigned int CURVE_OFFSET_BUFFER_INDEX = 1;
 
@@ -37,14 +30,14 @@ public:
     };
 
 protected:
-    std::unordered_map<GlyphKey, std::array<uint32_t, 2>, GlyphKeyHash> _offsets;
+    std::unordered_map<GlyphKey, std::array<uint32_t, 2>, GlyphKeyHash> _offsets{};
 
-    std::vector<glm::vec2> _vertices;            /**< Vertex buffer */
-    std::vector<uint32_t> _lineSegmentsIndices;  /**< Index buffer */
-    std::vector<uint32_t> _curveSegmentsIndices; /**< Index buffer */
+    std::vector<glm::vec2> _vertices{};            /**< Vertex buffer */
+    std::vector<uint32_t> _lineSegmentsIndices{};  /**< Index buffer */
+    std::vector<uint32_t> _curveSegmentsIndices{}; /**< Index buffer */
 
-    unsigned int _viewportWidth;
-    unsigned int _viewportHeight;
+    unsigned int _viewportWidth{0};
+    unsigned int _viewportHeight{0};
 
     VkBuffer _vertexBuffer{nullptr};                         /**< Vulkan vertex buffer */
     VkDeviceMemory _vertexBufferMemory{nullptr};             /**< Vulkan vertex buffer memory */
@@ -59,17 +52,16 @@ protected:
     VkPipeline _curveSegmentsPipeline{nullptr};
 
 public:
-    CombinedDrawer(GlyphCache &cache);
-    ~CombinedDrawer();
+    VulkanTessellationShadersTextRenderer() = default;
+    ~VulkanTessellationShadersTextRenderer() = default;
 
-    void init(VulkanContext vulkanContext) override;
-    void draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, VkCommandBuffer commandBuffer) override;
-    void recreateBuffers(std::vector<std::shared_ptr<TextBlock>> textBlocks) override;
-    
-    void setViewportSize(unsigned int width, unsigned int height);
+    void initialize() override;
+    void destroy() override;
+    void draw() override;
+    void update() override;
 
 protected:
-    void _createVertexAndIndexBuffers(std::vector<std::shared_ptr<TextBlock>> &textBlocks);
+    void _createVertexAndIndexBuffers();
 
     void _createLineSegmentsPipeline();
     void _createCurveSegmentsPipeline();

@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
     try {
         CameraType cameraType = CameraType::PERSPECTIVE;
         std::string sceneType = "benchmark";
-        vft::Renderer::TessellationStrategy tessellationAlgorithm = vft::Renderer::TessellationStrategy::GPU_ONLY;
+        vft::TessellationStrategy tessellationAlgorithm = vft::TessellationStrategy::WINDING_NUMBER;
         bool measureTime = true;
 
         for(int i = 1; i < argc; i++) {
@@ -59,13 +59,13 @@ int main(int argc, char **argv) {
                 std::string type = argv[++i];
 
                 if (type == "cpu") {
-                    tessellationAlgorithm = vft::Renderer::TessellationStrategy::CPU_ONLY;
+                    tessellationAlgorithm = vft::TessellationStrategy::TRIANGULATION;
                 }
                 else if (type == "gpu") {
-                    tessellationAlgorithm = vft::Renderer::TessellationStrategy::GPU_ONLY;
+                    tessellationAlgorithm = vft::TessellationStrategy::WINDING_NUMBER;
                 }
                 else if (type == "combined") {
-                    tessellationAlgorithm = vft::Renderer::TessellationStrategy::CPU_AND_GPU;
+                    tessellationAlgorithm = vft::TessellationStrategy::TESSELLATION_SHADERS;
                 }
                 else {
                     std::cerr << "Tessellation algorithm must be cpu or gpu or combined" << std::endl;

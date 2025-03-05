@@ -13,7 +13,7 @@
 
 #include <VFONT/font.h>
 #include <VFONT/text_block.h>
-#include <VFONT/renderer.h>
+#include <VFONT/text_renderer_utils.h>
 #include <VFONT/text_block_builder.h>
 
 #include "scene.h"
@@ -34,7 +34,7 @@ private:
 
 public:
 
-    EditorScene(CameraType cameraType, vft::Renderer::TessellationStrategy tessellationAlgorithm, bool measureTime = false);
+    EditorScene(CameraType cameraType, vft::TessellationStrategy tessellationAlgorithm, bool measureTime = false);
     ~EditorScene();
 
 private:

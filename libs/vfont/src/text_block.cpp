@@ -18,9 +18,7 @@ namespace vft {
  * @param kerning Indicates whether to use kerning in block
  * @param wrapping Indicates whether to use wrapping in block
  */
-TextBlock::TextBlock()
-    : _font{nullptr},
-      _kerning{false} {
+TextBlock::TextBlock() : _font{nullptr}, _kerning{false} {
     this->setFontSize(0);
     this->setWidth(-1);
     this->setColor(glm::vec4(1, 1, 1, 1));
@@ -56,7 +54,7 @@ void TextBlock::add(std::vector<uint32_t> codePoints, unsigned int start) {
         // No text segment exists, create one
         TextSegment newSegment{this->_font, this->_fontSize};
         newSegment.setTransform(this->_transform);
-        newSegment.add(codePoints, this->_tessellator);
+        newSegment.add(codePoints);
 
         this->_segments.push_back(newSegment);
     } else {
@@ -67,11 +65,11 @@ void TextBlock::add(std::vector<uint32_t> codePoints, unsigned int start) {
         if (this->_font == segment.getFont() && this->_fontSize == segment.getFontSize()) {
             // Add text to selected segment at specified position
             // No need to create a new text segment
-            segment.add(codePoints, this->_tessellator, start - this->_getCodePointGlobalIndexBasedOnSegment(segment));
+            segment.add(codePoints, start - this->_getCodePointGlobalIndexBasedOnSegment(segment));
         } else {
             TextSegment newSegment{this->_font, this->_fontSize};
             newSegment.setTransform(this->_transform);
-            newSegment.add(codePoints, this->_tessellator);
+            newSegment.add(codePoints);
             unsigned int localIndex = start - this->_getCodePointGlobalIndexBasedOnSegment(segment);
 
             if (localIndex == 0) {
@@ -87,11 +85,10 @@ void TextBlock::add(std::vector<uint32_t> codePoints, unsigned int start) {
                 TextSegment rightSegment{segment.getFont(), segment.getFontSize()};
                 rightSegment.setTransform(this->_transform);
                 rightSegment.add(std::vector<uint32_t>(std::next(segment.getCodePoints().begin(), localIndex),
-                                                       segment.getCodePoints().end()),
-                                 this->_tessellator);
+                                                       segment.getCodePoints().end()));
 
                 // Erase code points from left segment from range <localIndex, end)
-                segment.remove(localIndex, this->_tessellator);
+                segment.remove(localIndex);
 
                 // Add new middle segment
                 this->_segments.insert(std::next(segmentIterator), newSegment);
@@ -166,16 +163,16 @@ void TextBlock::remove(unsigned int start, unsigned int count) {
                 continue;
             } else if (localStart == 0) {
                 // Remove code points from start to non-end of segment
-                segmentIterator->remove(0, this->_tessellator, count);
+                segmentIterator->remove(0, count);
                 count = 0;
             } else if (count >= segmentCodePointCount - localStart) {
                 // Remove from non-start to end of segment
                 unsigned int charactersToRemove = segmentCodePointCount - localStart;
-                segmentIterator->remove(localStart, this->_tessellator, charactersToRemove);
+                segmentIterator->remove(localStart, charactersToRemove);
                 count -= charactersToRemove;
             } else {
                 // Remove from non-start to non-end of segment
-                segmentIterator->remove(localStart, this->_tessellator, count);
+                segmentIterator->remove(localStart, count);
                 count = 0;
             }
         }
@@ -338,10 +335,6 @@ void TextBlock::setKerning(bool kerning) {
         this->_kerning = kerning;
         this->_updateCharacters();
     }
-}
-
-void TextBlock::setTessellationStrategy(std::shared_ptr<Tessellator> tessellator) {
-    this->_tessellator = tessellator;
 }
 
 void TextBlock::setTextAlign(std::unique_ptr<TextAlignStrategy> textAlign) {
@@ -526,7 +519,7 @@ std::list<TextSegment>::iterator TextBlock::_mergeSegmentsIfPossible(std::list<T
 
     if (first->getFont() == second->getFont() && first->getFontSize() == second->getFontSize()) {
         // Move characters from second segment to first
-        first->add(second->getCodePoints(), this->_tessellator);
+        first->add(second->getCodePoints());
 
         // Return iterator to segment one after merged segment
         return this->_segments.erase(second);

@@ -21,7 +21,7 @@ const std::vector<uint32_t> DemoScene::JAPANESE_CODE_POINTS =
 const std::vector<uint32_t> DemoScene::EMOJI_CODE_POINTS =
     {0x1F970, 0x1F480, 0x270C, 0xFE0F, 0x1F334, 0x1F422, 0x1F410, 0x1F344, 0x26BD, 0x1F37B, 0x1F451, 0x1F4F8};
 
-DemoScene::DemoScene(CameraType cameraType, vft::Renderer::TessellationStrategy tessellationAlgorithm, bool measureTime) : Scene{cameraType, tessellationAlgorithm, measureTime} {
+DemoScene::DemoScene(CameraType cameraType, vft::TessellationStrategy tessellationAlgorithm, bool measureTime) : Scene{cameraType, tessellationAlgorithm, measureTime} {
     this->_jersey = std::make_shared<vft::Font>(DemoScene::JERSEY_PATH);
     this->_crimsontext = std::make_shared<vft::Font>(DemoScene::CRIMSON_TEXT_PATH);
     this->_roboto = std::make_shared<vft::Font>(DemoScene::ROBOTO_PATH);
@@ -64,7 +64,7 @@ DemoScene::DemoScene(CameraType cameraType, vft::Renderer::TessellationStrategy 
     this->_block5 = vft::TextBlockBuilder()
         .setFont(this->_jersey)
         .setFontSize(32)
-        .setColor(glm::vec4(0.f, 0.f, 1.f, 0.5f))
+        .setColor(glm::vec4(1.f, 1.f, 0.f, 1.f))
         .setPosition(glm::vec3(0.f, 160.f, 0.f))
         .setKerning(true)
         .build();

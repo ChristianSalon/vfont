@@ -34,10 +34,8 @@ protected:
     static Glyph _currentGlyph;                      /**< Glyph that is currently being composed */
     static vft::ComposedGlyphData _currentGlyphData; /**< Data of glyph that is currently being composed */
 
-    GlyphCache &_cache;
-
 public:
-    Tessellator(GlyphCache &cache);
+    Tessellator();
     ~Tessellator() = default;
 
     virtual Glyph composeGlyph(uint32_t glyphId, std::shared_ptr<vft::Font> font, unsigned int fontSize = 0) = 0;

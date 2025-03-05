@@ -10,9 +10,7 @@ namespace vft {
 TextSegment::TextSegment(std::shared_ptr<Font> font, unsigned int fontSize)
     : _font{font}, _fontSize{fontSize}, _transform{1.f} {}
 
-void TextSegment::add(const std::vector<uint32_t> &codePoints,
-                      std::shared_ptr<Tessellator> tessellator,
-                      unsigned int start) {
+void TextSegment::add(const std::vector<uint32_t> &codePoints, unsigned int start) {
     if (start == std::numeric_limits<unsigned int>::max()) {
         start = this->_codePoints.size();
     }
@@ -25,10 +23,10 @@ void TextSegment::add(const std::vector<uint32_t> &codePoints,
     this->_codePoints.insert(this->_codePoints.begin() + start, codePoints.begin(), codePoints.end());
 
     // Shape segment and update characters
-    this->_shape(tessellator);
+    this->_shape();
 }
 
-void TextSegment::remove(unsigned int start, std::shared_ptr<Tessellator> tessellator, unsigned int count) {
+void TextSegment::remove(unsigned int start, unsigned int count) {
     if (count == 0) {
         return;
     }
@@ -44,7 +42,7 @@ void TextSegment::remove(unsigned int start, std::shared_ptr<Tessellator> tessel
     this->_codePoints.erase(this->_codePoints.begin() + start, this->_codePoints.begin() + start + count);
 
     // Shape segment and update characters
-    this->_shape(tessellator);
+    this->_shape();
 }
 
 void TextSegment::setTransform(glm::mat4 transform) {
@@ -83,7 +81,7 @@ unsigned int TextSegment::getFontSize() const {
     return this->_fontSize;
 }
 
-void TextSegment::_shape(std::shared_ptr<Tessellator> tessellator) {
+void TextSegment::_shape() {
     // Shape whole segment
     std::vector<std::vector<ShapedCharacter>> shaped = Shaper::shape(this->_codePoints, this->_font, this->_fontSize);
 
@@ -94,8 +92,8 @@ void TextSegment::_shape(std::shared_ptr<Tessellator> tessellator) {
     for (const std::vector<ShapedCharacter> &shapedLine : shaped) {
         for (const ShapedCharacter &shapedCharacter : shapedLine) {
             // Creates glyph if not in cache
-            Glyph glyph = tessellator->composeGlyph(shapedCharacter.glyphId, this->_font, this->_fontSize);
-            Character character{glyph, shapedCharacter.glyphId, this->_font, this->_fontSize};
+            // Glyph glyph = tessellator->composeGlyph(shapedCharacter.glyphId, this->_font, this->_fontSize);
+            Character character{shapedCharacter.glyphId, 0, this->_font, this->_fontSize};
             character.setAdvance(glm::vec2(shapedCharacter.xAdvance, shapedCharacter.yAdvance));
             character.setTransform(this->_transform);
 
@@ -106,8 +104,7 @@ void TextSegment::_shape(std::shared_ptr<Tessellator> tessellator) {
         shapedLineCount++;
         if (shapedLineCount != shaped.size()) {
             // Add new line
-            Character character{Glyph{}, vft::U_LF, this->_font, this->_fontSize};
-            character.setAdvance(glm::vec2(0, 0));
+            Character character{0, vft::U_LF, this->_font, this->_fontSize};
             character.setTransform(this->_transform);
 
             this->_characters.push_back(character);

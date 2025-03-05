@@ -7,7 +7,7 @@
 
 const std::string EditorScene::ROBOTO_PATH = "assets/Roboto-Regular.ttf";
 
-EditorScene::EditorScene(CameraType cameraType, vft::Renderer::TessellationStrategy tessellationAlgorithm, bool measureTime) : Scene{cameraType, tessellationAlgorithm, measureTime} {
+EditorScene::EditorScene(CameraType cameraType, vft::TessellationStrategy tessellationAlgorithm, bool measureTime) : Scene{cameraType, tessellationAlgorithm, measureTime} {
     this->_roboto = std::make_shared<vft::Font>(EditorScene::ROBOTO_PATH);
     this->_textBlock = vft::TextBlockBuilder()
         .setFont(this->_roboto)

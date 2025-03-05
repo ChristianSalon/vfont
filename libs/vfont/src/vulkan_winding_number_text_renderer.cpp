@@ -1,100 +1,109 @@
 ﻿/**
- * @file gpu_drawer.cpp
+ * @file vulkan_winding_number_text_renderer.cpp
  * @author Christian Saloň
  */
 
-#include <glm/vec4.hpp>
-#include <iostream>
-
-#include "gpu_drawer.h"
+#include "vulkan_winding_number_text_renderer.h"
 
 namespace vft {
 
-GpuDrawer::GpuDrawer(GlyphCache &cache) : Drawer{cache} {};
+void VulkanWindingNumberTextRenderer::initialize() {
+    VulkanTextRenderer::initialize();
 
-GpuDrawer::~GpuDrawer() {
-    // Destroy vulkan buffers
-    if (this->_boundingBoxIndexBuffer != nullptr)
-        this->_destroyBuffer(this->_boundingBoxIndexBuffer, this->_boundingBoxIndexBufferMemory);
-
-    if (this->_segmentsBuffer != nullptr)
-        this->_destroyBuffer(this->_segmentsBuffer, this->_segmentsBufferMemory);
-
-    if (this->_vertexBuffer != nullptr)
-        this->_destroyBuffer(this->_vertexBuffer, this->_vertexBufferMemory);
-
-    vkDestroyDescriptorSetLayout(this->_vulkanContext.logicalDevice, this->_segmentsDescriptorSetLayout, nullptr);
-
-    vkDestroyPipeline(this->_vulkanContext.logicalDevice, this->_segmentsPipeline, nullptr);
-    vkDestroyPipelineLayout(this->_vulkanContext.logicalDevice, this->_segmentsPipelineLayout, nullptr);
-}
-
-void GpuDrawer::init(VulkanContext vulkanContext) {
-    Drawer::init(vulkanContext);
-
+    this->_tessellator = std::make_unique<GpuTessellator>();
     this->_createSegmentsDescriptorSetLayout();
     this->_createSegmentsDescriptorSet();
-
     this->_createSegmentsPipeline();
 }
 
-void GpuDrawer::draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, VkCommandBuffer commandBuffer) {
+void VulkanWindingNumberTextRenderer::destroy() {
+    // Destroy vulkan buffers
+    if (this->_boundingBoxIndexBuffer != nullptr)
+        this->_destroyBuffer(this->_boundingBoxIndexBuffer, this->_boundingBoxIndexBufferMemory);
+    if (this->_segmentsBuffer != nullptr)
+        this->_destroyBuffer(this->_segmentsBuffer, this->_segmentsBufferMemory);
+    if (this->_vertexBuffer != nullptr)
+        this->_destroyBuffer(this->_vertexBuffer, this->_vertexBufferMemory);
+
+    // Destroy descriptor set
+    if (this->_vertexBuffer != nullptr)
+        vkDestroyDescriptorSetLayout(this->_logicalDevice, this->_segmentsDescriptorSetLayout, nullptr);
+
+    // Destroy pipeline
+    if (this->_vertexBuffer != nullptr)
+        vkDestroyPipeline(this->_logicalDevice, this->_segmentsPipeline, nullptr);
+    if (this->_vertexBuffer != nullptr)
+        vkDestroyPipelineLayout(this->_logicalDevice, this->_segmentsPipelineLayout, nullptr);
+
+    VulkanTextRenderer::destroy();
+}
+
+void VulkanWindingNumberTextRenderer::draw() {
     // Check if there are characters to render
     if (this->_vertices.size() == 0) {
         return;
     }
 
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_segmentsPipeline);
+    vkCmdBindPipeline(this->_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_segmentsPipeline);
 
     std::array<VkDescriptorSet, 2> sets = {this->_uboDescriptorSet, this->_segmentsDescriptorSet};
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_segmentsPipelineLayout, 0,
+    vkCmdBindDescriptorSets(this->_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_segmentsPipelineLayout, 0,
                             sets.size(), sets.data(), 0, nullptr);
 
     VkBuffer vertexBuffers[] = {this->_vertexBuffer};
     VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+    vkCmdBindVertexBuffers(this->_commandBuffer, 0, 1, vertexBuffers, offsets);
 
     // Draw line and curve segments
-    vkCmdBindIndexBuffer(commandBuffer, this->_boundingBoxIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-    for (int i = 0; i < textBlocks.size(); i++) {
-        for (Character &character : textBlocks[i]->getCharacters()) {
-            if (character.glyph.mesh.getVertexCount() > 0) {
-                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getCodePoint(), 0};
+    vkCmdBindIndexBuffer(this->_commandBuffer, this->_boundingBoxIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+    for (int i = 0; i < this->_textBlocks.size(); i++) {
+        for (const Character &character : this->_textBlocks[i]->getCharacters()) {
+            GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), 0};
+            const Glyph &glyph = this->_cache->getGlyph(key);
 
+            if (glyph.mesh.getVertexCount() > 0) {
                 SegmentsInfo segmentsInfo =
                     this->_segmentsInfo.at(this->_offsets.at(key).at(SEGMENTS_INFO_OFFSET_BUFFER_INDEX));
 
-                PushConstants pushConstants{character.getModelMatrix(),           textBlocks.at(i)->getColor(),
+                PushConstants pushConstants{character.getModelMatrix(),           this->_textBlocks.at(i)->getColor(),
                                             segmentsInfo.lineSegmentsStartIndex,  segmentsInfo.lineSegmentsCount,
                                             segmentsInfo.curveSegmentsStartIndex, segmentsInfo.curveSegmentsCount};
-                vkCmdPushConstants(commandBuffer, this->_segmentsPipelineLayout,
+                vkCmdPushConstants(this->_commandBuffer, this->_segmentsPipelineLayout,
                                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants),
                                    &pushConstants);
 
-                vkCmdDrawIndexed(commandBuffer,
-                                 character.glyph.mesh.getIndexCount(GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX), 1,
+                vkCmdDrawIndexed(this->_commandBuffer,
+                                 glyph.mesh.getIndexCount(GpuTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX), 1,
                                  this->_offsets.at(key).at(BOUNDING_BOX_OFFSET_BUFFER_INDEX), 0, 0);
             }
         }
     }
 }
 
-void GpuDrawer::recreateBuffers(std::vector<std::shared_ptr<TextBlock>> textBlocks) {
+void VulkanWindingNumberTextRenderer::update() {
+    // Update glyph cache
+    for (std::shared_ptr<TextBlock> block : this->_textBlocks) {
+        for (const Character &character : block->getCharacters()) {
+            GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), 0};
+            if (!this->_cache->exists(key)) {
+                // Tessellate glyph and insert into cache
+                Glyph glyph = this->_tessellator->composeGlyph(character.getGlyphId(), character.getFont(),
+                                                               character.getFontSize());
+                this->_cache->setGlyph(key, glyph);
+            }
+        }
+    }
+
     // Destroy vulkan buffers
     this->_destroyBuffer(this->_boundingBoxIndexBuffer, this->_boundingBoxIndexBufferMemory);
     this->_destroyBuffer(this->_segmentsBuffer, this->_segmentsBufferMemory);
     this->_destroyBuffer(this->_vertexBuffer, this->_vertexBufferMemory);
 
     // Create vulkan buffers
-    this->_createVertexAndIndexBuffers(textBlocks);
+    this->_createVertexAndIndexBuffers();
 }
 
-void GpuDrawer::setViewportSize(unsigned int width, unsigned int height) {
-    this->_viewportWidth = width;
-    this->_viewportHeight = height;
-}
-
-void GpuDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<TextBlock>> &textBlocks) {
+void VulkanWindingNumberTextRenderer::_createVertexAndIndexBuffers() {
     this->_vertices.clear();
     this->_boundingBoxIndices.clear();
     this->_segments.clear();
@@ -106,29 +115,33 @@ void GpuDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<TextBlo
     uint32_t segmentsCount = 0;
     uint32_t segmentsInfoCount = 0;
 
-    for (int i = 0; i < textBlocks.size(); i++) {
-        for (Character &character : textBlocks[i]->getCharacters()) {
-            GlyphKey key{textBlocks[i]->getFont()->getFontFamily(), character.getCodePoint(), 0};
+    for (int i = 0; i < this->_textBlocks.size(); i++) {
+        for (const Character &character : this->_textBlocks[i]->getCharacters()) {
+            GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), 0};
+            const Glyph &glyph = this->_cache->getGlyph(key);
+
             if (!this->_offsets.contains(key)) {
                 this->_offsets.insert({key, {boundingBoxIndexCount, segmentsInfoCount}});
 
-                this->_vertices.insert(this->_vertices.end(), character.glyph.mesh.getVertices().begin(),
-                                       character.glyph.mesh.getVertices().end());
+                this->_vertices.insert(this->_vertices.end(), glyph.mesh.getVertices().begin(),
+                                       glyph.mesh.getVertices().end());
                 this->_boundingBoxIndices.insert(
                     this->_boundingBoxIndices.end(),
-                    character.glyph.mesh.getIndices(GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX).begin(),
-                    character.glyph.mesh.getIndices(GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX).end());
+                    glyph.mesh.getIndices(GpuTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX).begin(),
+                    glyph.mesh.getIndices(GpuTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX).end());
 
-                std::vector<glm::vec2> vertices = character.glyph.mesh.getVertices();
+                std::vector<glm::vec2> vertices = glyph.mesh.getVertices();
 
-                std::vector<uint32_t> lineSegments = character.glyph.mesh.getIndices(GLYPH_MESH_LINE_BUFFER_INDEX);
+                std::vector<uint32_t> lineSegments =
+                    glyph.mesh.getIndices(GpuTessellator::GLYPH_MESH_LINE_BUFFER_INDEX);
                 uint32_t lineCount = lineSegments.size() / 2;
                 for (int j = 0; j < lineSegments.size(); j += 2) {
                     this->_segments.push_back(vertices.at(lineSegments.at(j)));
                     this->_segments.push_back(vertices.at(lineSegments.at(j + 1)));
                 }
 
-                std::vector<uint32_t> curveSegments = character.glyph.mesh.getIndices(GLYPH_MESH_CURVE_BUFFER_INDEX);
+                std::vector<uint32_t> curveSegments =
+                    glyph.mesh.getIndices(GpuTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX);
                 uint32_t curveCount = curveSegments.size() / 3;
                 for (int j = 0; j < curveSegments.size(); j += 3) {
                     this->_segments.push_back(vertices.at(curveSegments.at(j)));
@@ -136,16 +149,16 @@ void GpuDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<TextBlo
                     this->_segments.push_back(vertices.at(curveSegments.at(j + 2)));
                 }
 
-                this->_segmentsInfo.push_back(
-                    SegmentsInfo{segmentsCount, lineCount, segmentsCount + static_cast<uint32_t>(lineSegments.size()), curveCount});
+                this->_segmentsInfo.push_back(SegmentsInfo{
+                    segmentsCount, lineCount, segmentsCount + static_cast<uint32_t>(lineSegments.size()), curveCount});
 
                 // Add an offset to line segment indices of current character
                 for (int j = boundingBoxIndexCount; j < this->_boundingBoxIndices.size(); j++) {
                     this->_boundingBoxIndices.at(j) += vertexCount;
                 }
 
-                vertexCount += character.glyph.mesh.getVertexCount();
-                boundingBoxIndexCount += character.glyph.mesh.getIndexCount(GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX);
+                vertexCount += glyph.mesh.getVertexCount();
+                boundingBoxIndexCount += glyph.mesh.getIndexCount(GpuTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX);
                 segmentsCount += lineSegments.size() + curveSegments.size();
                 segmentsInfoCount++;
             }
@@ -176,7 +189,7 @@ void GpuDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<TextBlo
     }
 }
 
-void GpuDrawer::_createDescriptorPool() {
+void VulkanWindingNumberTextRenderer::_createDescriptorPool() {
     std::array<VkDescriptorPoolSize, 2> poolSizes = {};
 
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -191,13 +204,14 @@ void GpuDrawer::_createDescriptorPool() {
     poolCreateInfo.pPoolSizes = poolSizes.data();
     poolCreateInfo.maxSets = static_cast<uint32_t>(2);
 
-    if (vkCreateDescriptorPool(this->_vulkanContext.logicalDevice, &poolCreateInfo, nullptr,
-                               &(this->_descriptorPool)) != VK_SUCCESS) {
-        throw std::runtime_error("Error creating vulkan descriptor pool");
+    if (vkCreateDescriptorPool(this->_logicalDevice, &poolCreateInfo, nullptr, &(this->_descriptorPool)) !=
+        VK_SUCCESS) {
+        throw std::runtime_error(
+            "VulkanWindingNumberTextRenderer::_createDescriptorPool(): Error creating vulkan descriptor pool");
     }
 }
 
-void GpuDrawer::_createSsbo() {
+void VulkanWindingNumberTextRenderer::_createSsbo() {
     VkDeviceSize segmentsBufferSize = sizeof(this->_segments.at(0)) * this->_segments.size();
     this->_stageAndCreateVulkanBuffer(this->_segments.data(), segmentsBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                       this->_segmentsBuffer, this->_segmentsBufferMemory);
@@ -217,11 +231,10 @@ void GpuDrawer::_createSsbo() {
     writeDescriptorSets[0].descriptorCount = 1;
     writeDescriptorSets[0].pBufferInfo = &lineSegmentsBufferInfo;
 
-    vkUpdateDescriptorSets(this->_vulkanContext.logicalDevice, writeDescriptorSets.size(), writeDescriptorSets.data(),
-                           0, nullptr);
+    vkUpdateDescriptorSets(this->_logicalDevice, writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
 }
 
-void GpuDrawer::_createSegmentsDescriptorSetLayout() {
+void VulkanWindingNumberTextRenderer::_createSegmentsDescriptorSetLayout() {
     std::array<VkDescriptorSetLayoutBinding, 1> layoutBindings;
 
     layoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
@@ -234,26 +247,28 @@ void GpuDrawer::_createSegmentsDescriptorSetLayout() {
     layoutCreateInfo.bindingCount = layoutBindings.size();
     layoutCreateInfo.pBindings = layoutBindings.data();
 
-    if (vkCreateDescriptorSetLayout(this->_vulkanContext.logicalDevice, &layoutCreateInfo, nullptr,
+    if (vkCreateDescriptorSetLayout(this->_logicalDevice, &layoutCreateInfo, nullptr,
                                     &(this->_segmentsDescriptorSetLayout)) != VK_SUCCESS) {
-        throw std::runtime_error("Error creating vulkan descriptor set layout");
+        throw std::runtime_error(
+            "VulkanWindingNumberTextRenderer::_createSegmentsDescriptorSetLayout(: Error creating vulkan descriptor "
+            "set layout");
     }
 }
 
-void GpuDrawer::_createSegmentsDescriptorSet() {
+void VulkanWindingNumberTextRenderer::_createSegmentsDescriptorSet() {
     VkDescriptorSetAllocateInfo allocateInfo{};
     allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocateInfo.descriptorPool = this->_descriptorPool;
     allocateInfo.descriptorSetCount = 1;
     allocateInfo.pSetLayouts = &this->_segmentsDescriptorSetLayout;
 
-    if (vkAllocateDescriptorSets(this->_vulkanContext.logicalDevice, &allocateInfo, &this->_segmentsDescriptorSet) !=
-        VK_SUCCESS) {
-        throw std::runtime_error("Error allocating vulkan descriptor sets");
+    if (vkAllocateDescriptorSets(this->_logicalDevice, &allocateInfo, &this->_segmentsDescriptorSet) != VK_SUCCESS) {
+        throw std::runtime_error(
+            "VulkanWindingNumberTextRenderer::_createSegmentsDescriptorSet(): Error allocating vulkan descriptor sets");
     }
 }
 
-void GpuDrawer::_createSegmentsPipeline() {
+void VulkanWindingNumberTextRenderer::_createSegmentsPipeline() {
     std::vector<char> vertexShaderCode = this->_readFile("shaders/winding_number-vert.spv");
     std::vector<char> fragmentShaderCode = this->_readFile("shaders/winding_number-frag.spv");
 
@@ -348,9 +363,10 @@ void GpuDrawer::_createSegmentsPipeline() {
     pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
     pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 
-    if (vkCreatePipelineLayout(this->_vulkanContext.logicalDevice, &pipelineLayoutCreateInfo, nullptr,
+    if (vkCreatePipelineLayout(this->_logicalDevice, &pipelineLayoutCreateInfo, nullptr,
                                &this->_segmentsPipelineLayout) != VK_SUCCESS) {
-        throw std::runtime_error("Error creating vulkan pipeline layout");
+        throw std::runtime_error(
+            "VulkanWindingNumberTextRenderer::_createSegmentsPipeline(): Error creating vulkan pipeline layout");
     }
 
     VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo{};
@@ -366,16 +382,17 @@ void GpuDrawer::_createSegmentsPipeline() {
     graphicsPipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
     graphicsPipelineCreateInfo.pDynamicState = &dynamicStateCreateInfo;
     graphicsPipelineCreateInfo.layout = this->_segmentsPipelineLayout;
-    graphicsPipelineCreateInfo.renderPass = this->_vulkanContext.renderPass;
+    graphicsPipelineCreateInfo.renderPass = this->_renderPass;
     graphicsPipelineCreateInfo.subpass = 0;
 
-    if (vkCreateGraphicsPipelines(this->_vulkanContext.logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr,
+    if (vkCreateGraphicsPipelines(this->_logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr,
                                   &this->_segmentsPipeline) != VK_SUCCESS) {
-        throw std::runtime_error("Error creating vulkan graphics pipeline");
+        throw std::runtime_error(
+            "VulkanWindingNumberTextRenderer::_createSegmentsPipeline(): Error creating vulkan graphics pipeline");
     }
 
-    vkDestroyShaderModule(this->_vulkanContext.logicalDevice, vertexShaderModule, nullptr);
-    vkDestroyShaderModule(this->_vulkanContext.logicalDevice, fragmentShaderModule, nullptr);
+    vkDestroyShaderModule(this->_logicalDevice, vertexShaderModule, nullptr);
+    vkDestroyShaderModule(this->_logicalDevice, fragmentShaderModule, nullptr);
 }
 
 }  // namespace vft

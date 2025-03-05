@@ -10,7 +10,7 @@
  * 
  * @param cameraType Type of camera used for rendering
  */
-Scene::Scene(CameraType cameraType, vft::Renderer::TessellationStrategy tessellationAlgorithm, bool measureTime) : _cameraType{ cameraType }, _measureTime { measureTime } {
+Scene::Scene(CameraType cameraType, vft::TessellationStrategy tessellationAlgorithm, bool measureTime) : _cameraType{ cameraType }, _measureTime { measureTime } {
 
     this->extensions = {
     "VK_KHR_surface",
@@ -71,22 +71,39 @@ Scene::Scene(CameraType cameraType, vft::Renderer::TessellationStrategy tessella
 
     // Initialize text renderer
     if (measureTime) {
-        vft::Renderer *renderer = new vft::TextRenderer();
-        this->_renderer = std::make_shared<vft::TimedRenderer>(renderer);
+        vft::VulkanTextRenderer *renderer = nullptr;
+
+        if (tessellationAlgorithm == vft::TessellationStrategy::TRIANGULATION) {
+            renderer = new vft::VulkanTriangulationTextRenderer();
+        }
+        else if(tessellationAlgorithm == vft::TessellationStrategy::TESSELLATION_SHADERS) {
+            renderer = new vft::VulkanTessellationShadersTextRenderer();
+        }
+        else {
+            renderer = new vft::VulkanWindingNumberTextRenderer();
+        }
+
+        this->_renderer = std::make_shared<vft::VulkanTimedRenderer>(renderer);
     }
     else {
-        this->_renderer = std::make_shared<vft::TextRenderer>();
+        if (tessellationAlgorithm == vft::TessellationStrategy::TRIANGULATION) {
+            this->_renderer = std::make_shared<vft::VulkanTriangulationTextRenderer>();
+        }
+        else if (tessellationAlgorithm == vft::TessellationStrategy::TESSELLATION_SHADERS) {
+            this->_renderer = std::make_shared<vft::VulkanTessellationShadersTextRenderer>();
+        }
+        else {
+            this->_renderer = std::make_shared<vft::VulkanWindingNumberTextRenderer>();
+        }
     }
 
-    vft::VulkanContext vulkanContext{
-        this->_physicalDevice,
-        this->_logicalDevice,
-        this->_graphicsQueue,
-        this->_commandPool,
-        this->_renderPass
-    };
-
-    this->_renderer->init(tessellationAlgorithm, vulkanContext);
+    this->_renderer->setPhysicalDevice(this->_physicalDevice);
+    this->_renderer->setLogicalDevice(this->_logicalDevice);
+    this->_renderer->setGraphicsQueue(this->_graphicsQueue);
+    this->_renderer->setCommandPool(this->_commandPool);
+    this->_renderer->setRenderPass(this->_renderPass);
+    this->_renderer->setCommandBuffer(this->_commandBuffer);
+    this->_renderer->initialize();
     this->_renderer->setViewportSize(this->_window->getWidth(), this->_window->getHeight());
 }
 
@@ -879,7 +896,7 @@ void Scene::_recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIn
     }
 
     if(this->_measureTime) {
-        reinterpret_cast<vft::TimedRenderer*>(this->_renderer.get())->resetQueryPool(commandBuffer);
+        reinterpret_cast<vft::VulkanTimedRenderer*>(this->_renderer.get())->resetQueryPool();
     }
 
     VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
@@ -910,7 +927,7 @@ void Scene::_recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIn
     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
     
-    this->_renderer->draw(commandBuffer);
+    this->_renderer->draw();
 
     vkCmdEndRenderPass(commandBuffer);
 
@@ -962,6 +979,7 @@ void Scene::_drawFrame() {
     vkResetFences(this->_logicalDevice, 1, &this->_inFlightFence);
 
     vkResetCommandBuffer(this->_commandBuffer, 0);
+    this->_renderer->setCommandBuffer(this->_commandBuffer);
     this->_recordCommandBuffer(this->_commandBuffer, imageIndex);
 
     VkSemaphore signalSemaphores[] = { this->_renderFinishedSemaphore };
@@ -1003,7 +1021,7 @@ void Scene::_drawFrame() {
     }
 
     if(this->_measureTime) {
-        float time = reinterpret_cast<vft::TimedRenderer*>(this->_renderer.get())->readTimestamps(this->_commandBuffer) / 10e+3;
+        float time = reinterpret_cast<vft::VulkanTimedRenderer*>(this->_renderer.get())->readTimestamps() / 10e+3;
         std::cout << "Draw time: " << time << " microseconds" << std::endl;
     }
 }

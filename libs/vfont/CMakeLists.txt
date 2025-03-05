@@ -3,10 +3,14 @@ project(vfont VERSION 1.0)
 
 set(LIB_NAME vfont)
 set(VFONT_HEADERS
-    include/VFONT/renderer.h
-    include/VFONT/renderer_decorator.h
     include/VFONT/text_renderer.h
-    include/VFONT/timed_renderer.h
+    include/VFONT/i_vulkan_text_renderer.h
+    include/VFONT/vulkan_text_renderer.h
+    include/VFONT/vulkan_triangulation_text_renderer.h
+    include/VFONT/vulkan_tessellation_shaders_text_renderer.h
+    include/VFONT/vulkan_winding_number_text_renderer.h
+    include/VFONT/vulkan_text_renderer_decorator.h
+    include/VFONT/vulkan_timed_renderer.h
     include/VFONT/text_renderer_utils.h
     include/VFONT/glyph.h
     include/VFONT/glyph_mesh.h
@@ -24,15 +28,15 @@ set(VFONT_HEADERS
     include/VFONT/cpu_tessellator.h
     include/VFONT/gpu_tessellator.h
     include/VFONT/combined_tessellator.h
-    include/VFONT/drawer.h
-    include/VFONT/cpu_drawer.h
-    include/VFONT/gpu_drawer.h
-    include/VFONT/combined_drawer.h
 )
 set(VFONT_SOURCES
-    src/renderer_decorator.cpp
     src/text_renderer.cpp
-    src/timed_renderer.cpp
+    src/vulkan_text_renderer.cpp
+    src/vulkan_triangulation_text_renderer.cpp
+    src/vulkan_tessellation_shaders_text_renderer.cpp
+    src/vulkan_winding_number_text_renderer.cpp
+    src/vulkan_text_renderer_decorator.cpp
+    src/vulkan_timed_renderer.cpp
     src/glyph.cpp
     src/glyph_mesh.cpp
     src/glyph_compositor.cpp
@@ -49,10 +53,6 @@ set(VFONT_SOURCES
     src/cpu_tessellator.cpp
     src/gpu_tessellator.cpp
     src/combined_tessellator.cpp
-    src/drawer.cpp
-    src/cpu_drawer.cpp
-    src/gpu_drawer.cpp
-    src/combined_drawer.cpp
 )
 
 add_library(${LIB_NAME} STATIC ${VFONT_HEADERS} ${VFONT_SOURCES})

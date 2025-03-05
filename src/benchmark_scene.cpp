@@ -9,7 +9,7 @@ const std::string BenchmarkScene::ROBOTO_PATH = "assets/Roboto-Regular.ttf";
 
 const std::string BenchmarkScene::CODE_POINTS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
-BenchmarkScene::BenchmarkScene(CameraType cameraType, vft::Renderer::TessellationStrategy tessellationAlgorithm, bool measureTime) : Scene{cameraType, tessellationAlgorithm, measureTime} {
+BenchmarkScene::BenchmarkScene(CameraType cameraType, vft::TessellationStrategy tessellationAlgorithm, bool measureTime) : Scene{cameraType, tessellationAlgorithm, measureTime} {
     // this->_renderer->setCacheSize(0);
 
     this->_roboto = std::make_shared<vft::Font>(BenchmarkScene::ROBOTO_PATH);

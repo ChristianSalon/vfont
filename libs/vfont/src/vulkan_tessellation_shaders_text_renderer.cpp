@@ -1,117 +1,132 @@
 ﻿/**
- * @file combined_drawer.cpp
+ * @file vulkan_tessellation_shaders_text_renderer.cpp
  * @author Christian Saloň
  */
 
-#include <glm/vec4.hpp>
-
-#include "combined_drawer.h"
+#include "vulkan_tessellation_shaders_text_renderer.h"
 
 namespace vft {
 
-CombinedDrawer::CombinedDrawer(GlyphCache &cache) : Drawer{cache} {};
+void VulkanTessellationShadersTextRenderer::initialize() {
+    VulkanTextRenderer::initialize();
 
-CombinedDrawer::~CombinedDrawer() {
-    // Destroy vulkan buffers
-    if (this->_lineSegmentsIndexBuffer != nullptr)
-        this->_destroyBuffer(this->_lineSegmentsIndexBuffer, this->_lineSegmentsIndexBufferMemory);
-
-    if (this->_curveSegmentsIndexBuffer != nullptr)
-        this->_destroyBuffer(this->_curveSegmentsIndexBuffer, this->_curveSegmentsIndexBufferMemory);
-
-    if (this->_vertexBuffer != nullptr)
-        this->_destroyBuffer(this->_vertexBuffer, this->_vertexBufferMemory);
-
-    vkDestroyPipeline(this->_vulkanContext.logicalDevice, this->_lineSegmentsPipeline, nullptr);
-    vkDestroyPipelineLayout(this->_vulkanContext.logicalDevice, this->_lineSegmentsPipelineLayout, nullptr);
-
-    vkDestroyPipeline(this->_vulkanContext.logicalDevice, this->_curveSegmentsPipeline, nullptr);
-    vkDestroyPipelineLayout(this->_vulkanContext.logicalDevice, this->_curveSegmentsPipelineLayout, nullptr);
-}
-
-void CombinedDrawer::init(VulkanContext vulkanContext) {
-    Drawer::init(vulkanContext);
-
+    this->_tessellator = std::make_unique<CombinedTessellator>();
     this->_createLineSegmentsPipeline();
     this->_createCurveSegmentsPipeline();
 }
 
-void CombinedDrawer::draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, VkCommandBuffer commandBuffer) {
+void VulkanTessellationShadersTextRenderer::destroy() {
+    // Destroy vulkan buffers
+    if (this->_lineSegmentsIndexBuffer != nullptr)
+        this->_destroyBuffer(this->_lineSegmentsIndexBuffer, this->_lineSegmentsIndexBufferMemory);
+    if (this->_curveSegmentsIndexBuffer != nullptr)
+        this->_destroyBuffer(this->_curveSegmentsIndexBuffer, this->_curveSegmentsIndexBufferMemory);
+    if (this->_vertexBuffer != nullptr)
+        this->_destroyBuffer(this->_vertexBuffer, this->_vertexBufferMemory);
+
+    // Destroy line segments pipeline
+    if (this->_lineSegmentsPipeline != nullptr)
+        vkDestroyPipeline(this->_logicalDevice, this->_lineSegmentsPipeline, nullptr);
+    if (this->_lineSegmentsPipelineLayout != nullptr)
+        vkDestroyPipelineLayout(this->_logicalDevice, this->_lineSegmentsPipelineLayout, nullptr);
+
+    // Destroy curve segments pipeline
+    if (this->_curveSegmentsPipeline != nullptr)
+        vkDestroyPipeline(this->_logicalDevice, this->_curveSegmentsPipeline, nullptr);
+    if (this->_curveSegmentsPipelineLayout != nullptr)
+        vkDestroyPipelineLayout(this->_logicalDevice, this->_curveSegmentsPipelineLayout, nullptr);
+
+    VulkanTextRenderer::destroy();
+}
+
+void VulkanTessellationShadersTextRenderer::draw() {
     // Check if there are characters to render
     if (this->_vertices.size() == 0) {
         return;
     }
 
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_lineSegmentsPipeline);
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_lineSegmentsPipelineLayout, 0, 1,
-                            &this->_uboDescriptorSet, 0, nullptr);
+    vkCmdBindPipeline(this->_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_lineSegmentsPipeline);
+    vkCmdBindDescriptorSets(this->_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_lineSegmentsPipelineLayout, 0,
+                            1, &this->_uboDescriptorSet, 0, nullptr);
 
     VkBuffer vertexBuffers[] = {this->_vertexBuffer};
     VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+    vkCmdBindVertexBuffers(this->_commandBuffer, 0, 1, vertexBuffers, offsets);
 
     // Draw line segments
-    vkCmdBindIndexBuffer(commandBuffer, this->_lineSegmentsIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-    for (int i = 0; i < textBlocks.size(); i++) {
-        for (Character &character : textBlocks[i]->getCharacters()) {
-            if (character.glyph.mesh.getVertexCount() > 0) {
-                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getCodePoint(), 0};
+    vkCmdBindIndexBuffer(this->_commandBuffer, this->_lineSegmentsIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+    for (int i = 0; i < this->_textBlocks.size(); i++) {
+        for (const Character &character : this->_textBlocks[i]->getCharacters()) {
+            GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), 0};
+            const Glyph &glyph = this->_cache->getGlyph(key);
 
-                vft::CharacterPushConstants pushConstants{character.getModelMatrix(), textBlocks.at(i)->getColor()};
-                vkCmdPushConstants(commandBuffer, this->_lineSegmentsPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
-                                   sizeof(vft::CharacterPushConstants), &pushConstants);
+            if (glyph.mesh.getVertexCount() > 0) {
+                vft::CharacterPushConstants pushConstants{character.getModelMatrix(), this->_textBlocks[i]->getColor()};
+                vkCmdPushConstants(this->_commandBuffer, this->_lineSegmentsPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
+                                   0, sizeof(vft::CharacterPushConstants), &pushConstants);
 
-                vkCmdDrawIndexed(commandBuffer, character.glyph.mesh.getIndexCount(GLYPH_MESH_TRIANGLE_BUFFER_INDEX), 1,
+                vkCmdDrawIndexed(this->_commandBuffer,
+                                 glyph.mesh.getIndexCount(CombinedTessellator::GLYPH_MESH_TRIANGLE_BUFFER_INDEX), 1,
                                  this->_offsets.at(key).at(LINE_OFFSET_BUFFER_INDEX), 0, 0);
             }
         }
     }
 
     // Draw curve segments
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_curveSegmentsPipeline);
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_curveSegmentsPipelineLayout, 0, 1,
-                            &this->_uboDescriptorSet, 0, nullptr);
+    vkCmdBindPipeline(this->_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_curveSegmentsPipeline);
+    vkCmdBindDescriptorSets(this->_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->_curveSegmentsPipelineLayout,
+                            0, 1, &this->_uboDescriptorSet, 0, nullptr);
 
-    // vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-    vkCmdBindIndexBuffer(commandBuffer, this->_curveSegmentsIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-    for (int i = 0; i < textBlocks.size(); i++) {
-        for (Character &character : textBlocks[i]->getCharacters()) {
-            if (character.glyph.mesh.getVertexCount() > 0) {
-                GlyphKey key{textBlocks.at(i)->getFont()->getFontFamily(), character.getCodePoint(), 0};
+    // vkCmdBindVertexBuffers(this->_commandBuffer, 0, 1, vertexBuffers, offsets);
+    vkCmdBindIndexBuffer(this->_commandBuffer, this->_curveSegmentsIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+    for (int i = 0; i < this->_textBlocks.size(); i++) {
+        for (const Character &character : this->_textBlocks[i]->getCharacters()) {
+            GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), 0};
+            const Glyph &glyph = this->_cache->getGlyph(key);
 
-                vft::CharacterPushConstants pushConstants{character.getModelMatrix(), textBlocks.at(i)->getColor()};
-                vkCmdPushConstants(commandBuffer, this->_curveSegmentsPipelineLayout,
+            if (glyph.mesh.getVertexCount() > 0) {
+                vft::CharacterPushConstants pushConstants{character.getModelMatrix(), this->_textBlocks[i]->getColor()};
+                vkCmdPushConstants(this->_commandBuffer, this->_curveSegmentsPipelineLayout,
                                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                                    sizeof(vft::CharacterPushConstants), &pushConstants);
 
                 ViewportPushConstants viewportPushConstants{this->_viewportWidth, this->_viewportHeight};
-                vkCmdPushConstants(commandBuffer, this->_curveSegmentsPipelineLayout,
+                vkCmdPushConstants(this->_commandBuffer, this->_curveSegmentsPipelineLayout,
                                    VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(vft::CharacterPushConstants),
                                    sizeof(ViewportPushConstants), &viewportPushConstants);
 
-                vkCmdDrawIndexed(commandBuffer, character.glyph.mesh.getIndexCount(GLYPH_MESH_CURVE_BUFFER_INDEX), 1,
+                vkCmdDrawIndexed(this->_commandBuffer,
+                                 glyph.mesh.getIndexCount(CombinedTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX), 1,
                                  this->_offsets.at(key).at(CURVE_OFFSET_BUFFER_INDEX), 0, 0);
             }
         }
     }
 }
 
-void CombinedDrawer::recreateBuffers(std::vector<std::shared_ptr<TextBlock>> textBlocks) {
+void VulkanTessellationShadersTextRenderer::update() {
+    // Update glyph cache
+    for (std::shared_ptr<TextBlock> block : this->_textBlocks) {
+        for (const Character &character : block->getCharacters()) {
+            GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), 0};
+            if (!this->_cache->exists(key)) {
+                // Tessellate glyph and insert into cache
+                Glyph glyph = this->_tessellator->composeGlyph(character.getGlyphId(), character.getFont(),
+                                                               character.getFontSize());
+                this->_cache->setGlyph(key, glyph);
+            }
+        }
+    }
+
     // Destroy vulkan buffers
     this->_destroyBuffer(this->_lineSegmentsIndexBuffer, this->_lineSegmentsIndexBufferMemory);
     this->_destroyBuffer(this->_curveSegmentsIndexBuffer, this->_curveSegmentsIndexBufferMemory);
     this->_destroyBuffer(this->_vertexBuffer, this->_vertexBufferMemory);
 
     // Create vulkan buffers
-    this->_createVertexAndIndexBuffers(textBlocks);
+    this->_createVertexAndIndexBuffers();
 }
 
-void CombinedDrawer::setViewportSize(unsigned int width, unsigned int height) {
-    this->_viewportWidth = width;
-    this->_viewportHeight = height;
-}
-
-void CombinedDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<TextBlock>> &textBlocks) {
+void VulkanTessellationShadersTextRenderer::_createVertexAndIndexBuffers() {
     this->_vertices.clear();
     this->_lineSegmentsIndices.clear();
     this->_curveSegmentsIndices.clear();
@@ -121,22 +136,24 @@ void CombinedDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<Te
     uint32_t lineSegmentsIndexCount = 0;
     uint32_t curveSegmentsIndexCount = 0;
 
-    for (int i = 0; i < textBlocks.size(); i++) {
-        for (Character &character : textBlocks[i]->getCharacters()) {
-            GlyphKey key{textBlocks[i]->getFont()->getFontFamily(), character.getCodePoint(), 0};
+    for (int i = 0; i < this->_textBlocks.size(); i++) {
+        for (const Character &character : this->_textBlocks[i]->getCharacters()) {
+            GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), 0};
             if (!this->_offsets.contains(key)) {
+                const Glyph &glyph = this->_cache->getGlyph(key);
+
                 this->_offsets.insert({key, {lineSegmentsIndexCount, curveSegmentsIndexCount}});
 
-                this->_vertices.insert(this->_vertices.end(), character.glyph.mesh.getVertices().begin(),
-                                       character.glyph.mesh.getVertices().end());
+                this->_vertices.insert(this->_vertices.end(), glyph.mesh.getVertices().begin(),
+                                       glyph.mesh.getVertices().end());
                 this->_lineSegmentsIndices.insert(
                     this->_lineSegmentsIndices.end(),
-                    character.glyph.mesh.getIndices(GLYPH_MESH_TRIANGLE_BUFFER_INDEX).begin(),
-                    character.glyph.mesh.getIndices(GLYPH_MESH_TRIANGLE_BUFFER_INDEX).end());
+                    glyph.mesh.getIndices(CombinedTessellator::GLYPH_MESH_TRIANGLE_BUFFER_INDEX).begin(),
+                    glyph.mesh.getIndices(CombinedTessellator::GLYPH_MESH_TRIANGLE_BUFFER_INDEX).end());
                 this->_curveSegmentsIndices.insert(
                     this->_curveSegmentsIndices.end(),
-                    character.glyph.mesh.getIndices(GLYPH_MESH_CURVE_BUFFER_INDEX).begin(),
-                    character.glyph.mesh.getIndices(GLYPH_MESH_CURVE_BUFFER_INDEX).end());
+                    glyph.mesh.getIndices(CombinedTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX).begin(),
+                    glyph.mesh.getIndices(CombinedTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX).end());
 
                 // Add an offset to line segment indices of current character
                 for (int j = lineSegmentsIndexCount; j < this->_lineSegmentsIndices.size(); j++) {
@@ -148,9 +165,10 @@ void CombinedDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<Te
                     this->_curveSegmentsIndices.at(j) += vertexCount;
                 }
 
-                vertexCount += character.glyph.mesh.getVertexCount();
-                lineSegmentsIndexCount += character.glyph.mesh.getIndexCount(GLYPH_MESH_TRIANGLE_BUFFER_INDEX);
-                curveSegmentsIndexCount += character.glyph.mesh.getIndexCount(GLYPH_MESH_CURVE_BUFFER_INDEX);
+                vertexCount += glyph.mesh.getVertexCount();
+                lineSegmentsIndexCount +=
+                    glyph.mesh.getIndexCount(CombinedTessellator::GLYPH_MESH_TRIANGLE_BUFFER_INDEX);
+                curveSegmentsIndexCount += glyph.mesh.getIndexCount(CombinedTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX);
             }
         }
     }
@@ -184,7 +202,7 @@ void CombinedDrawer::_createVertexAndIndexBuffers(std::vector<std::shared_ptr<Te
     }
 }
 
-void CombinedDrawer::_createLineSegmentsPipeline() {
+void VulkanTessellationShadersTextRenderer::_createLineSegmentsPipeline() {
     std::vector<char> vertexShaderCode = this->_readFile("shaders/triangle-vert.spv");
     std::vector<char> fragmentShaderCode = this->_readFile("shaders/triangle-frag.spv");
 
@@ -276,9 +294,11 @@ void CombinedDrawer::_createLineSegmentsPipeline() {
     pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
     pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 
-    if (vkCreatePipelineLayout(this->_vulkanContext.logicalDevice, &pipelineLayoutCreateInfo, nullptr,
+    if (vkCreatePipelineLayout(this->_logicalDevice, &pipelineLayoutCreateInfo, nullptr,
                                &this->_lineSegmentsPipelineLayout) != VK_SUCCESS) {
-        throw std::runtime_error("Error creating vulkan pipeline layout");
+        throw std::runtime_error(
+            "VulkanTessellationShadersTextRenderer::_createLineSegmentsPipeline(): Error creating vulkan pipeline "
+            "layout");
     }
 
     VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo{};
@@ -294,19 +314,21 @@ void CombinedDrawer::_createLineSegmentsPipeline() {
     graphicsPipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
     graphicsPipelineCreateInfo.pDynamicState = &dynamicStateCreateInfo;
     graphicsPipelineCreateInfo.layout = this->_lineSegmentsPipelineLayout;
-    graphicsPipelineCreateInfo.renderPass = this->_vulkanContext.renderPass;
+    graphicsPipelineCreateInfo.renderPass = this->_renderPass;
     graphicsPipelineCreateInfo.subpass = 0;
 
-    if (vkCreateGraphicsPipelines(this->_vulkanContext.logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr,
+    if (vkCreateGraphicsPipelines(this->_logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr,
                                   &this->_lineSegmentsPipeline) != VK_SUCCESS) {
-        throw std::runtime_error("Error creating vulkan graphics pipeline");
+        throw std::runtime_error(
+            "VulkanTessellationShadersTextRenderer::_createLineSegmentsPipeline(): Error creating vulkan graphics "
+            "pipeline");
     }
 
-    vkDestroyShaderModule(this->_vulkanContext.logicalDevice, vertexShaderModule, nullptr);
-    vkDestroyShaderModule(this->_vulkanContext.logicalDevice, fragmentShaderModule, nullptr);
+    vkDestroyShaderModule(this->_logicalDevice, vertexShaderModule, nullptr);
+    vkDestroyShaderModule(this->_logicalDevice, fragmentShaderModule, nullptr);
 }
 
-void CombinedDrawer::_createCurveSegmentsPipeline() {
+void VulkanTessellationShadersTextRenderer::_createCurveSegmentsPipeline() {
     std::vector<char> vertexShaderCode = this->_readFile("shaders/curve-vert.spv");
     std::vector<char> tcsCode = this->_readFile("shaders/curve-tesc.spv");
     std::vector<char> tesCode = this->_readFile("shaders/curve-tese.spv");
@@ -443,9 +465,11 @@ void CombinedDrawer::_createCurveSegmentsPipeline() {
     pipelineLayoutCreateInfo.pPushConstantRanges = pushConstantRanges.data();
     pipelineLayoutCreateInfo.pushConstantRangeCount = pushConstantRanges.size();
 
-    if (vkCreatePipelineLayout(this->_vulkanContext.logicalDevice, &pipelineLayoutCreateInfo, nullptr,
+    if (vkCreatePipelineLayout(this->_logicalDevice, &pipelineLayoutCreateInfo, nullptr,
                                &this->_curveSegmentsPipelineLayout) != VK_SUCCESS) {
-        throw std::runtime_error("Error creating vulkan pipeline layout");
+        throw std::runtime_error(
+            "VulkanTessellationShadersTextRenderer::_createCurveSegmentsPipeline(): Error creating vulkan pipeline "
+            "layout");
     }
 
     VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo{};
@@ -462,18 +486,20 @@ void CombinedDrawer::_createCurveSegmentsPipeline() {
     graphicsPipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
     graphicsPipelineCreateInfo.pDynamicState = &dynamicStateCreateInfo;
     graphicsPipelineCreateInfo.layout = this->_curveSegmentsPipelineLayout;
-    graphicsPipelineCreateInfo.renderPass = this->_vulkanContext.renderPass;
+    graphicsPipelineCreateInfo.renderPass = this->_renderPass;
     graphicsPipelineCreateInfo.subpass = 0;
 
-    if (vkCreateGraphicsPipelines(this->_vulkanContext.logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr,
+    if (vkCreateGraphicsPipelines(this->_logicalDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr,
                                   &this->_curveSegmentsPipeline) != VK_SUCCESS) {
-        throw std::runtime_error("Error creating vulkan graphics pipeline");
+        throw std::runtime_error(
+            "VulkanTessellationShadersTextRenderer::_createCurveSegmentsPipeline(): Error creating vulkan graphics "
+            "pipeline");
     }
 
-    vkDestroyShaderModule(this->_vulkanContext.logicalDevice, vertexShaderModule, nullptr);
-    vkDestroyShaderModule(this->_vulkanContext.logicalDevice, tcsShaderModule, nullptr);
-    vkDestroyShaderModule(this->_vulkanContext.logicalDevice, tesShaderModule, nullptr);
-    vkDestroyShaderModule(this->_vulkanContext.logicalDevice, fragmentShaderModule, nullptr);
+    vkDestroyShaderModule(this->_logicalDevice, vertexShaderModule, nullptr);
+    vkDestroyShaderModule(this->_logicalDevice, tcsShaderModule, nullptr);
+    vkDestroyShaderModule(this->_logicalDevice, tesShaderModule, nullptr);
+    vkDestroyShaderModule(this->_logicalDevice, fragmentShaderModule, nullptr);
 }
 
 }  // namespace vft

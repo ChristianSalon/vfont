@@ -15,7 +15,6 @@
 #include "character.h"
 #include "font.h"
 #include "shaper.h"
-#include "tessellator.h"
 
 namespace vft {
 
@@ -26,21 +25,19 @@ namespace vft {
  */
 class TextSegment {
 protected:
-    std::shared_ptr<Font> _font;  /// Font used by characters in segment
-    unsigned int _fontSize;       /// Font size used in segment
+    std::shared_ptr<Font> _font{nullptr};  /// Font used by characters in segment
+    unsigned int _fontSize{0};             /// Font size used in segment
 
-    glm::mat4 _transform;
+    glm::mat4 _transform{1.f};  /// Transform matrix of parent text block
 
-    std::vector<uint32_t> _codePoints;   /// Unicode codepoints to render
-    std::vector<Character> _characters;  /// Characters to render
+    std::vector<uint32_t> _codePoints{};   /// Unicode codepoints to render
+    std::vector<Character> _characters{};  /// Characters to render
 
 public:
     TextSegment(std::shared_ptr<Font> font, unsigned int fontSize);
 
-    void add(const std::vector<uint32_t> &codePoints,
-             std::shared_ptr<Tessellator> tessellator,
-             unsigned int start = std::numeric_limits<unsigned int>::max());
-    void remove(unsigned int start, std::shared_ptr<Tessellator> tessellator, unsigned int count = 1);
+    void add(const std::vector<uint32_t> &codePoints, unsigned int start = std::numeric_limits<unsigned int>::max());
+    void remove(unsigned int start, unsigned int count = 1);
 
     void setTransform(glm::mat4 transform);
     glm::mat4 getTransform() const;
@@ -54,7 +51,7 @@ public:
     unsigned int getFontSize() const;
 
 protected:
-    void _shape(std::shared_ptr<Tessellator> tessellator);
+    void _shape();
 };
 
 }  // namespace vft

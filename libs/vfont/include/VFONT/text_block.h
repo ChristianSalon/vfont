@@ -23,7 +23,6 @@
 #include "font.h"
 #include "line_divider.h"
 #include "shaper.h"
-#include "tessellator.h"
 #include "text_align_strategy.h"
 #include "text_segment.h"
 
@@ -53,8 +52,6 @@ protected:
     std::list<TextSegment> _segments; /**< Text segments which include characters to render */
     LineDivider _lineDivider;
 
-    std::shared_ptr<Tessellator> _tessellator;
-
 public:
     TextBlock();
 
@@ -75,7 +72,6 @@ public:
     void setWidth(int width);
     void setKerning(bool kerning);
     void setTextAlign(std::unique_ptr<TextAlignStrategy> textAlign);
-    void setTessellationStrategy(std::shared_ptr<Tessellator> tessellator);
 
     std::vector<Character> getCharacters();
     unsigned int getCharacterCount();

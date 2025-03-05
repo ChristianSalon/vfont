@@ -1,5 +1,5 @@
 ﻿/**
- * @file cpu_drawer.h
+ * @file vulkan_triangulation_text_renderer.h
  * @author Christian Saloň
  */
 
@@ -12,17 +12,15 @@
 #include <vector>
 
 #include <vulkan/vulkan.h>
-#include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
 
-#include "drawer.h"
+#include "cpu_tessellator.h"
 #include "glyph_cache.h"
-#include "text_block.h"
-#include "text_renderer_utils.h"
+#include "vulkan_text_renderer.h"
 
 namespace vft {
 
-class CpuDrawer : public Drawer {
+class VulkanTriangulationTextRenderer : public VulkanTextRenderer {
 protected:
     std::unordered_map<GlyphKey, uint32_t, GlyphKeyHash> _offsets;
 
@@ -38,17 +36,17 @@ protected:
     VkPipeline _pipeline{nullptr};
 
 public:
-    CpuDrawer(GlyphCache &cache);
-    ~CpuDrawer();
+    VulkanTriangulationTextRenderer() = default;
+    ~VulkanTriangulationTextRenderer() = default;
 
-    void init(VulkanContext vulkanContext) override;
-    void draw(std::vector<std::shared_ptr<TextBlock>> textBlocks, VkCommandBuffer commandBuffer) override;
-    void recreateBuffers(std::vector<std::shared_ptr<TextBlock>> textBlocks) override;
+    void initialize() override;
+    void destroy() override;
+    void draw() override;
+    void update() override;
 
 protected:
-    void _createVertexAndIndexBuffers(std::vector<std::shared_ptr<TextBlock>> &textBlocks);
-
     void _createPipeline();
+    void _createVertexAndIndexBuffers();
 };
 
 }  // namespace vft

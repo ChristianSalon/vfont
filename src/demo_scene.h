@@ -15,8 +15,8 @@
 
 #include <VFONT/font.h>
 #include <VFONT/text_block.h>
-#include <VFONT/renderer.h>
 #include <VFONT/text_block_builder.h>
+#include <VFONT/text_renderer_utils.h>
 
 #include "scene.h"
 
@@ -58,7 +58,7 @@ private:
 
 public:
 
-    DemoScene(CameraType cameraType, vft::Renderer::TessellationStrategy tessellationAlgorithm, bool measureTime = false);
+    DemoScene(CameraType cameraType, vft::TessellationStrategy tessellationAlgorithm, bool measureTime = false);
     ~DemoScene();
 
 };

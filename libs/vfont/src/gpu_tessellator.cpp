@@ -7,14 +7,10 @@
 
 namespace vft {
 
-GpuTessellator::GpuTessellator(GlyphCache &cache) : Tessellator{cache} {}
+GpuTessellator::GpuTessellator() {}
 
 Glyph GpuTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<vft::Font> font, unsigned int fontSize) {
     GlyphKey key{font->getFontFamily(), glyphId, 0};
-    if (this->_cache.exists(key)) {
-        return this->_cache.getGlyph(key);
-    }
-
     Glyph glyph = GpuTessellator::_composeGlyph(glyphId, font);
 
     std::vector<glm::vec2> vertices = glyph.mesh.getVertices();
@@ -50,7 +46,6 @@ Glyph GpuTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<vft::Font> 
 
     GlyphMesh mesh{vertices, {boundingBoxIndices, curveIndices, lineIndices}};
     glyph.mesh = mesh;
-    this->_cache.setGlyph(key, glyph);
 
     return glyph;
 }

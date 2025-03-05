@@ -35,7 +35,7 @@ protected:
     std::vector<Edge> _edges;
 
 public:
-    CpuTessellator(GlyphCache &cache);
+    CpuTessellator();
     ~CpuTessellator() = default;
 
     Glyph composeGlyph(uint32_t glyphId, std::shared_ptr<vft::Font> font, unsigned int fontSize = 0) override;

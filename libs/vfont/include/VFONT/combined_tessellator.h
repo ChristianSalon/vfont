@@ -21,6 +21,9 @@ namespace vft {
 
 class CombinedTessellator : public Tessellator {
 public:
+    static constexpr unsigned int GLYPH_MESH_TRIANGLE_BUFFER_INDEX = 0;
+    static constexpr unsigned int GLYPH_MESH_CURVE_BUFFER_INDEX = 1;
+
     static FT_Outline_MoveToFunc _moveToFunc;
     static FT_Outline_LineToFunc _lineToFunc;
     static FT_Outline_ConicToFunc _conicToFunc;
@@ -29,7 +32,7 @@ protected:
     std::vector<Edge> _edges;
 
 public:
-    CombinedTessellator(GlyphCache &cache);
+    CombinedTessellator();
     ~CombinedTessellator() = default;
 
     Glyph composeGlyph(uint32_t glyphId, std::shared_ptr<vft::Font> font, unsigned int fontSize = 0) override;

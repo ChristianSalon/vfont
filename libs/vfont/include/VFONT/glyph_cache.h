@@ -21,10 +21,10 @@ namespace vft {
 class GlyphKey {
 public:
     std::string fontName;
-    uint32_t codePoint;
+    uint32_t glyphId;
     unsigned int fontSize;
 
-    GlyphKey(std::string fontName, uint32_t codePoint, unsigned int fontSize);
+    GlyphKey(std::string fontName, uint32_t glyphId, unsigned int fontSize);
 
     bool operator==(const GlyphKey &rhs) const = default;
 };
@@ -32,9 +32,9 @@ public:
 struct GlyphKeyHash {
     std::size_t operator()(const GlyphKey &key) const {
         std::size_t fontNameHash = std::hash<std::string>()(key.fontName);
-        std::size_t codePointHash = std::hash<uint32_t>()(key.codePoint);
+        std::size_t glyphIdHash = std::hash<uint32_t>()(key.glyphId);
         std::size_t fontSizeHash = std::hash<unsigned int>()(key.fontSize);
-        return fontSizeHash ^ (codePointHash << 1) ^ (fontNameHash << 2);
+        return fontSizeHash ^ (glyphIdHash << 1) ^ (fontNameHash << 2);
     }
 };
 

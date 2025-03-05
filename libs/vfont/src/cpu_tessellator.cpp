@@ -9,7 +9,7 @@
 
 namespace vft {
 
-CpuTessellator::CpuTessellator(GlyphCache &cache) : Tessellator{cache} {}
+CpuTessellator::CpuTessellator() {}
 
 FT_Outline_MoveToFunc CpuTessellator::_moveToFunc = [](const FT_Vector *to, void *user) {
     CpuTessellator *pThis = reinterpret_cast<CpuTessellator *>(user);
@@ -133,15 +133,13 @@ FT_Outline_ConicToFunc CpuTessellator::_conicToFunc = [](const FT_Vector *contro
 };
 
 Glyph CpuTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<vft::Font> font, unsigned int fontSize) {
-    GlyphKey key{font->getFontFamily(), glyphId, fontSize};
-    if (this->_cache.exists(key)) {
-        return this->_cache.getGlyph(key);
-    }
-
     this->_font = font;
     this->_fontSize = fontSize;
     this->_edges.clear();
+
+    GlyphKey key{font->getFontFamily(), glyphId, fontSize};
     Glyph glyph = this->_composeGlyph(glyphId, font);
+
     if (CpuTessellator::_currentGlyphData.contourCount >= 2) {
         std::vector<glm::vec2> vertices = glyph.mesh.getVertices();
         this->_combineContours(vertices, this->_edges);
@@ -153,7 +151,6 @@ Glyph CpuTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<vft::Font> 
 
     GlyphMesh mesh{vertices, {triangles}};
     glyph.mesh = mesh;
-    this->_cache.setGlyph(key, glyph);
 
     return glyph;
 }

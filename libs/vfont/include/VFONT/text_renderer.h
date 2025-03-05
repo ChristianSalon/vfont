@@ -11,16 +11,9 @@
 #include <vector>
 
 #include <vulkan/vulkan.h>
+#include <glm/mat4x4.hpp>
 
-#include "combined_drawer.h"
-#include "combined_tessellator.h"
-#include "cpu_drawer.h"
-#include "cpu_tessellator.h"
-#include "drawer.h"
 #include "glyph_cache.h"
-#include "gpu_drawer.h"
-#include "gpu_tessellator.h"
-#include "renderer.h"
 #include "tessellator.h"
 #include "text_block.h"
 #include "text_renderer_utils.h"
@@ -32,40 +25,29 @@ namespace vft {
  *
  * @brief Creates vertex and index buffers for specified characters
  */
-class TextRenderer : public Renderer {
+class TextRenderer {
 protected:
-    TessellationStrategy _tessellationStrategy;
+    UniformBufferObject _ubo{glm::mat4{1.f}, glm::mat4{1.f}};
+    unsigned int _viewportWidth{0};
+    unsigned int _viewportHeight{0};
 
-    std::vector<std::shared_ptr<TextBlock>> _blocks; /**< All text blocks to be rendered */
-    std::shared_ptr<Tessellator> _tessellator;
-    std::shared_ptr<Drawer> _drawer;
-    GlyphCache _cache;
-
-    VulkanContext _vulkanContext;
+    std::vector<std::shared_ptr<TextBlock>> _textBlocks{}; /**< All text blocks to be rendered */
+    std::shared_ptr<GlyphCache> _cache{nullptr};
+    std::unique_ptr<Tessellator> _tessellator{nullptr};
 
 public:
-    TextRenderer();
-    ~TextRenderer() override;
+    TextRenderer() = default;
+    virtual ~TextRenderer() = default;
 
-    void init(TessellationStrategy tessellationStrategy, VulkanContext vulkanContext) override;
-    void destroy() override;
-    void add(std::shared_ptr<TextBlock> text) override;
-    void draw(VkCommandBuffer commandBuffer) override;
+    virtual void initialize();
+    virtual void destroy();
+    virtual void add(std::shared_ptr<TextBlock> text);
+    virtual void draw() = 0;
+    virtual void update() = 0;
 
-    void setUniformBuffers(vft::UniformBufferObject ubo) override;
-    void setViewportSize(unsigned int width, unsigned int height) override;
-
-    void setCache(GlyphCache &cache) override;
-    void setCacheSize(unsigned long maxSize) override;
-
-    VulkanContext getVulkanContext();
-
-protected:
-    void _setPhysicalDevice(VkPhysicalDevice physicalDevice);
-    void _setLogicalDevice(VkDevice logicalDevice);
-    void _setCommandPool(VkCommandPool commandPool);
-    void _setGraphicsQueue(VkQueue graphicsQueue);
-    void _setRenderPass(VkRenderPass renderPass);
+    virtual void setUniformBuffers(UniformBufferObject ubo);
+    virtual void setViewportSize(unsigned int width, unsigned int height);
+    virtual void setCache(std::shared_ptr<GlyphCache> cache);
 };
 
 }  // namespace vft

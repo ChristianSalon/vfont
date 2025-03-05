@@ -120,4 +120,6 @@ public:
     VulkanContext() {}
 };
 
+enum class TessellationStrategy { SDF, TRIANGULATION, TESSELLATION_SHADERS, WINDING_NUMBER };
+
 }  // namespace vft

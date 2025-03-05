@@ -18,18 +18,9 @@ namespace vft {
  * @param position Position of character relative to text block
  * @param transform Text block model matrix
  */
-Character::Character(const Glyph glyph, uint32_t codePoint, std::shared_ptr<Font> font, unsigned int fontSize)
-    : glyph{glyph}, _codePoint{codePoint}, _font{font}, _fontSize{fontSize} {
+Character::Character(uint32_t glyphId, uint32_t codePoint, std::shared_ptr<Font> font, unsigned int fontSize)
+    : _glyphId{glyphId}, _codePoint{codePoint}, _font{font}, _fontSize{fontSize} {
     this->_updateModelMatrix();
-}
-
-/**
- * @brief Setter for unicode code point
- *
- * @param unicodeCodePoint Unicode code point of character
- */
-void Character::setCodePoint(uint32_t codePoint) {
-    this->_codePoint = codePoint;
 }
 
 void Character::setAdvance(glm::vec2 advance) {
@@ -44,6 +35,10 @@ void Character::setPosition(glm::vec2 position) {
 void Character::setTransform(glm::mat4 transform) {
     this->_parentMatrix = transform;
     this->_updateModelMatrix();
+}
+
+uint32_t Character::getGlyphId() const {
+    return this->_glyphId;
 }
 
 /**

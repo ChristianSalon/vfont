@@ -10,7 +10,7 @@ namespace vft {
 Glyph Tessellator::_currentGlyph{};
 ComposedGlyphData Tessellator::_currentGlyphData{};
 
-Tessellator::Tessellator(GlyphCache &cache) : _cache{cache} {};
+Tessellator::Tessellator(){};
 
 /**
  * @brief Freetype outline decomposition move_to function.

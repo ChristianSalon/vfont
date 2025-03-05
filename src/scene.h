@@ -21,13 +21,15 @@
 #include <vulkan/vulkan.h>
 #include <glm/mat4x4.hpp>
 
-#include <VFONT/text_renderer.h>
+#include <VFONT/vulkan_text_renderer.h>
 #include <VFONT/text_renderer_utils.h>
 #include <VFONT/font.h>
 #include <VFONT/text_block.h>
-#include <VFONT/text_renderer.h>
-#include <VFONT/timed_renderer.h>
-#include <VFONT/tessellator.h>
+#include <VFONT/vulkan_triangulation_text_renderer.h>
+#include <VFONT/vulkan_tessellation_shaders_text_renderer.h>
+#include <VFONT/vulkan_winding_number_text_renderer.h>
+#include <VFONT/i_vulkan_text_renderer.h>
+#include <VFONT/vulkan_timed_renderer.h>
 
 #include "window.h"
 #include "base_camera.h"
@@ -72,7 +74,7 @@ protected:
     std::vector<const char *> validationLayers;             /**< Selected vulkan validation layers */
 
     bool _measureTime;
-    std::shared_ptr<vft::Renderer> _renderer;                            /**< Default text renderer */
+    std::shared_ptr<vft::IVulkanTextRenderer> _renderer;                            /**< Default text renderer */
     std::shared_ptr<MainWindow> _window;                    /**< Application window */
     std::unique_ptr<BaseCamera> _camera;                    /**< Camera object */
     CameraType _cameraType;                                 /**< Type of camera used for rendering */
@@ -98,7 +100,7 @@ protected:
 
 public:
 
-    Scene(CameraType cameraType, vft::Renderer::TessellationStrategy tessellationAlgorithm, bool measureTime = false);
+    Scene(CameraType cameraType, vft::TessellationStrategy tessellationAlgorithm, bool measureTime = false);
     ~Scene();
 
     void run();
