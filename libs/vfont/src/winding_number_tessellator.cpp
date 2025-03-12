@@ -11,7 +11,7 @@ WindingNumberTessellator::WindingNumberTessellator() {}
 
 Glyph WindingNumberTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<vft::Font> font, unsigned int fontSize) {
     GlyphKey key{font->getFontFamily(), glyphId, 0};
-    Glyph glyph = WindingNumberTessellator::_composeGlyph(glyphId, font);
+    Glyph glyph = this->_composeGlyph(glyphId, font);
 
     std::vector<glm::vec2> vertices = glyph.mesh.getVertices();
     std::vector<vft::Edge> lineSegments = glyph.getLineSegmentsIndices();

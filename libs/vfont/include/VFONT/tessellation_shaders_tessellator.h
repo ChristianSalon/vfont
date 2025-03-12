@@ -9,11 +9,13 @@
 #include <memory>
 #include <vector>
 
+#include "circular_dll.h"
 #include "font.h"
 #include "glyph.h"
 #include "glyph_cache.h"
 #include "glyph_compositor.h"
 #include "glyph_mesh.h"
+#include "polygon_operator.h"
 #include "tessellator.h"
 #include "text_renderer_utils.h"
 
@@ -24,12 +26,10 @@ public:
     static constexpr unsigned int GLYPH_MESH_TRIANGLE_BUFFER_INDEX = 0;
     static constexpr unsigned int GLYPH_MESH_CURVE_BUFFER_INDEX = 1;
 
-    static FT_Outline_MoveToFunc _moveToFunc;
-    static FT_Outline_LineToFunc _lineToFunc;
-    static FT_Outline_ConicToFunc _conicToFunc;
-
 protected:
-    std::vector<Edge> _edges;
+    std::vector<glm::vec2> _vertices{};
+    std::vector<CircularDLL<uint32_t>> _firstPolygon{};
+    std::vector<CircularDLL<uint32_t>> _secondPolygon{};
 
 public:
     TessellationShadersTessellator();
@@ -38,12 +38,7 @@ public:
     Glyph composeGlyph(uint32_t glyphId, std::shared_ptr<vft::Font> font, unsigned int fontSize = 0) override;
 
 protected:
-    int _combineContours(std::vector<glm::vec2> &vertices, std::vector<Edge> &edges);
-    int _combineContours();
-
-    FT_Outline_MoveToFunc _getMoveToFunc() override;
-    FT_Outline_LineToFunc _getLineToFunc() override;
-    FT_Outline_ConicToFunc _getConicToFunc() override;
+    bool _isOnLeftSide(const glm::vec2 &lineStartingPoint, const glm::vec2 &lineEndingPoint, const glm::vec2 &point);
 };
 
 }  // namespace vft

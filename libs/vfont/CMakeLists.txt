@@ -28,6 +28,8 @@ set(VFONT_HEADERS
     include/VFONT/triangulation_tessellator.h
     include/VFONT/winding_number_tessellator.h
     include/VFONT/tessellation_shaders_tessellator.h
+    include/VFONT/circular_dll.h
+    include/VFONT/polygon_operator.h
 )
 set(VFONT_SOURCES
     src/text_renderer.cpp
@@ -53,6 +55,8 @@ set(VFONT_SOURCES
     src/triangulation_tessellator.cpp
     src/winding_number_tessellator.cpp
     src/tessellation_shaders_tessellator.cpp
+    src/circular_dll.cpp
+    src/polygon_operator.cpp
 )
 
 add_library(${LIB_NAME} STATIC ${VFONT_HEADERS} ${VFONT_SOURCES})

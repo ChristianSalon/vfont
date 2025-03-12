@@ -82,9 +82,10 @@ public:
     uint32_t vertexId;             /**< Currently processed glyph's vertex id counter */
     uint32_t contourStartVertexId; /**< Vertex id for the starting vertex of a contour */
     glm::vec2 lastVertex;          /**< Last vertex processed */
+    uint32_t lastVertexIndex;      /**< Index of last vertex processed */
     int contourCount;              /**< Number of processed contours */
 
-    ComposedGlyphData() : vertexId{0}, contourStartVertexId{0}, lastVertex{0, 0}, contourCount{0} {}
+    ComposedGlyphData() : vertexId{0}, contourStartVertexId{0}, lastVertex{0, 0}, lastVertexIndex{0}, contourCount{0} {}
 };
 
 /**
