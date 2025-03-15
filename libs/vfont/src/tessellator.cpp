@@ -13,68 +13,66 @@ Tessellator::Tessellator() {
 
         // Start processing new contour
         glm::vec2 newVertex{static_cast<float>(to->x), static_cast<float>(to->y)};
-        long newVertexIndex = pThis->_getVertexIndex(newVertex);
-
-        if (newVertexIndex < 0) {
+        uint32_t newVertexIndex = pThis->_getVertexIndex(newVertex);
+        if (newVertexIndex == pThis->_currentGlyphData.vertexId) {
             pThis->_currentGlyph.mesh.addVertex(newVertex);
-            pThis->_currentGlyphData.contourStartVertexId = pThis->_currentGlyphData.vertexId;
             pThis->_currentGlyphData.vertexId++;
-        } else {
-            pThis->_currentGlyphData.contourStartVertexId = newVertexIndex;
         }
 
+        // Update glyph data
         pThis->_currentGlyphData.lastVertex = newVertex;
+        pThis->_currentGlyphData.lastVertexIndex = newVertexIndex;
+        pThis->_currentGlyphData.contourStartVertexId = newVertexIndex;
         pThis->_currentGlyphData.contourCount++;
+
         return 0;
     };
 
     this->_lineToFunc = [](const FT_Vector *to, void *user) {
         Tessellator *pThis = reinterpret_cast<Tessellator *>(user);
 
-        uint32_t lastVertexIndex = pThis->_getVertexIndex(pThis->_currentGlyphData.lastVertex);
-
         glm::vec2 newVertex{static_cast<float>(to->x), static_cast<float>(to->y)};
-        long newVertexIndex = pThis->_getVertexIndex(newVertex);
-        if (newVertexIndex < 0) {
+        uint32_t newVertexIndex = pThis->_getVertexIndex(newVertex);
+        if (newVertexIndex == pThis->_currentGlyphData.vertexId) {
             pThis->_currentGlyph.mesh.addVertex(newVertex);
-            newVertexIndex = pThis->_currentGlyphData.vertexId;
             pThis->_currentGlyphData.vertexId++;
         }
 
         // Add line segment
-        pThis->_currentGlyph.addLineSegment(Edge{lastVertexIndex, static_cast<uint32_t>(newVertexIndex)});
+        pThis->_currentGlyph.addLineSegment(Edge{pThis->_currentGlyphData.lastVertexIndex, newVertexIndex});
 
+        // Update glyph data
         pThis->_currentGlyphData.lastVertex = newVertex;
+        pThis->_currentGlyphData.lastVertexIndex = newVertexIndex;
+
         return 0;
     };
 
     this->_conicToFunc = [](const FT_Vector *control, const FT_Vector *to, void *user) {
         Tessellator *pThis = reinterpret_cast<Tessellator *>(user);
 
-        uint32_t startPointIndex = pThis->_getVertexIndex(pThis->_currentGlyphData.lastVertex);
-        glm::vec2 startPoint = pThis->_currentGlyph.mesh.getVertices().at(startPointIndex);
-
         glm::vec2 controlPoint{static_cast<float>(control->x), static_cast<float>(control->y)};
-        long controlPointIndex = pThis->_getVertexIndex(controlPoint);
-        if (controlPointIndex < 0) {
+        uint32_t controlPointIndex = pThis->_getVertexIndex(controlPoint);
+        if (controlPointIndex == pThis->_currentGlyphData.vertexId) {
             pThis->_currentGlyph.mesh.addVertex(controlPoint);
-            controlPointIndex = pThis->_currentGlyphData.vertexId;
             pThis->_currentGlyphData.vertexId++;
         }
 
         glm::vec2 endPoint{static_cast<float>(to->x), static_cast<float>(to->y)};
-        long endPointIndex = pThis->_getVertexIndex(endPoint);
-        if (endPointIndex < 0) {
+        uint32_t endPointIndex = pThis->_getVertexIndex(endPoint);
+        if (endPointIndex == pThis->_currentGlyphData.vertexId) {
             pThis->_currentGlyph.mesh.addVertex(endPoint);
-            endPointIndex = pThis->_currentGlyphData.vertexId;
             pThis->_currentGlyphData.vertexId++;
         }
 
         // Add quadratic bezier curve segment
         pThis->_currentGlyph.addCurveSegment(
-            Curve{startPointIndex, static_cast<uint32_t>(controlPointIndex), static_cast<uint32_t>(endPointIndex)});
+            Curve{pThis->_currentGlyphData.lastVertexIndex, controlPointIndex, endPointIndex});
 
+        // Update glyph data
         pThis->_currentGlyphData.lastVertex = endPoint;
+        pThis->_currentGlyphData.lastVertexIndex = endPointIndex;
+
         return 0;
     };
 
@@ -119,8 +117,8 @@ Glyph Tessellator::_composeGlyph(uint32_t glyphId, std::shared_ptr<Font> font) {
     return this->_currentGlyph;
 }
 
-long Tessellator::_getVertexIndex(const glm::vec2 &vertex) {
-    long i = 0;
+uint32_t Tessellator::_getVertexIndex(const glm::vec2 &vertex) {
+    uint32_t i = 0;
 
     for (const glm::vec2 &glyphVertex : this->_currentGlyph.mesh.getVertices()) {
         if (glm::distance(vertex, glyphVertex) <= 1.f) {
@@ -130,7 +128,7 @@ long Tessellator::_getVertexIndex(const glm::vec2 &vertex) {
         i++;
     }
 
-    return -1;
+    return this->_currentGlyphData.vertexId;
 }
 
 }  // namespace vft

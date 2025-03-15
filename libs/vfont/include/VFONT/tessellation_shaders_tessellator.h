@@ -28,8 +28,8 @@ public:
 
 protected:
     std::vector<glm::vec2> _vertices{};
-    std::vector<CircularDLL<uint32_t>> _firstPolygon{};
-    std::vector<CircularDLL<uint32_t>> _secondPolygon{};
+    std::vector<CircularDLL<Edge>> _firstPolygon{};
+    std::vector<CircularDLL<Edge>> _secondPolygon{};
 
 public:
     TessellationShadersTessellator();

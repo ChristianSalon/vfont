@@ -7,6 +7,8 @@
 
 #include <stdexcept>
 
+#include "text_renderer_utils.h"
+
 namespace vft {
 
 template <typename T>

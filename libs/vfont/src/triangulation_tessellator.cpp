@@ -16,30 +16,29 @@ TriangulationTessellator::TriangulationTessellator() {
         if (pThis->_currentGlyphData.contourCount >= 2) {
             // Perform union of contours
             PolygonOperator polygonOperator{};
-            polygonOperator.join(pThis->_vertices, pThis->_firstPolygon, pThis->_secondPolygon);
-            pThis->_vertices = polygonOperator.getVertices();
+            polygonOperator.join(pThis->_currentGlyph.mesh.getVertices(), pThis->_firstPolygon, pThis->_secondPolygon);
+            pThis->_currentGlyph.mesh.setVertices(polygonOperator.getVertices());
             pThis->_firstPolygon = polygonOperator.getPolygon();
-            pThis->_secondPolygon = {CircularDLL<uint32_t>{}};
+            pThis->_secondPolygon = {CircularDLL<Edge>{}};
 
-            pThis->_currentGlyphData.vertexId = pThis->_vertices.size();
+            pThis->_currentGlyphData.vertexId = pThis->_currentGlyph.mesh.getVertexCount();
         } else if (pThis->_currentGlyphData.contourCount == 1) {
             pThis->_firstPolygon = pThis->_secondPolygon;
-            pThis->_secondPolygon = {CircularDLL<uint32_t>{}};
+            pThis->_secondPolygon = {CircularDLL<Edge>{}};
         }
 
         // Process contour starting vertex
-        glm::vec2 newVertex{static_cast<float>(to->x), static_cast<float>(to->y)};
-        pThis->_vertices.push_back(newVertex);
-        uint32_t newVertexIndex = pThis->_currentGlyphData.vertexId;
-        pThis->_currentGlyphData.vertexId++;
-
-        // Add vertex to polygon
-        pThis->_secondPolygon[0].insertLast(newVertexIndex);
+        glm::vec2 vertex{static_cast<float>(to->x), static_cast<float>(to->y)};
+        uint32_t vertexIndex = pThis->_getVertexIndex(vertex);
+        if (vertexIndex == pThis->_currentGlyphData.vertexId) {
+            pThis->_currentGlyph.mesh.addVertex(vertex);
+            pThis->_currentGlyphData.vertexId++;
+        }
 
         // Update glyph data
-        pThis->_currentGlyphData.contourStartVertexId = newVertexIndex;
-        pThis->_currentGlyphData.lastVertex = newVertex;
-        pThis->_currentGlyphData.lastVertexIndex = newVertexIndex;
+        pThis->_currentGlyphData.contourStartVertexId = vertexIndex;
+        pThis->_currentGlyphData.lastVertex = vertex;
+        pThis->_currentGlyphData.lastVertexIndex = vertexIndex;
         pThis->_currentGlyphData.contourCount++;
 
         return 0;
@@ -50,15 +49,17 @@ TriangulationTessellator::TriangulationTessellator() {
 
         // Process line end vertex
         glm::vec2 endVertex{static_cast<float>(to->x), static_cast<float>(to->y)};
-        pThis->_vertices.push_back(endVertex);
-        uint32_t endVertexIndex = pThis->_currentGlyphData.vertexId;
-        pThis->_currentGlyphData.vertexId++;
+        uint32_t endVertexIndex = pThis->_getVertexIndex(endVertex);
+        if (endVertexIndex == pThis->_currentGlyphData.vertexId) {
+            pThis->_currentGlyph.mesh.addVertex(endVertex);
+            pThis->_currentGlyphData.vertexId++;
+        }
 
         // Create line segment
         pThis->_currentGlyph.addLineSegment(Edge{pThis->_currentGlyphData.lastVertexIndex, endVertexIndex});
 
-        // Add vertex to polygon
-        pThis->_secondPolygon[0].insertLast(endVertexIndex);
+        // Add edge to polygon
+        pThis->_secondPolygon[0].insertLast(Edge{pThis->_currentGlyphData.lastVertexIndex, endVertexIndex});
 
         // Update glyph data
         pThis->_currentGlyphData.lastVertex = endVertex;
@@ -74,37 +75,47 @@ TriangulationTessellator::TriangulationTessellator() {
 
         // Process curve control vertex
         glm::vec2 controlPoint{static_cast<float>(control->x), static_cast<float>(control->y)};
-        pThis->_vertices.push_back(controlPoint);
-        uint32_t controlVertexPointIndex = pThis->_currentGlyphData.vertexId;
-        pThis->_currentGlyphData.vertexId++;
+        uint32_t controlPointVertexIndex = pThis->_getVertexIndex(controlPoint);
+        if (controlPointVertexIndex == pThis->_currentGlyphData.vertexId) {
+            pThis->_currentGlyph.mesh.addVertex(controlPoint);
+            pThis->_currentGlyphData.vertexId++;
+        }
 
         // Process curve end vertex
         glm::vec2 endPoint{static_cast<float>(to->x), static_cast<float>(to->y)};
-        pThis->_vertices.push_back(endPoint);
-        uint32_t endPointVertexIndex = pThis->_currentGlyphData.vertexId;
-        pThis->_currentGlyphData.vertexId++;
+        uint32_t endPointVertexIndex = pThis->_getVertexIndex(endPoint);
+        if (endPointVertexIndex == pThis->_currentGlyphData.vertexId) {
+            pThis->_currentGlyph.mesh.addVertex(endPoint);
+            pThis->_currentGlyphData.vertexId++;
+        }
 
         // Create curve segment
         pThis->_currentGlyph.addCurveSegment(
-            Curve{pThis->_currentGlyphData.lastVertexIndex, controlVertexPointIndex, endPointVertexIndex});
+            Curve{pThis->_currentGlyphData.lastVertexIndex, controlPointVertexIndex, endPointVertexIndex});
 
         // Adaptive subdivision of quadratic bezier curve
         std::array<glm::vec2, 3> curve{pThis->_font->getScalingVector(pThis->_fontSize) * startPoint,
                                        pThis->_font->getScalingVector(pThis->_fontSize) * controlPoint,
                                        pThis->_font->getScalingVector(pThis->_fontSize) * endPoint};
         std::set<float> newVertices = pThis->_subdivideQuadraticBezier(curve);
+
+        uint32_t lastVertexIndex = pThis->_currentGlyphData.lastVertexIndex;
         for (float t : newVertices) {
             if (t == 0) {
                 continue;
             }
 
             glm::vec2 newVertex{(1 - t) * (1 - t) * startPoint + 2 * (1 - t) * t * controlPoint + (t * t) * endPoint};
-            pThis->_vertices.push_back(newVertex);
-            uint32_t newVertexIndex = pThis->_currentGlyphData.vertexId;
-            pThis->_currentGlyphData.vertexId++;
+            uint32_t newVertexIndex = pThis->_getVertexIndex(newVertex);
+            if (newVertexIndex == pThis->_currentGlyphData.vertexId) {
+                pThis->_currentGlyph.mesh.addVertex(newVertex);
+                pThis->_currentGlyphData.vertexId++;
+            }
 
-            // Add vertex to polygon
-            pThis->_secondPolygon[0].insertLast(newVertexIndex);
+            // Add edge to polygon
+            pThis->_secondPolygon[0].insertLast(Edge{lastVertexIndex, newVertexIndex});
+
+            lastVertexIndex = newVertexIndex;
         }
 
         // Update glyph data
@@ -120,8 +131,8 @@ Glyph TriangulationTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<v
     this->_fontSize = fontSize;
 
     // Initialize polygons
-    this->_firstPolygon = {CircularDLL<uint32_t>{}};
-    this->_secondPolygon = {CircularDLL<uint32_t>{}};
+    this->_firstPolygon = {CircularDLL<Edge>{}};
+    this->_secondPolygon = {CircularDLL<Edge>{}};
 
     GlyphKey key{font->getFontFamily(), glyphId, fontSize};
     Glyph glyph = this->_composeGlyph(glyphId, font);
@@ -133,15 +144,15 @@ Glyph TriangulationTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<v
     if (this->_currentGlyphData.contourCount >= 1) {
         // Perform union of contours
         PolygonOperator polygonOperator{};
-        polygonOperator.join(this->_vertices, this->_firstPolygon, this->_secondPolygon);
+        polygonOperator.join(this->_currentGlyph.mesh.getVertices(), this->_firstPolygon, this->_secondPolygon);
         vertices = polygonOperator.getVertices();
-        std::vector<CircularDLL<uint32_t>> polygon = polygonOperator.getPolygon();
+        std::vector<CircularDLL<Edge>> polygon = polygonOperator.getPolygon();
 
         // Create edges for triangulation
-        for (CircularDLL<uint32_t> &contour : polygon) {
+        for (CircularDLL<Edge> &contour : polygon) {
             for (unsigned int i = 0; i < contour.size(); i++) {
-                uint32_t startVertexIndex = contour.getAt(i)->value;
-                uint32_t endVertexIndex = contour.getAt(i)->next->value;
+                uint32_t startVertexIndex = contour.getAt(i)->value.first;
+                uint32_t endVertexIndex = contour.getAt(i)->value.second;
 
                 edges.push_back(Edge{startVertexIndex, endVertexIndex});
             }

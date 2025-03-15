@@ -22,9 +22,9 @@ namespace vft {
 class Contour {
 public:
     bool visited;
-    CircularDLL<uint32_t> list;
+    CircularDLL<Edge> list;
 
-    Contour(bool visited, CircularDLL<uint32_t> list) : visited{visited}, list{list} {}
+    Contour(bool visited, CircularDLL<Edge> list) : visited{visited}, list{list} {}
 };
 
 class PolygonOperator {
@@ -38,34 +38,38 @@ protected:
     std::vector<glm::vec2> _vertices{};
     std::vector<Contour> _first{};
     std::vector<Contour> _second{};
-    std::vector<CircularDLL<uint32_t>> _output{};
+    std::vector<CircularDLL<Edge>> _output{};
 
-    std::list<uint32_t> _normalIntersections{};
-    std::list<uint32_t> _specialIntersections{};
+    std::list<uint32_t> _intersections{};
 
 public:
     void join(const std::vector<glm::vec2> &vertices,
-              const std::vector<CircularDLL<uint32_t>> &first,
-              const std::vector<CircularDLL<uint32_t>> &second);
+              const std::vector<CircularDLL<Edge>> &first,
+              const std::vector<CircularDLL<Edge>> &second);
 
     void setEpsilon(double epsilon);
 
     std::vector<glm::vec2> getVertices();
-    std::vector<CircularDLL<uint32_t>> getPolygon();
+    std::vector<CircularDLL<Edge>> getPolygon();
 
 protected:
     void _initializeContours(const std::vector<glm::vec2> &vertices,
-                             const std::vector<CircularDLL<uint32_t>> &first,
-                             const std::vector<CircularDLL<uint32_t>> &second);
+                             const std::vector<CircularDLL<Edge>> &first,
+                             const std::vector<CircularDLL<Edge>> &second);
 
+    std::vector<CircularDLL<Edge>> _resolveSelfIntersections(CircularDLL<Edge> contour);
+    void _resolveOverlappingEdges();
     void _resolveIntersectingEdges();
     bool _intersect(Edge first, Edge second, glm::vec2 &intersection);
 
     void _walkContours();
-    uint32_t _walkUntilIntersectionOrStart(CircularDLL<uint32_t>::Node *start, unsigned int contourIndex);
-    void _markContourAsVisited(CircularDLL<uint32_t>::Node *vertex);
+    uint32_t _walkUntilIntersectionOrStart(CircularDLL<Edge>::Node *start, unsigned int contourIndex);
+    void _markContourAsVisited(CircularDLL<Edge>::Node *vertex);
 
-    std::vector<CircularDLL<uint32_t>::Node *> _getEdgesStartingAt(uint32_t vertex);
+    void _addIntersectionIfNeeded(std::list<uint32_t> &intersections, uint32_t intersection);
+    void _removeUnwantedIntersections(std::list<uint32_t> &intersections, const std::vector<Contour> &contours);
+
+    std::vector<CircularDLL<Edge>::Node *> _getEdgesStartingAt(uint32_t vertex);
     bool _isOnLeftSide(glm::vec2 lineStartingPoint, glm::vec2 lineEndingPoint, glm::vec2 point);
     double _determinant(double a, double b, double c, double d);
     bool _isEdgeOnEdge(Edge first, Edge second);

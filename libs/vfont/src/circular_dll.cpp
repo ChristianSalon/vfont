@@ -142,7 +142,7 @@ void CircularDLL<T>::insertLast(T value) {
 template <typename T>
 void CircularDLL<T>::deleteAt(unsigned int index) {
     index = index % this->_size;
-    
+
     if (index == 0) {
         this->deleteFirst();
         return;
@@ -251,5 +251,6 @@ unsigned int CircularDLL<T>::size() const {
 }
 
 template class CircularDLL<uint32_t>;
+template class CircularDLL<Edge>;
 
 }  // namespace vft

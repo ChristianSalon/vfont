@@ -36,9 +36,6 @@ protected:
     std::vector<uint32_t> _lineSegmentsIndices{};  /**< Index buffer */
     std::vector<uint32_t> _curveSegmentsIndices{}; /**< Index buffer */
 
-    unsigned int _viewportWidth{0};
-    unsigned int _viewportHeight{0};
-
     VkBuffer _vertexBuffer{nullptr};                         /**< Vulkan vertex buffer */
     VkDeviceMemory _vertexBufferMemory{nullptr};             /**< Vulkan vertex buffer memory */
     VkBuffer _lineSegmentsIndexBuffer{nullptr};              /**< Vulkan index buffer */

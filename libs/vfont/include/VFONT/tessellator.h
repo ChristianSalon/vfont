@@ -39,7 +39,7 @@ public:
 
 protected:
     Glyph _composeGlyph(uint32_t glyphId, std::shared_ptr<vft::Font> font);
-    long _getVertexIndex(const glm::vec2 &vertex);
+    uint32_t _getVertexIndex(const glm::vec2 &vertex);
 };
 
 }  // namespace vft
