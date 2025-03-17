@@ -11,50 +11,47 @@
 
 #include <glm/vec2.hpp>
 
+#include "curve.h"
+#include "edge.h"
 #include "glyph_mesh.h"
-#include "text_renderer_utils.h"
 
 namespace vft {
 
 /**
- * @class Glyph
- *
- * @brief Represents glyph vertex data and metrics expressed in font units
+ * @brief Represents glyph data and metrics expressed in font units
  */
 class Glyph {
 public:
-    GlyphMesh mesh;
+    GlyphMesh mesh{}; /**< Mesh storing vertex and index buffers used for rendering */
 
 protected:
-    std::vector<vft::Curve> _curveSegments;
-    std::vector<vft::Edge> _lineSegments;
+    std::vector<Curve> _curveSegments{}; /**< Curve segments of glyph */
+    std::vector<Edge> _lineSegments{};   /**< Line segment of glyph */
 
-    long _width;
-    long _height;
+    long _width{0};  /**< Width of glyph */
+    long _height{0}; /**< Height of glyph */
 
-    long _bearingX;
-    long _bearingY;
+    long _bearingX{0}; /**< Bearing in the direction of x axis */
+    long _bearingY{0}; /**< Bearing in the direction of y axis */
 
     /**
      * Indicates by how much to increment the X coordinate of pen position.
      * This includes the glyph's width plus the space behind.
      * Used for horizontal layouts
      */
-    long _advanceX;
+    long _advanceX{0};
 
     /**
      * Indicates by how much to increment the Y coordinate of pen position.
      * Not specified for horizontal layouts
      */
-    long _advanceY;
+    long _advanceY{0};
 
 public:
-    Glyph();
+    Glyph() = default;
 
-    void addLineSegment(vft::Edge edge);
-    void addCurveSegment(vft::Curve curve);
-
-    std::array<glm::vec2, 4> getBoundingBox() const;
+    void addLineSegment(Edge edge);
+    void addCurveSegment(Curve curve);
 
     void setWidth(long width);
     void setHeight(long height);
@@ -63,8 +60,10 @@ public:
     void setAdvanceX(long advanceX);
     void setAdvanceY(long advanceY);
 
-    const std::vector<vft::Edge> &getLineSegmentsIndices() const;
-    const std::vector<vft::Curve> &getCurveSegmentsIndices() const;
+    std::array<glm::vec2, 4> getBoundingBox() const;
+
+    const std::vector<Edge> &getLineSegmentsIndices() const;
+    const std::vector<Curve> &getCurveSegmentsIndices() const;
     uint32_t getLineSegmentsIndexCount() const;
     uint32_t getCurveSegmentsIndexCount() const;
 

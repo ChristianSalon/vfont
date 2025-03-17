@@ -10,19 +10,17 @@
 #include <vulkan/vulkan.h>
 
 #include "i_vulkan_text_renderer.h"
-#include "text_renderer_utils.h"
+#include "text_renderer.h"
 #include "vulkan_text_renderer.h"
 
 namespace vft {
 
 /**
- * @class VulkanTextRendererDecorator
- *
  * @brief Base class for all vulkan text renderer decorators
  */
 class VulkanTextRendererDecorator : public IVulkanTextRenderer {
 protected:
-    VulkanTextRenderer *_renderer;
+    VulkanTextRenderer *_renderer; /**< Wrapped vulkan text renderer */
 
 public:
     explicit VulkanTextRendererDecorator(VulkanTextRenderer *renderer);

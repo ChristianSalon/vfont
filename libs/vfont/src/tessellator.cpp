@@ -7,6 +7,9 @@
 
 namespace vft {
 
+/**
+ * @brief Tessellator constructor, initializes freetype outline decompose functions
+ */
 Tessellator::Tessellator() {
     this->_moveToFunc = [](const FT_Vector *to, void *user) {
         Tessellator *pThis = reinterpret_cast<Tessellator *>(user);
@@ -14,16 +17,16 @@ Tessellator::Tessellator() {
         // Start processing new contour
         glm::vec2 newVertex{static_cast<float>(to->x), static_cast<float>(to->y)};
         uint32_t newVertexIndex = pThis->_getVertexIndex(newVertex);
-        if (newVertexIndex == pThis->_currentGlyphData.vertexId) {
+        if (newVertexIndex == pThis->vertexIndex) {
             pThis->_currentGlyph.mesh.addVertex(newVertex);
-            pThis->_currentGlyphData.vertexId++;
+            pThis->vertexIndex++;
         }
 
         // Update glyph data
-        pThis->_currentGlyphData.lastVertex = newVertex;
-        pThis->_currentGlyphData.lastVertexIndex = newVertexIndex;
-        pThis->_currentGlyphData.contourStartVertexId = newVertexIndex;
-        pThis->_currentGlyphData.contourCount++;
+        pThis->lastVertex = newVertex;
+        pThis->lastVertexIndex = newVertexIndex;
+        pThis->contourStartVertexIndex = newVertexIndex;
+        pThis->contourCount++;
 
         return 0;
     };
@@ -33,17 +36,17 @@ Tessellator::Tessellator() {
 
         glm::vec2 newVertex{static_cast<float>(to->x), static_cast<float>(to->y)};
         uint32_t newVertexIndex = pThis->_getVertexIndex(newVertex);
-        if (newVertexIndex == pThis->_currentGlyphData.vertexId) {
+        if (newVertexIndex == pThis->vertexIndex) {
             pThis->_currentGlyph.mesh.addVertex(newVertex);
-            pThis->_currentGlyphData.vertexId++;
+            pThis->vertexIndex++;
         }
 
         // Add line segment
-        pThis->_currentGlyph.addLineSegment(Edge{pThis->_currentGlyphData.lastVertexIndex, newVertexIndex});
+        pThis->_currentGlyph.addLineSegment(Edge{pThis->lastVertexIndex, newVertexIndex});
 
         // Update glyph data
-        pThis->_currentGlyphData.lastVertex = newVertex;
-        pThis->_currentGlyphData.lastVertexIndex = newVertexIndex;
+        pThis->lastVertex = newVertex;
+        pThis->lastVertexIndex = newVertexIndex;
 
         return 0;
     };
@@ -53,25 +56,24 @@ Tessellator::Tessellator() {
 
         glm::vec2 controlPoint{static_cast<float>(control->x), static_cast<float>(control->y)};
         uint32_t controlPointIndex = pThis->_getVertexIndex(controlPoint);
-        if (controlPointIndex == pThis->_currentGlyphData.vertexId) {
+        if (controlPointIndex == pThis->vertexIndex) {
             pThis->_currentGlyph.mesh.addVertex(controlPoint);
-            pThis->_currentGlyphData.vertexId++;
+            pThis->vertexIndex++;
         }
 
         glm::vec2 endPoint{static_cast<float>(to->x), static_cast<float>(to->y)};
         uint32_t endPointIndex = pThis->_getVertexIndex(endPoint);
-        if (endPointIndex == pThis->_currentGlyphData.vertexId) {
+        if (endPointIndex == pThis->vertexIndex) {
             pThis->_currentGlyph.mesh.addVertex(endPoint);
-            pThis->_currentGlyphData.vertexId++;
+            pThis->vertexIndex++;
         }
 
         // Add quadratic bezier curve segment
-        pThis->_currentGlyph.addCurveSegment(
-            Curve{pThis->_currentGlyphData.lastVertexIndex, controlPointIndex, endPointIndex});
+        pThis->_currentGlyph.addCurveSegment(Curve{pThis->lastVertexIndex, controlPointIndex, endPointIndex});
 
         // Update glyph data
-        pThis->_currentGlyphData.lastVertex = endPoint;
-        pThis->_currentGlyphData.lastVertexIndex = endPointIndex;
+        pThis->lastVertex = endPoint;
+        pThis->lastVertexIndex = endPointIndex;
 
         return 0;
     };
@@ -83,10 +85,10 @@ Tessellator::Tessellator() {
 }
 
 /**
- * @brief Creates a triangulated glyph if not in cache and inserts glyph into cache
+ * @brief Composes a glyph using freetype
  *
- * @param codePoint Unicode code point of glyph to triangulate
- * @param font Font to use for triangulation
+ * @param glyphId Id of glyph to compose
+ * @param font Font of glyph
  */
 Glyph Tessellator::_composeGlyph(uint32_t glyphId, std::shared_ptr<Font> font) {
     // Get glyph from .ttf file
@@ -95,9 +97,15 @@ Glyph Tessellator::_composeGlyph(uint32_t glyphId, std::shared_ptr<Font> font) {
     }
     FT_GlyphSlot slot = font->getFace()->glyph;
 
-    // Decompose outlines to vertices and vertex indices
+    // Initialize member variables
+    this->vertexIndex = 0;
+    this->lastVertex = glm::vec2{0, 0};
+    this->lastVertexIndex = 0;
+    this->contourStartVertexIndex = 0;
+    this->contourCount = 0;
     this->_currentGlyph = Glyph{};
-    this->_currentGlyphData = ComposedGlyphData{};
+
+    // Decompose outlines to vertices and vertex indices
     FT_Outline_Funcs outlineFunctions{.move_to = this->_moveToFunc,
                                       .line_to = this->_lineToFunc,
                                       .conic_to = this->_conicToFunc,
@@ -117,6 +125,13 @@ Glyph Tessellator::_composeGlyph(uint32_t glyphId, std::shared_ptr<Font> font) {
     return this->_currentGlyph;
 }
 
+/**
+ * @brief Get index of given vertex from vertices of currently composed glyph
+ *
+ * @param vertex Given vertex
+ *
+ * @return Index of given vertex
+ */
 uint32_t Tessellator::_getVertexIndex(const glm::vec2 &vertex) {
     uint32_t i = 0;
 
@@ -128,7 +143,7 @@ uint32_t Tessellator::_getVertexIndex(const glm::vec2 &vertex) {
         i++;
     }
 
-    return this->_currentGlyphData.vertexId;
+    return this->vertexIndex;
 }
 
 }  // namespace vft

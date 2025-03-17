@@ -7,15 +7,25 @@
 
 namespace vft {
 
+/**
+ * @brief WindingNumberTessellator constructor
+ */
 WindingNumberTessellator::WindingNumberTessellator() {}
 
+/**
+ * @brief Composes a glyph ready for rendering
+ *
+ * @param glyphId Id of glyph to compose
+ * @param font Font of glyph
+ * @param fontSize Font size of glyph
+ */
 Glyph WindingNumberTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<vft::Font> font, unsigned int fontSize) {
     GlyphKey key{font->getFontFamily(), glyphId, 0};
     Glyph glyph = this->_composeGlyph(glyphId, font);
 
     std::vector<glm::vec2> vertices = glyph.mesh.getVertices();
-    std::vector<vft::Edge> lineSegments = glyph.getLineSegmentsIndices();
-    std::vector<vft::Curve> curveSegments = glyph.getCurveSegmentsIndices();
+    std::vector<Edge> lineSegments = glyph.getLineSegmentsIndices();
+    std::vector<Curve> curveSegments = glyph.getCurveSegmentsIndices();
 
     // Create bounding box indices that form two triangles
     uint32_t newVertexIndex = vertices.size();
@@ -31,14 +41,14 @@ Glyph WindingNumberTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<v
 
     // Create line segments index buffer
     std::vector<uint32_t> lineIndices;
-    for (vft::Edge edge : lineSegments) {
+    for (Edge edge : lineSegments) {
         lineIndices.push_back(edge.first);
         lineIndices.push_back(edge.second);
     }
 
     // Create curve segments index buffer
     std::vector<uint32_t> curveIndices;
-    for (vft::Curve curve : curveSegments) {
+    for (Curve curve : curveSegments) {
         curveIndices.push_back(curve.start);
         curveIndices.push_back(curve.control);
         curveIndices.push_back(curve.end);

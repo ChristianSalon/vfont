@@ -7,9 +7,20 @@
 
 namespace vft {
 
-TextSegment::TextSegment(std::shared_ptr<Font> font, unsigned int fontSize)
-    : _font{font}, _fontSize{fontSize}, _transform{1.f} {}
+/**
+ * @brief TextSegment constructor
+ *
+ * @param font Font of characters in segment
+ * @param fontSize Font size of characters in segment
+ */
+TextSegment::TextSegment(std::shared_ptr<Font> font, unsigned int fontSize) : _font{font}, _fontSize{fontSize} {}
 
+/**
+ * @brief Add unicode code points to segment at given position
+ *
+ * @param codePoints Unicode code points
+ * @param start Index where to start adding code points
+ */
 void TextSegment::add(const std::vector<uint32_t> &codePoints, unsigned int start) {
     if (start == std::numeric_limits<unsigned int>::max()) {
         start = this->_codePoints.size();
@@ -26,6 +37,12 @@ void TextSegment::add(const std::vector<uint32_t> &codePoints, unsigned int star
     this->_shape();
 }
 
+/**
+ * @brief Remove unicode code points from segment
+ *
+ * @param start Index from which to start removing code points
+ * @param count Number of code points to remove
+ */
 void TextSegment::remove(unsigned int start, unsigned int count) {
     if (count == 0) {
         return;
@@ -45,6 +62,11 @@ void TextSegment::remove(unsigned int start, unsigned int count) {
     this->_shape();
 }
 
+/**
+ * @brief Set and apply transform of text block to characters in segment
+ *
+ * @param transform Transform matrix
+ */
 void TextSegment::setTransform(glm::mat4 transform) {
     this->_transform = transform;
 
@@ -53,34 +75,72 @@ void TextSegment::setTransform(glm::mat4 transform) {
     }
 }
 
+/**
+ * @brief Get transform of text block
+ *
+ * @return Transform matrix
+ */
 glm::mat4 TextSegment::getTransform() const {
     return this->_transform;
 }
 
+/**
+ * @brief Get unicode code points in segment
+ *
+ * @return Code points
+ */
 const std::vector<uint32_t> &TextSegment::getCodePoints() {
     return this->_codePoints;
 }
 
+/**
+ * @brief Get characters in segment
+ *
+ * @return Characters
+ */
 std::vector<Character> &TextSegment::getCharacters() {
     return this->_characters;
 }
 
+/**
+ * @brief Get number of unicode code points in segment
+ *
+ * @return Number of code points
+ */
 unsigned int TextSegment::getCodePointCount() const {
     return this->_codePoints.size();
 }
 
+/**
+ * @brief Get number of characters in segment
+ *
+ * @return Number of charcters
+ */
 unsigned int TextSegment::getCharacterCount() const {
     return this->_characters.size();
 }
 
+/**
+ * @brief Get font of characters in segment
+ *
+ * @return Font
+ */
 std::shared_ptr<Font> TextSegment::getFont() const {
     return this->_font;
 }
 
+/**
+ * @brief Get font size of characters in segment
+ *
+ * @return Font size
+ */
 unsigned int TextSegment::getFontSize() const {
     return this->_fontSize;
 }
 
+/**
+ * @brief Shape all code points in segment
+ */
 void TextSegment::_shape() {
     // Shape whole segment
     std::vector<std::vector<ShapedCharacter>> shaped = Shaper::shape(this->_codePoints, this->_font, this->_fontSize);
@@ -91,8 +151,6 @@ void TextSegment::_shape() {
     unsigned int shapedLineCount = 0;
     for (const std::vector<ShapedCharacter> &shapedLine : shaped) {
         for (const ShapedCharacter &shapedCharacter : shapedLine) {
-            // Creates glyph if not in cache
-            // Glyph glyph = tessellator->composeGlyph(shapedCharacter.glyphId, this->_font, this->_fontSize);
             Character character{shapedCharacter.glyphId, 0, this->_font, this->_fontSize};
             character.setAdvance(glm::vec2(shapedCharacter.xAdvance, shapedCharacter.yAdvance));
             character.setTransform(this->_transform);

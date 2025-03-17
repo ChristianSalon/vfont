@@ -10,18 +10,16 @@
 
 #include <glm/vec2.hpp>
 
-#include "text_renderer_utils.h"
+#include "edge.h"
 
 namespace vft {
 
 /**
- * @class GlyphCompositor
- *
  * @brief Composes a triangulated glyph from glyph outlines
  */
 class GlyphCompositor {
 public:
-    static std::vector<uint32_t> triangulate(std::vector<glm::vec2> &vertices, std::vector<vft::Edge> &edges);
+    static std::vector<uint32_t> triangulate(std::vector<glm::vec2> &vertices, std::vector<Edge> &edges);
 };
 
 }  // namespace vft

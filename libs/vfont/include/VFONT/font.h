@@ -11,19 +11,16 @@
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
-
-#include "glyph.h"
+#include <glm/vec2.hpp>
 
 namespace vft {
 
 /**
- * @class Font
- *
- * @brief Represents a font and stores triangulated glyphs in cache
+ * @brief Represents a freetype font
  */
 class Font {
 public:
-    static constexpr unsigned int DEFAULT_FONT_SIZE = 64;
+    static constexpr unsigned int DEFAULT_FONT_SIZE = 64; /**< Default font size used when initializing freetype font */
 
 protected:
     FT_Library _ft;        /**< Freetype library */

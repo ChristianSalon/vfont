@@ -22,7 +22,7 @@
 #include <glm/mat4x4.hpp>
 
 #include <VFONT/vulkan_text_renderer.h>
-#include <VFONT/text_renderer_utils.h>
+#include <VFONT/text_renderer.h>
 #include <VFONT/font.h>
 #include <VFONT/text_block.h>
 #include <VFONT/vulkan_triangulation_text_renderer.h>

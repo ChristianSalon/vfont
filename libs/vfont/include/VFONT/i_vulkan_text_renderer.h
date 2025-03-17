@@ -5,20 +5,13 @@
 
 #pragma once
 
-#include <memory>
-
 #include <vulkan/vulkan.h>
 
-#include "glyph_cache.h"
-#include "text_block.h"
 #include "text_renderer.h"
-#include "text_renderer_utils.h"
 
 namespace vft {
 
 /**
- * @class IVulkanTextRenderer
- *
  * @brief Interface for Vulkan text renderers
  */
 class IVulkanTextRenderer : public TextRenderer {

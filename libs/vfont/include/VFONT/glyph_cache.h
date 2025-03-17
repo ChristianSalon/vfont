@@ -18,17 +18,23 @@
 
 namespace vft {
 
+/**
+ * @brief Key for glyphs stored in glyph cache
+ */
 class GlyphKey {
 public:
-    std::string fontName;
-    uint32_t glyphId;
-    unsigned int fontSize;
+    std::string fontName;  /**< Font name of glyph */
+    uint32_t glyphId;      /**< Glyph */
+    unsigned int fontSize; /**< Font size of glyph */
 
     GlyphKey(std::string fontName, uint32_t glyphId, unsigned int fontSize);
 
     bool operator==(const GlyphKey &rhs) const = default;
 };
 
+/**
+ * @brief Hash of glyph keys in cache
+ */
 struct GlyphKeyHash {
     std::size_t operator()(const GlyphKey &key) const {
         std::size_t fontNameHash = std::hash<std::string>()(key.fontName);
@@ -38,12 +44,15 @@ struct GlyphKeyHash {
     }
 };
 
+/**
+ * @brief LRU cache for glyphs
+ */
 class GlyphCache {
 private:
-    unsigned long _maxSize{ULONG_MAX};
+    unsigned long _maxSize{ULONG_MAX}; /**< Maximum size of cache */
 
-    std::unordered_map<GlyphKey, Glyph, GlyphKeyHash> _cache{};
-    std::list<GlyphKey> _used{};
+    std::unordered_map<GlyphKey, Glyph, GlyphKeyHash> _cache{}; /**< Hash map used to store glyphs */
+    std::list<GlyphKey> _used{}; /**< Linked list of glyphs in cache ordered by most recently used glyph */
 
 public:
     GlyphCache(unsigned long maxSize);
@@ -52,7 +61,7 @@ public:
 
     void setGlyph(GlyphKey key, Glyph glyph);
     const Glyph &getGlyph(GlyphKey key);
-    bool exists(GlyphKey key);
+    bool exists(GlyphKey key) const;
 
     void clearGlyph(GlyphKey key);
     void clearAll();

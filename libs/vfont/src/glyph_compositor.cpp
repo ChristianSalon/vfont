@@ -12,7 +12,7 @@ namespace vft {
 /**
  * @brief Performs constrained delaunay triangulation on a glyph
  */
-std::vector<uint32_t> GlyphCompositor::triangulate(std::vector<glm::vec2> &vertices, std::vector<vft::Edge> &edges) {
+std::vector<uint32_t> GlyphCompositor::triangulate(std::vector<glm::vec2> &vertices, std::vector<Edge> &edges) {
     // CDT uses Constrained Delaunay Triangulation algorithm
     CDT::Triangulation<float> cdt{CDT::VertexInsertionOrder::Auto, CDT::IntersectingConstraintEdges::TryResolve,
                                   1.0e-6};
@@ -21,8 +21,7 @@ std::vector<uint32_t> GlyphCompositor::triangulate(std::vector<glm::vec2> &verti
         vertices.begin(), vertices.end(), [](const glm::vec2 &p) { return p.x; },
         [](const glm::vec2 &p) { return p.y; });
     cdt.insertEdges(
-        edges.begin(), edges.end(), [](const vft::Edge &e) { return e.first; },
-        [](const vft::Edge &e) { return e.second; });
+        edges.begin(), edges.end(), [](const Edge &e) { return e.first; }, [](const Edge &e) { return e.second; });
     cdt.eraseOuterTrianglesAndHoles();
 
     // Create index buffer from triangulation

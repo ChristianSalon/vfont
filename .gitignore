@@ -58,7 +58,7 @@ CMakePresets.json
 
 build/
 out/
-doc/
+doc*/
 .editorconfig
 
 # Include everyting in bin folder

@@ -9,6 +9,13 @@
 
 namespace vft {
 
+/**
+ * @brief Union of two polygons
+ *
+ * @param vertices Vertices of both polygons
+ * @param first First polygon
+ * @param second Second polygon
+ */
 void PolygonOperator::join(const std::vector<glm::vec2> &vertices,
                            const std::vector<CircularDLL<Edge>> &first,
                            const std::vector<CircularDLL<Edge>> &second) {
@@ -23,6 +30,13 @@ void PolygonOperator::join(const std::vector<glm::vec2> &vertices,
     this->_walkContours();
 }
 
+/**
+ * @brief Initialize polygons to be ready for traversal
+ *
+ * @param vertices Vertices of both polygons
+ * @param first First polygon
+ * @param second Second polygon
+ */
 void PolygonOperator::_initializeContours(const std::vector<glm::vec2> &vertices,
                                           const std::vector<CircularDLL<Edge>> &first,
                                           const std::vector<CircularDLL<Edge>> &second) {
@@ -31,13 +45,15 @@ void PolygonOperator::_initializeContours(const std::vector<glm::vec2> &vertices
     this->_second.clear();
     this->_output.clear();
 
-    // Initialize both polygons
+    // Initialize first polygon
     this->_vertices = vertices;
     for (CircularDLL<Edge> contour : first) {
         for (CircularDLL<Edge> contourWithNoIntersections : this->_resolveSelfIntersections(contour)) {
             this->_first.push_back(Contour{false, contourWithNoIntersections});
         }
     }
+
+    // Initialize second polygon
     for (CircularDLL<Edge> contour : second) {
         for (CircularDLL<Edge> contourWithNoIntersections : this->_resolveSelfIntersections(contour)) {
             this->_second.push_back(Contour{false, contourWithNoIntersections});
@@ -45,6 +61,13 @@ void PolygonOperator::_initializeContours(const std::vector<glm::vec2> &vertices
     }
 }
 
+/**
+ * @brief Resolve self intersections of one contour
+ *
+ * @param contour Contour
+ *
+ * @return Contours with no self intersections
+ */
 std::vector<CircularDLL<Edge>> PolygonOperator::_resolveSelfIntersections(CircularDLL<Edge> contour) {
     std::list<uint32_t> intersections;
 
@@ -257,6 +280,9 @@ std::vector<CircularDLL<Edge>> PolygonOperator::_resolveSelfIntersections(Circul
     return output;
 }
 
+/**
+ * @brief Resolve overlapping edges between the first and second polygon
+ */
 void PolygonOperator::_resolveOverlappingEdges() {
     for (Contour &firstPolygonContour : this->_first) {
         for (unsigned int i = 0; i < firstPolygonContour.list.size(); i++) {
@@ -333,6 +359,9 @@ void PolygonOperator::_resolveOverlappingEdges() {
     }
 }
 
+/**
+ * @brief Resolve normal intersections and intersections at shared vertex between the first and second polygon
+ */
 void PolygonOperator::_resolveIntersectingEdges() {
     for (Contour &firstPolygonContour : this->_first) {
         for (unsigned int i = 0; i < firstPolygonContour.list.size(); i++) {
@@ -394,6 +423,15 @@ void PolygonOperator::_resolveIntersectingEdges() {
     }
 }
 
+/**
+ * @brief Check if edges intersect
+ *
+ * @param first First edge
+ * @param second Second edge
+ * @param intersection Sets the point of intesection if exists
+ *
+ * @return True if edges intersect
+ */
 bool PolygonOperator::_intersect(Edge first, Edge second, glm::vec2 &intersection) {
     double x1 = this->_vertices.at(first.first).x;
     double y1 = this->_vertices.at(first.first).y;
@@ -430,6 +468,9 @@ bool PolygonOperator::_intersect(Edge first, Edge second, glm::vec2 &intersectio
     return false;
 }
 
+/**
+ * @brief Traverse both polygons to construct the output polygon
+ */
 void PolygonOperator::_walkContours() {
     uint32_t startVertex = 0;  // Starting vertex of current contour
     uint32_t endVertex = 0;    // Last processed vertex of current contour
@@ -495,6 +536,14 @@ void PolygonOperator::_walkContours() {
     }
 }
 
+/**
+ * @brief Traverse given contour until start of currently processed contour or until intersection
+ *
+ * @param start Starting edge
+ * @param contourIndex Index of currently processed contour
+ *
+ * @return Index of vertex where traversal ended
+ */
 uint32_t PolygonOperator::_walkUntilIntersectionOrStart(CircularDLL<Edge>::Node *start, unsigned int contourIndex) {
     while (std::find(this->_intersections.begin(), this->_intersections.end(), start->value.second) ==
                this->_intersections.end()  // End of current edge is a intersection
@@ -514,11 +563,16 @@ uint32_t PolygonOperator::_walkUntilIntersectionOrStart(CircularDLL<Edge>::Node 
     return start->value.second;
 }
 
-void PolygonOperator::_markContourAsVisited(CircularDLL<Edge>::Node *vertex) {
+/**
+ * @brief Mark contour with given edge as visited
+ *
+ * @param edge Edge of polygon
+ */
+void PolygonOperator::_markContourAsVisited(CircularDLL<Edge>::Node *edge) {
     // Search in first polygon
     for (Contour &contour : this->_first) {
         for (unsigned int i = 0; i < contour.list.size(); i++) {
-            if (vertex == contour.list.getAt(i)) {
+            if (edge == contour.list.getAt(i)) {
                 // Found contour including vertex
                 contour.visited = true;
                 return;
@@ -529,7 +583,7 @@ void PolygonOperator::_markContourAsVisited(CircularDLL<Edge>::Node *vertex) {
     // Search in second polygon
     for (Contour &contour : this->_second) {
         for (unsigned int i = 0; i < contour.list.size(); i++) {
-            if (vertex == contour.list.getAt(i)) {
+            if (edge == contour.list.getAt(i)) {
                 // Found contour including vertex
                 contour.visited = true;
                 return;
@@ -538,12 +592,24 @@ void PolygonOperator::_markContourAsVisited(CircularDLL<Edge>::Node *vertex) {
     }
 }
 
+/**
+ * @brief Add point of intersection to list if not already in list
+ *
+ * @param intersections List of intersections
+ * @param intersection Index of vertex at intersection
+ */
 void PolygonOperator::_addIntersectionIfNeeded(std::list<uint32_t> &intersections, uint32_t intersection) {
     if (std::find(intersections.begin(), intersections.end(), intersection) == intersections.end()) {
         intersections.push_back(intersection);
     }
 }
 
+/**
+ * @brief Remove vertices from list of intersections if no edges start at intersection
+ *
+ * @param intersections List of intersections
+ * @param contours List of contours containing edges to search
+ */
 void PolygonOperator::_removeUnwantedIntersections(std::list<uint32_t> &intersections,
                                                    const std::vector<Contour> &contours) {
     std::erase_if(intersections, [&](uint32_t intersection) {
@@ -560,6 +626,13 @@ void PolygonOperator::_removeUnwantedIntersections(std::list<uint32_t> &intersec
     });
 }
 
+/**
+ * @brief Get edges from first and second polygon that start at given vertex
+ *
+ * @param vertex Vertex
+ *
+ * @return Edges starting at vertex
+ */
 std::vector<CircularDLL<Edge>::Node *> PolygonOperator::_getEdgesStartingAt(uint32_t vertex) {
     std::vector<CircularDLL<Edge>::Node *> edges;
 
@@ -590,6 +663,15 @@ std::vector<CircularDLL<Edge>::Node *> PolygonOperator::_getEdgesStartingAt(uint
     return edges;
 }
 
+/**
+ * @brief Check whether point lies on the left side of line
+ *
+ * @param lineStartingPoint Line start
+ * @param lineEndingPoint Line end
+ * @param point Point to check
+ *
+ * @return True if point lies on the left of line
+ */
 bool PolygonOperator::_isOnLeftSide(glm::vec2 lineStartingPoint, glm::vec2 lineEndingPoint, glm::vec2 point) {
     float a = lineEndingPoint.y - lineStartingPoint.y;
     float b = lineStartingPoint.x - lineEndingPoint.x;
@@ -599,15 +681,41 @@ bool PolygonOperator::_isOnLeftSide(glm::vec2 lineStartingPoint, glm::vec2 lineE
     return d < 0;
 }
 
+/**
+ * @brief Calculates the determinant of a 2x2 matrix
+ *
+ * @param a Top left value
+ * @param b Top right value
+ * @param c Bottom left value
+ * @param d Bottom right value
+ *
+ * @return Determinant
+ */
 double PolygonOperator::_determinant(double a, double b, double c, double d) {
     return (a * d) - (b * c);
 }
 
+/**
+ * @brief Checks whether the second edge fully lies on first edge
+ *
+ * @param first First edge
+ * @param second Second edge
+ *
+ * @return True if second edge fully lies on second edge
+ */
 bool PolygonOperator::_isEdgeOnEdge(Edge first, Edge second) {
     return this->_isPointOnEdge(this->_vertices.at(first.first), second) &&
            this->_isPointOnEdge(this->_vertices.at(first.second), second);
 }
 
+/**
+ * @brief Check whether a point lies on edge
+ *
+ * @param point Point oto check
+ * @param edge Given edge
+ *
+ * @return True if point lies on edge
+ */
 bool PolygonOperator::_isPointOnEdge(glm::vec2 point, Edge edge) {
     // Check if point lies in the bounding box of edge
     if (point.x < std::min(this->_vertices.at(edge.first).x, this->_vertices.at(edge.second).x) ||
@@ -623,6 +731,11 @@ bool PolygonOperator::_isPointOnEdge(glm::vec2 point, Edge edge) {
     return glm::abs(glm::cross(glm::vec3{lineVector, 0.f}, glm::vec3{pointVector, 0.f}).z) < this->_epsilon;
 }
 
+/**
+ * @brief Set the maximum error
+ *
+ * @param epsilon Maximum error
+ */
 void PolygonOperator::setEpsilon(double epsilon) {
     if (epsilon < 0) {
         throw std::invalid_argument("PolygonOperator::setEpsilon(): Epsilon must be positive");
@@ -631,10 +744,21 @@ void PolygonOperator::setEpsilon(double epsilon) {
     this->_epsilon = epsilon;
 }
 
+/**
+ * @brief Get the final polygon after performing a boolean operation
+ *
+ * @return Output polygon
+ */
 std::vector<CircularDLL<Edge>> PolygonOperator::getPolygon() {
     return this->_output;
 }
 
+/**
+ * @brief Get vertices of final polygon (still contains all vertices before performing boolean operation, but also
+ * contains new intersections)
+ *
+ * @return Vertices of final polygon
+ */
 std::vector<glm::vec2> PolygonOperator::getVertices() {
     return this->_vertices;
 }

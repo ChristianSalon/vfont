@@ -7,15 +7,22 @@
 
 namespace vft {
 
+/**
+ * @brief Initialize vulkan text renderer
+ */
 void VulkanTextRenderer::initialize() {
     TextRenderer::initialize();
 
+    this->_createDescriptorPool();
+
     this->_createUbo();
     this->_createUboDescriptorSetLayout();
-    this->_createDescriptorPool();
     this->_createUboDescriptorSet();
 }
 
+/**
+ * @brief Deallocate memory and destroy vulkan text renderer
+ */
 void VulkanTextRenderer::destroy() {
     this->_destroyBuffer(this->_uboBuffer, this->_uboMemory);
 
@@ -25,6 +32,10 @@ void VulkanTextRenderer::destroy() {
         vkDestroyDescriptorSetLayout(this->_logicalDevice, this->_uboDescriptorSetLayout, nullptr);
 }
 
+/**
+ * @brief Set vulkan uniform buffer to the uniform buffer object
+ * @param ubo
+ */
 void VulkanTextRenderer::setUniformBuffers(UniformBufferObject ubo) {
     this->_ubo = ubo;
     memcpy(this->_mappedUbo, &this->_ubo, sizeof(this->_ubo));
@@ -108,6 +119,15 @@ void VulkanTextRenderer::setCommandBuffer(VkCommandBuffer commandBuffer) {
     this->_commandBuffer = commandBuffer;
 }
 
+/**
+ * @brief Create a vulkan buffer
+ *
+ * @param size Size of buffer
+ * @param usage Vulkan buffer usage flags
+ * @param properties Vulkan memory property flags
+ * @param buffer Handle to vulkan buffer
+ * @param bufferMemory Handle to vulkan buffer memory
+ */
 void VulkanTextRenderer::_createBuffer(VkDeviceSize size,
                                        VkBufferUsageFlags usage,
                                        VkMemoryPropertyFlags properties,
@@ -138,30 +158,68 @@ void VulkanTextRenderer::_createBuffer(VkDeviceSize size,
     vkBindBufferMemory(this->_logicalDevice, buffer, bufferMemory, 0);
 }
 
+/**
+ * @brief Getter for vulkan physical device
+ *
+ * @return Physical device
+ */
 VkPhysicalDevice VulkanTextRenderer::getPhysicalDevice() {
     return this->_physicalDevice;
 }
 
+/**
+ * @brief Getter for vulkan logical device
+ *
+ * @return Logical device
+ */
 VkDevice VulkanTextRenderer::getLogicalDevice() {
     return this->_logicalDevice;
 }
 
+/**
+ * @brief Getter for vulkan command pool
+ *
+ * @return Command pool
+ */
 VkCommandPool VulkanTextRenderer::getCommandPool() {
     return this->_commandPool;
 }
 
+/**
+ * @brief Getter for vulkan graphics queue
+ *
+ * @return Graphics queue
+ */
 VkQueue VulkanTextRenderer::getGraphicsQueue() {
     return this->_graphicsQueue;
 }
 
+/**
+ * @brief Getter for vulkan render pass
+ *
+ * @return Render pass
+ */
 VkRenderPass VulkanTextRenderer::getRenderPass() {
     return this->_renderPass;
 }
 
+/**
+ * @brief Getter for vulkan command buffer
+ *
+ * @return Command buffer
+ */
 VkCommandBuffer VulkanTextRenderer::getCommandBuffer() {
     return this->_commandBuffer;
 }
 
+/**
+ * @brief Selects a suitable memory type for Vulkan allocation.
+ *
+ * @param memoryType A bitmask specifying the memory type indices that are compatible
+ * @param properties The required memory property flags
+ *
+ * @return The index of a suitable memory type with specified properties
+ */
 uint32_t VulkanTextRenderer::_selectMemoryType(uint32_t memoryType, VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties memoryProperties;
     vkGetPhysicalDeviceMemoryProperties(this->_physicalDevice, &memoryProperties);
@@ -172,10 +230,19 @@ uint32_t VulkanTextRenderer::_selectMemoryType(uint32_t memoryType, VkMemoryProp
         }
     }
 
-    throw std::runtime_error(
-        "VulkanTextRenderer::_selectMemoryType(): Error selecting memory for vulkan vertex buffer");
+    throw std::runtime_error("VulkanTextRenderer::_selectMemoryType(): Error selecting memory for vulkan buffer");
 }
 
+/**
+ * @brief Copies data from one vulkan buffer to another
+ *
+ * This function records and submits a temporaray command buffer to copy data from the source buffer to the destination
+ * buffer
+ *
+ * @param sourceBuffer Vulkan buffer containing the source data
+ * @param destinationBuffer Vulkan buffer to copy data into
+ * @param bufferSize The size of the data to copy, in bytes
+ */
 void VulkanTextRenderer::_copyBuffer(VkBuffer sourceBuffer, VkBuffer destinationBuffer, VkDeviceSize bufferSize) {
     VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
     commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -211,6 +278,18 @@ void VulkanTextRenderer::_copyBuffer(VkBuffer sourceBuffer, VkBuffer destination
     vkFreeCommandBuffers(this->_logicalDevice, this->_commandPool, 1, &commandBuffer);
 }
 
+/**
+ * @brief Stages data and creates a vulkan buffer with the given usage
+ *
+ * This function first creates a temporary staging buffer in host-visible memory, copies the provided data into it, and
+ * then transfers the data to the final vulkan buffer with the specified usage flags
+ *
+ * @param data Pointer to the data to be copied
+ * @param size Size of the data to be copied in bytes
+ * @param destinationUsage Vulkan buffer usage flags for the destination buffer
+ * @param destinationBuffer The created vulkan buffer
+ * @param destinationMemory The allocated vulkan device memory
+ */
 void VulkanTextRenderer::_stageAndCreateVulkanBuffer(void *data,
                                                      VkDeviceSize size,
                                                      VkBufferUsageFlags destinationUsage,
@@ -239,6 +318,12 @@ void VulkanTextRenderer::_stageAndCreateVulkanBuffer(void *data,
     vkFreeMemory(this->_logicalDevice, stagingBufferMemory, nullptr);
 }
 
+/**
+ * @brief Destroys a vulkan buffer and frees its associated memory.
+ *
+ * @param buffer The vulkan buffer to be destroyed. It will be set to nullptr after destruction.
+ * @param bufferMemory The vulkan device memory associated with the buffer. It will be set to nullptr after being freed.
+ */
 void VulkanTextRenderer::_destroyBuffer(VkBuffer &buffer, VkDeviceMemory &bufferMemory) {
     if (buffer == nullptr)
         return;
@@ -252,6 +337,13 @@ void VulkanTextRenderer::_destroyBuffer(VkBuffer &buffer, VkDeviceMemory &buffer
     bufferMemory = nullptr;
 }
 
+/**
+ * @brief Returns the content of file given a file name
+ *
+ * @param fileName Name of file to read
+ *
+ * @return Contents of given file in bytes
+ */
 std::vector<char> VulkanTextRenderer::_readFile(std::string fileName) {
     std::ifstream file{fileName, std::ios::ate | std::ios::binary};
 
@@ -269,6 +361,13 @@ std::vector<char> VulkanTextRenderer::_readFile(std::string fileName) {
     return buffer;
 }
 
+/**
+ * @brief Creates a vulkan shader module from the shader code
+ *
+ * @param shaderCode Contents of the shader
+ *
+ * @return Vulkan shader module
+ */
 VkShaderModule VulkanTextRenderer::_createShaderModule(const std::vector<char> &shaderCode) {
     VkShaderModuleCreateInfo shaderModuleCreateInfo{};
     shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -284,6 +383,9 @@ VkShaderModule VulkanTextRenderer::_createShaderModule(const std::vector<char> &
     return shaderModule;
 }
 
+/**
+ * @brief Created a vulkan buffer with the contents of the uniform buffer object
+ */
 void VulkanTextRenderer::_createUbo() {
     VkDeviceSize bufferSize = sizeof(vft::UniformBufferObject);
 
@@ -294,6 +396,9 @@ void VulkanTextRenderer::_createUbo() {
     vkMapMemory(this->_logicalDevice, this->_uboMemory, 0, bufferSize, 0, &this->_mappedUbo);
 }
 
+/**
+ * @brief Creates a vulkan descriptor pool
+ */
 void VulkanTextRenderer::_createDescriptorPool() {
     VkDescriptorPoolSize poolSize{};
     poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -311,6 +416,9 @@ void VulkanTextRenderer::_createDescriptorPool() {
     }
 }
 
+/**
+ * @brief Creates a vulkan descriptor set layout for the uniform buffer object
+ */
 void VulkanTextRenderer::_createUboDescriptorSetLayout() {
     VkDescriptorSetLayoutBinding layoutBinding{};
     layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -331,6 +439,9 @@ void VulkanTextRenderer::_createUboDescriptorSetLayout() {
     }
 }
 
+/**
+ * @brief Create a vulkan descriptor set for the uniform buffer object
+ */
 void VulkanTextRenderer::_createUboDescriptorSet() {
     VkDescriptorSetAllocateInfo allocateInfo{};
     allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;

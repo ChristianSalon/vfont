@@ -8,15 +8,7 @@
 namespace vft {
 
 /**
- * @brief TextBloc constructor
- *
- * @param font Font used in text block
- * @param fontSize Font size in pixels
- * @param color Font color
- * @param position Position of text block in scene
- * @param width Width of text block. -1 indicates unlimited width
- * @param kerning Indicates whether to use kerning in block
- * @param wrapping Indicates whether to use wrapping in block
+ * @brief TextBlock constructor
  */
 TextBlock::TextBlock() : _font{nullptr}, _kerning{false} {
     this->setFontSize(0);
@@ -26,6 +18,12 @@ TextBlock::TextBlock() : _font{nullptr}, _kerning{false} {
     this->setTextAlign(std::make_unique<LeftTextAlign>());
 }
 
+/**
+ * @brief Add unicode code points to text block at given position
+ *
+ * @param codePoints Unicode code points
+ * @param start Position at which to start inserting text
+ */
 void TextBlock::add(std::vector<uint32_t> codePoints, unsigned int start) {
     if (codePoints.size() == 0) {
         return;
@@ -43,7 +41,7 @@ void TextBlock::add(std::vector<uint32_t> codePoints, unsigned int start) {
 
     // Check if code point at index start exists or if start is one index after last code point
     if (start > this->getCodePointCount()) {
-        throw std::out_of_range("add(): Start index is out of bounds");
+        throw std::out_of_range("TextBlock::add(): Start index is out of bounds");
     }
 
     // Global index of first character where to start updating line data and position
@@ -113,6 +111,12 @@ void TextBlock::add(std::vector<uint32_t> codePoints, unsigned int start) {
     }
 }
 
+/**
+ * @brief Add text into text block at given position
+ *
+ * @param text Input text
+ * @param start Position at which to start inserting text
+ */
 void TextBlock::add(std::string text, unsigned int start) {
     std::vector<uint32_t> codePoints;
     for (unsigned char character : text) {
@@ -123,8 +127,9 @@ void TextBlock::add(std::string text, unsigned int start) {
 }
 
 /**
- * @brief Remove characters from end of text block
+ * @brief Remove characters from text block
  *
+ * @param start Position at which to start removing text
  * @param count Amount of characters to remove
  */
 void TextBlock::remove(unsigned int start, unsigned int count) {
@@ -138,11 +143,11 @@ void TextBlock::remove(unsigned int start, unsigned int count) {
     }
 
     if (start >= this->getCodePointCount()) {
-        throw std::out_of_range("remove(): Start index is out of bounds");
+        throw std::out_of_range("TextBlock::remove(): Start index is out of bounds");
     }
 
     if (start + count > this->getCodePointCount()) {
-        throw std::out_of_range("remove(): Range exceeds available characters");
+        throw std::out_of_range("TextBlock::remove(): Range exceeds available characters");
     }
 
     // Edit text segments
@@ -213,7 +218,7 @@ void TextBlock::remove(unsigned int start, unsigned int count) {
 }
 
 /**
- * @brief Remove all characters in text block
+ * @brief Remove all characters from text block
  */
 void TextBlock::clear() {
     this->_segments.clear();
@@ -258,9 +263,9 @@ void TextBlock::rotate(float x, float y, float z) {
 }
 
 /**
- * @brief Set font in text block
+ * @brief Set font to use from now on
  *
- * @param font Font
+ * @param font Font to use
  */
 void TextBlock::setFont(std::shared_ptr<Font> font) {
     if (font == nullptr) {
@@ -271,7 +276,7 @@ void TextBlock::setFont(std::shared_ptr<Font> font) {
 }
 
 /**
- * @brief Set font size of characters in text block
+ * @brief Set font size to use from now on
  *
  * @param fontSize Font size in pixels
  */
@@ -282,14 +287,14 @@ void TextBlock::setFontSize(unsigned int fontSize) {
 /**
  * @brief Set color of characters in text block
  *
- * @param color Color
+ * @param color New color
  */
 void TextBlock::setColor(glm::vec4 color) {
     this->_color = color;
 }
 
 /**
- * @brief Set position of text block in scene
+ * @brief Set position of text block
  *
  * @param position 3D position
  */
@@ -300,7 +305,7 @@ void TextBlock::setPosition(glm::vec3 position) {
 }
 
 /**
- * @brief Set transform of text block and update characters
+ * @brief Set transform of text block
  *
  * @param transform Transform matrix
  */
@@ -321,7 +326,7 @@ void TextBlock::setWidth(int width) {
 }
 
 /**
- * @brief Check if font supports kerning, apply if supported and update characters
+ * @brief Check if font supports kerning and apply if supported
  *
  * @param kerning Indicates whether to use kerning in text block
  */
@@ -337,12 +342,17 @@ void TextBlock::setKerning(bool kerning) {
     }
 }
 
+/**
+ * @brief Set text align of text block
+ *
+ * @param textAlign Text align
+ */
 void TextBlock::setTextAlign(std::unique_ptr<TextAlignStrategy> textAlign) {
     this->_textAlign = std::move(textAlign);
 }
 
 /**
- * @brief Get all characters in text block
+ * @brief Get all renderable characters in text block
  *
  * @return Characters in text block
  */
@@ -355,6 +365,11 @@ std::vector<Character> TextBlock::getCharacters() {
     return characters;
 }
 
+/**
+ * @brief Get number of renderable characters in text block
+ *
+ * @return Number of characters
+ */
 unsigned int TextBlock::getCharacterCount() {
     unsigned int count = 0;
     for (const TextSegment &segment : this->_segments) {
@@ -364,6 +379,11 @@ unsigned int TextBlock::getCharacterCount() {
     return count;
 }
 
+/**
+ * @brief Get all unicode code points in text block
+ *
+ * @return Unicode code points
+ */
 std::vector<uint32_t> TextBlock::getCodePoints() {
     std::vector<uint32_t> codePoints;
     for (TextSegment &segment : this->_segments) {
@@ -373,6 +393,11 @@ std::vector<uint32_t> TextBlock::getCodePoints() {
     return codePoints;
 }
 
+/**
+ * @brief Get number of unicode code points in text block
+ *
+ * @return Number of code points
+ */
 unsigned int TextBlock::getCodePointCount() {
     unsigned int count = 0;
     for (const TextSegment &segment : this->_segments) {
@@ -383,18 +408,18 @@ unsigned int TextBlock::getCodePointCount() {
 }
 
 /**
- * @brief Get font used in text block
+ * @brief Get current font used in text block
  *
- * @return Font used in text block
+ * @return Current font
  */
 std::shared_ptr<Font> TextBlock::getFont() const {
     return this->_font;
 }
 
 /**
- * @brief Get font size used in text block
+ * @brief Get current font size used in text block
  *
- * @return Font size used in text block
+ * @return Current font size
  */
 unsigned int TextBlock::getFontSize() const {
     return this->_fontSize;
@@ -403,7 +428,7 @@ unsigned int TextBlock::getFontSize() const {
 /**
  * @brief Get font color used in text block
  *
- * @return Font color used in text block
+ * @return Color
  */
 glm::vec4 TextBlock::getColor() const {
     return this->_color;
@@ -472,6 +497,11 @@ void TextBlock::_updateTransform() {
     }
 }
 
+/**
+ * @brief Update renderable characters positions starting with character at given index
+ *
+ * @param start Index of starting character
+ */
 void TextBlock::_updateCharacterPositions(unsigned int start) {
     std::pair<unsigned int, LineData> firstLine = this->_lineDivider.getLineOfCharacter(start);
 
@@ -511,10 +541,18 @@ void TextBlock::_updateCharacterPositions(unsigned int start) {
     }
 }
 
+/**
+ * @brief Merge text segments if they have same properties
+ *
+ * @param first Iterator to first segment
+ * @param second Iterator to second segment
+ *
+ * @return Iterator to next segment
+ */
 std::list<TextSegment>::iterator TextBlock::_mergeSegmentsIfPossible(std::list<TextSegment>::iterator first,
                                                                      std::list<TextSegment>::iterator second) {
     if (first == this->_segments.end() || second == this->_segments.end()) {
-        throw std::out_of_range("_mergeSegmentsIfPossible(): Invalid segment iterator");
+        throw std::out_of_range("TextBlock::_mergeSegmentsIfPossible(): Invalid segment iterator");
     }
 
     if (first->getFont() == second->getFont() && first->getFontSize() == second->getFontSize()) {
@@ -529,9 +567,17 @@ std::list<TextSegment>::iterator TextBlock::_mergeSegmentsIfPossible(std::list<T
     return std::next(second);
 }
 
+/**
+ * @brief Get text segment based on the code point at given position
+ *
+ * @param index Position of code point in text block
+ *
+ * @return Text segment of code point
+ */
 TextSegment &TextBlock::_getSegmentBasedOnCodePointGlobalIndex(unsigned int index) {
     if (index > this->getCodePointCount()) {
-        throw std::out_of_range("_getSegmentBasedOnCodePointGlobalIndex(): Range exceeds available characters");
+        throw std::out_of_range(
+            "TextBlock::_getSegmentBasedOnCodePointGlobalIndex(): Range exceeds available characters");
     }
 
     if (!this->_segments.empty() && index == this->getCodePointCount()) {
@@ -547,12 +593,20 @@ TextSegment &TextBlock::_getSegmentBasedOnCodePointGlobalIndex(unsigned int inde
         currentIndex += segment.getCodePointCount();
     }
 
-    throw std::runtime_error("_getSegmentBasedOnCodePointGlobalIndex(): Such segment does not exist");
+    throw std::runtime_error("TextBlock::_getSegmentBasedOnCodePointGlobalIndex(): Such segment does not exist");
 }
 
+/**
+ * @brief Get text segment iterator based on the code point at given position
+ *
+ * @param index Position of code point in text block
+ *
+ * @return Text segment iterator of code point
+ */
 std::list<TextSegment>::iterator TextBlock::_getSegmentIteratorBasedOnCodePointGlobalIndex(unsigned int index) {
     if (index > this->getCodePointCount()) {
-        throw std::out_of_range("_getSegmentIteratorBasedOnCodePointGlobalIndex(): Range exceeds available characters");
+        throw std::out_of_range(
+            "TextBlock::_getSegmentIteratorBasedOnCodePointGlobalIndex(): Range exceeds available characters");
     }
 
     if (!this->_segments.empty() && index == this->getCodePointCount()) {
@@ -568,12 +622,21 @@ std::list<TextSegment>::iterator TextBlock::_getSegmentIteratorBasedOnCodePointG
         currentIndex += it->getCodePointCount();
     }
 
-    throw std::runtime_error("_getSegmentIteratorBasedOnCodePointGlobalIndex(): Such segment does not exist");
+    throw std::runtime_error(
+        "TextBlock::_getSegmentIteratorBasedOnCodePointGlobalIndex(): Such segment does not exist");
 }
 
+/**
+ * @brief Get text segment based on the character at given position
+ *
+ * @param index Position of character in text block
+ *
+ * @return Text segment of character
+ */
 TextSegment &TextBlock::_getSegmentBasedOnCharacterGlobalIndex(unsigned int index) {
     if (index > this->getCharacterCount()) {
-        throw std::out_of_range("_getSegmentBasedOnCharacterGlobalIndex(): Range exceeds available characters");
+        throw std::out_of_range(
+            "TextBlock::_getSegmentBasedOnCharacterGlobalIndex(): Range exceeds available characters");
     }
 
     if (!this->_segments.empty() && index == this->getCharacterCount()) {
@@ -589,12 +652,20 @@ TextSegment &TextBlock::_getSegmentBasedOnCharacterGlobalIndex(unsigned int inde
         currentIndex += segment.getCharacterCount();
     }
 
-    throw std::runtime_error("_getSegmentBasedOnCharacterGlobalIndex(): Such segment does not exist");
+    throw std::runtime_error("TextBlock::_getSegmentBasedOnCharacterGlobalIndex(): Such segment does not exist");
 }
 
+/**
+ * @brief Get text segment iterator based on the character at given position
+ *
+ * @param index Position of character in text block
+ *
+ * @return Text segment iterator of character
+ */
 std::list<TextSegment>::iterator TextBlock::_getSegmentIteratorBasedOnCharacterGlobalIndex(unsigned int index) {
     if (index > this->getCharacterCount()) {
-        throw std::out_of_range("_getSegmentIteratorBasedOnCharacterGlobalIndex(): Range exceeds available characters");
+        throw std::out_of_range(
+            "TextBlock::_getSegmentIteratorBasedOnCharacterGlobalIndex(): Range exceeds available characters");
     }
 
     if (!this->_segments.empty() && index == this->getCharacterCount()) {
@@ -610,12 +681,21 @@ std::list<TextSegment>::iterator TextBlock::_getSegmentIteratorBasedOnCharacterG
         currentIndex += it->getCharacterCount();
     }
 
-    throw std::runtime_error("_getSegmentIteratorBasedOnCharacterGlobalIndex(): Such segment does not exist");
+    throw std::runtime_error(
+        "TextBlock::_getSegmentIteratorBasedOnCharacterGlobalIndex(): Such segment does not exist");
 }
 
+/**
+ * @brief Get character at given position
+ *
+ * @param index Position of character in text block
+ *
+ * @return Character
+ */
 Character &TextBlock::_getCharacterBasedOnCharacterGlobalIndex(unsigned int index) {
     if (index >= this->getCharacterCount()) {
-        throw std::out_of_range("_getCharacterBasedOnCharacterGlobalIndex(): Range exceeds available characters");
+        throw std::out_of_range(
+            "TextBlock::_getCharacterBasedOnCharacterGlobalIndex(): Range exceeds available characters");
     }
 
     unsigned int currentIndex = 0;
@@ -627,13 +707,20 @@ Character &TextBlock::_getCharacterBasedOnCharacterGlobalIndex(unsigned int inde
         currentIndex += segment.getCharacterCount();
     }
 
-    throw std::runtime_error("_getCharacterBasedOnCharacterGlobalIndex(): Such character does not exist");
+    throw std::runtime_error("TextBlock::_getCharacterBasedOnCharacterGlobalIndex(): Such character does not exist");
 }
 
+/**
+ * @brief Get character iterator at given position
+ *
+ * @param index Position of character in text block
+ *
+ * @return Character iterator
+ */
 std::vector<Character>::iterator TextBlock::_getCharacterIteratorBasedOnCharacterGlobalIndex(unsigned int index) {
     if (index >= this->getCharacterCount()) {
         throw std::out_of_range(
-            "_getCharacterIteratorBasedOnCharacterGlobalIndex(): Range exceeds available characters");
+            "TextBlock::_getCharacterIteratorBasedOnCharacterGlobalIndex(): Range exceeds available characters");
     }
 
     unsigned int currentIndex = 0;
@@ -645,9 +732,17 @@ std::vector<Character>::iterator TextBlock::_getCharacterIteratorBasedOnCharacte
         currentIndex += segment.getCharacterCount();
     }
 
-    throw std::runtime_error("_getCharacterIteratorBasedOnCharacterGlobalIndex(): Such character does not exist");
+    throw std::runtime_error(
+        "TextBlock::_getCharacterIteratorBasedOnCharacterGlobalIndex(): Such character does not exist");
 }
 
+/**
+ * @brief Get position of first code point in given text segment
+ *
+ * @param segment Given text segment
+ *
+ * @return Position of code point in text block
+ */
 unsigned int TextBlock::_getCodePointGlobalIndexBasedOnSegment(const TextSegment &segment) {
     unsigned int currentIndex = 0;
     for (const TextSegment &s : this->_segments) {
@@ -658,9 +753,16 @@ unsigned int TextBlock::_getCodePointGlobalIndexBasedOnSegment(const TextSegment
         currentIndex += s.getCodePointCount();
     }
 
-    throw std::runtime_error("_getCodePointGlobalIndexBasedOnSegment(): Such segment does not exist");
+    throw std::runtime_error("TextBlock::_getCodePointGlobalIndexBasedOnSegment(): Such segment does not exist");
 }
 
+/**
+ * @brief Get position of first character in given text segment
+ *
+ * @param segment Given text segment
+ *
+ * @return Position of character in text block
+ */
 unsigned int TextBlock::_getCharacterGlobalIndexBasedOnSegment(const TextSegment &segment) {
     unsigned int currentIndex = 0;
     for (const TextSegment &s : this->_segments) {
@@ -671,9 +773,16 @@ unsigned int TextBlock::_getCharacterGlobalIndexBasedOnSegment(const TextSegment
         currentIndex += s.getCharacterCount();
     }
 
-    throw std::runtime_error("_getCharacterGlobalIndexBasedOnSegment(): Such segment does not exist");
+    throw std::runtime_error("TextBlock::_getCharacterGlobalIndexBasedOnSegment(): Such segment does not exist");
 }
 
+/**
+ * @brief Get position of character in text block based on given character
+ *
+ * @param character Given character
+ *
+ * @return Position of character in text block
+ */
 unsigned int TextBlock::_getCharacterGlobalIndexBasedOnCharacter(const Character &character) {
     unsigned int currentIndex = 0;
     for (TextSegment &segment : this->_segments) {
@@ -686,7 +795,7 @@ unsigned int TextBlock::_getCharacterGlobalIndexBasedOnCharacter(const Character
         }
     }
 
-    throw std::runtime_error("_getCharacterGlobalIndexBasedOnCharacter(): Such character does not exist");
+    throw std::runtime_error("TextBlock::_getCharacterGlobalIndexBasedOnCharacter(): Such character does not exist");
 }
 
 }  // namespace vft

@@ -11,22 +11,30 @@
 #include <vector>
 
 #include "character.h"
+#include "unicode.h"
 
 namespace vft {
 
+/**
+ * @brief Metrics of one line
+ */
 typedef struct {
-    double width;
-    double height;
-    double x;
-    double y;
+    double width;  /**< Width of line */
+    double height; /**< height of line */
+    double x;      /**< x coordinate of line start */
+    double y;      /**< y coordinate of line start */
 } LineData;
 
+/**
+ * @brief Divides characters into lines
+ */
 class LineDivider {
 protected:
-    double _maxLineSize;
+    double _maxLineSize{0}; /**< Maximum width of lines */
 
-    std::map<unsigned int, LineData> _lines;
-    std::vector<Character> _characters;
+    std::map<unsigned int, LineData>
+        _lines{}; /**< Divided lines. Key is index of starting character at given line. Value is line data */
+    std::vector<Character> _characters{}; /**< Characters which to divide into lines */
 
 public:
     const std::map<unsigned int, LineData> &divide(unsigned int startCharacterIndex = 0);
@@ -34,13 +42,8 @@ public:
     void setCharacters(const std::vector<Character> &characters);
     void setMaxLineSize(double maxLineSize);
 
-    std::pair<unsigned int, LineData> getLineOfCharacter(unsigned int characterIndex);
-
-    inline const std::map<unsigned int, LineData> &getLines();
-};
-
-inline const std::map<unsigned int, LineData> &LineDivider::getLines() {
-    return this->_lines;
+    std::pair<unsigned int, LineData> getLineOfCharacter(unsigned int characterIndex) const;
+    const std::map<unsigned int, LineData> &getLines() const;
 };
 
 }  // namespace vft

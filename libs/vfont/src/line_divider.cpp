@@ -7,6 +7,13 @@
 
 namespace vft {
 
+/**
+ * @brief Divides characters starting at given index into lines
+ *
+ * @param startCharacterIndex Index of starting character which to divide
+ *
+ * @return Divided lines
+ */
 const std::map<unsigned int, LineData> &LineDivider::divide(unsigned int startCharacterIndex) {
     if (startCharacterIndex >= this->_characters.size()) {
         throw std::out_of_range("LineDivider::divide(): Start index is out of bounds");
@@ -51,7 +58,7 @@ const std::map<unsigned int, LineData> &LineDivider::divide(unsigned int startCh
         Character &character = this->_characters[characterIndex];
 
         if ((this->_maxLineSize > 0 && pen.x + character.getAdvance().x > this->_maxLineSize) ||
-            character.getCodePoint() == vft::U_LF) {
+            character.getCodePoint() == U_LF) {
             // Set pen position to start of new line
             pen.x = 0;
             pen.y += character.getFontSize();
@@ -83,15 +90,32 @@ const std::map<unsigned int, LineData> &LineDivider::divide(unsigned int startCh
     return this->_lines;
 }
 
+/**
+ * @brief Set characters which will be divided into lines
+ *
+ * @param characters All characters
+ */
 void LineDivider::setCharacters(const std::vector<Character> &characters) {
     this->_characters = characters;
 }
 
+/**
+ * @brief Set the maximum size of lines
+ *
+ * @param maxLineSize
+ */
 void LineDivider::setMaxLineSize(double maxLineSize) {
     this->_maxLineSize = maxLineSize;
 }
 
-std::pair<unsigned int, LineData> LineDivider::getLineOfCharacter(unsigned int characterIndex) {
+/**
+ * @brief Get line on which is character at given index
+ *
+ * @param characterIndex Index of character
+ *
+ * @return Line on which is character
+ */
+std::pair<unsigned int, LineData> LineDivider::getLineOfCharacter(unsigned int characterIndex) const {
     if (this->_lines.empty()) {
         throw std::out_of_range("LineDivider::getLineOfCharacter(): Character index is out of bounds");
     }
@@ -103,5 +127,14 @@ std::pair<unsigned int, LineData> LineDivider::getLineOfCharacter(unsigned int c
 
     throw std::runtime_error("LineDivider::getLineOfCharacter(): Such line does not exist");
 }
+
+/**
+ * @brief Get all divided lines
+ *
+ * @return Divided lines
+ */
+const std::map<unsigned int, LineData> &LineDivider::getLines() const {
+    return this->_lines;
+};
 
 }  // namespace vft

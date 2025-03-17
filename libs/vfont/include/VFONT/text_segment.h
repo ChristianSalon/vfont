@@ -19,19 +19,17 @@
 namespace vft {
 
 /**
- * @class TextSegment
- *
- * @brief Groups together characters which are grouped together in a text block and have the same font and size
+ * @brief Groups together characters which have same properties (font and font size)
  */
 class TextSegment {
 protected:
-    std::shared_ptr<Font> _font{nullptr};  /// Font used by characters in segment
-    unsigned int _fontSize{0};             /// Font size used in segment
+    std::shared_ptr<Font> _font{nullptr}; /**< Font used by characters in segment */
+    unsigned int _fontSize{0};            /**< Font size used in segment */
 
-    glm::mat4 _transform{1.f};  /// Transform matrix of parent text block
+    glm::mat4 _transform{1.f}; /**< Transform matrix of text block */
 
-    std::vector<uint32_t> _codePoints{};   /// Unicode codepoints to render
-    std::vector<Character> _characters{};  /// Characters to render
+    std::vector<uint32_t> _codePoints{};  /**< Unicode code points to render */
+    std::vector<Character> _characters{}; /**< Characters to render */
 
 public:
     TextSegment(std::shared_ptr<Font> font, unsigned int fontSize);

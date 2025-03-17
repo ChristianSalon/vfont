@@ -10,30 +10,43 @@
 #include <stdexcept>
 #include <vector>
 
-#include <vulkan/vulkan.h>
 #include <glm/mat4x4.hpp>
 
 #include "glyph_cache.h"
 #include "tessellator.h"
 #include "text_block.h"
-#include "text_renderer_utils.h"
 
 namespace vft {
 
 /**
- * @class TextRenderer
- *
- * @brief Creates vertex and index buffers for specified characters
+ * @brief Lists all available algorithms for rendering text
+ */
+enum class TessellationStrategy { SDF, TRIANGULATION, TESSELLATION_SHADERS, WINDING_NUMBER };
+
+/**
+ * @brief Uniform buffer object
+ */
+class UniformBufferObject {
+public:
+    glm::mat4 view;       /**< View matrix */
+    glm::mat4 projection; /**< Projection matrix */
+
+    UniformBufferObject(glm::mat4 view, glm::mat4 projection) : view{view}, projection{projection} {}
+    UniformBufferObject() : view{glm::mat4(1.f)}, projection{glm::mat4(1.f)} {}
+};
+
+/**
+ * @brief Base class for text renderers
  */
 class TextRenderer {
 protected:
-    UniformBufferObject _ubo{glm::mat4{1.f}, glm::mat4{1.f}};
-    unsigned int _viewportWidth{0};
-    unsigned int _viewportHeight{0};
+    UniformBufferObject _ubo{glm::mat4{1.f}, glm::mat4{1.f}}; /**< Unifomr buffer object */
+    unsigned int _viewportWidth{0};                           /**< Viewport width */
+    unsigned int _viewportHeight{0};                          /**< Viewport height */
 
     std::vector<std::shared_ptr<TextBlock>> _textBlocks{}; /**< All text blocks to be rendered */
-    std::shared_ptr<GlyphCache> _cache{nullptr};
-    std::unique_ptr<Tessellator> _tessellator{nullptr};
+    std::shared_ptr<GlyphCache> _cache{nullptr}; /**< Glyph cache stores glyphs and reads them before rendering */
+    std::unique_ptr<Tessellator> _tessellator{nullptr}; /**< Tessellator to compose glyphs for rendering */
 
 public:
     TextRenderer() = default;

@@ -10,6 +10,8 @@
 #include <vector>
 
 #include "circular_dll.h"
+#include "curve.h"
+#include "edge.h"
 #include "font.h"
 #include "glyph.h"
 #include "glyph_cache.h"
@@ -17,19 +19,23 @@
 #include "glyph_mesh.h"
 #include "polygon_operator.h"
 #include "tessellator.h"
-#include "text_renderer_utils.h"
 
 namespace vft {
 
+/**
+ * @brief Composes glyphs where the inner triangles are triangulated on the cpu and outer triangles are processed in the
+ * tessellation shaders
+ */
 class TessellationShadersTessellator : public Tessellator {
 public:
+    /** Index of index buffer containing trinagles in glyph's vector of index buffers */
     static constexpr unsigned int GLYPH_MESH_TRIANGLE_BUFFER_INDEX = 0;
+    /** Index of index buffer containing curve segments in glyph's vector of index buffers */
     static constexpr unsigned int GLYPH_MESH_CURVE_BUFFER_INDEX = 1;
 
 protected:
-    std::vector<glm::vec2> _vertices{};
-    std::vector<CircularDLL<Edge>> _firstPolygon{};
-    std::vector<CircularDLL<Edge>> _secondPolygon{};
+    std::vector<CircularDLL<Edge>> _firstPolygon{};  /**< Polygon containing processed glyph contours */
+    std::vector<CircularDLL<Edge>> _secondPolygon{}; /**< Polygon containing current contour */
 
 public:
     TessellationShadersTessellator();

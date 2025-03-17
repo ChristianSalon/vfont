@@ -7,6 +7,9 @@
 
 namespace vft {
 
+/**
+ * @brief Initialize vulkan text renderer
+ */
 void VulkanTessellationShadersTextRenderer::initialize() {
     VulkanTextRenderer::initialize();
 
@@ -15,6 +18,9 @@ void VulkanTessellationShadersTextRenderer::initialize() {
     this->_createCurveSegmentsPipeline();
 }
 
+/**
+ * @brief Deallocate memory and destroy vulkan text renderer
+ */
 void VulkanTessellationShadersTextRenderer::destroy() {
     // Destroy vulkan buffers
     if (this->_lineSegmentsIndexBuffer != nullptr)
@@ -39,6 +45,9 @@ void VulkanTessellationShadersTextRenderer::destroy() {
     VulkanTextRenderer::destroy();
 }
 
+/**
+ * @brief Add draw commands to the command buffer for drawing all glyphs in tracked text blocks
+ */
 void VulkanTessellationShadersTextRenderer::draw() {
     // Check if there are characters to render
     if (this->_vertices.size() == 0) {
@@ -65,9 +74,10 @@ void VulkanTessellationShadersTextRenderer::draw() {
                 vkCmdPushConstants(this->_commandBuffer, this->_lineSegmentsPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
                                    0, sizeof(vft::CharacterPushConstants), &pushConstants);
 
-                vkCmdDrawIndexed(this->_commandBuffer,
-                                 glyph.mesh.getIndexCount(TessellationShadersTessellator::GLYPH_MESH_TRIANGLE_BUFFER_INDEX), 1,
-                                 this->_offsets.at(key).at(LINE_OFFSET_BUFFER_INDEX), 0, 0);
+                vkCmdDrawIndexed(
+                    this->_commandBuffer,
+                    glyph.mesh.getIndexCount(TessellationShadersTessellator::GLYPH_MESH_TRIANGLE_BUFFER_INDEX), 1,
+                    this->_offsets.at(key).at(LINE_OFFSET_BUFFER_INDEX), 0, 0);
             }
         }
     }
@@ -95,14 +105,18 @@ void VulkanTessellationShadersTextRenderer::draw() {
                                    VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(vft::CharacterPushConstants),
                                    sizeof(ViewportPushConstants), &viewportPushConstants);
 
-                vkCmdDrawIndexed(this->_commandBuffer,
-                                 glyph.mesh.getIndexCount(TessellationShadersTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX), 1,
-                                 this->_offsets.at(key).at(CURVE_OFFSET_BUFFER_INDEX), 0, 0);
+                vkCmdDrawIndexed(
+                    this->_commandBuffer,
+                    glyph.mesh.getIndexCount(TessellationShadersTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX), 1,
+                    this->_offsets.at(key).at(CURVE_OFFSET_BUFFER_INDEX), 0, 0);
             }
         }
     }
 }
 
+/**
+ * @brief Creates a new vertex and index buffer after a change in tracked text blocks
+ */
 void VulkanTessellationShadersTextRenderer::update() {
     // Update glyph cache
     for (std::shared_ptr<TextBlock> block : this->_textBlocks) {
@@ -126,6 +140,9 @@ void VulkanTessellationShadersTextRenderer::update() {
     this->_createVertexAndIndexBuffers();
 }
 
+/**
+ * @brief Create vulkan vertex and index buffer for all glyphs in tracked text blocks
+ */
 void VulkanTessellationShadersTextRenderer::_createVertexAndIndexBuffers() {
     this->_vertices.clear();
     this->_lineSegmentsIndices.clear();
@@ -168,7 +185,8 @@ void VulkanTessellationShadersTextRenderer::_createVertexAndIndexBuffers() {
                 vertexCount += glyph.mesh.getVertexCount();
                 lineSegmentsIndexCount +=
                     glyph.mesh.getIndexCount(TessellationShadersTessellator::GLYPH_MESH_TRIANGLE_BUFFER_INDEX);
-                curveSegmentsIndexCount += glyph.mesh.getIndexCount(TessellationShadersTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX);
+                curveSegmentsIndexCount +=
+                    glyph.mesh.getIndexCount(TessellationShadersTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX);
             }
         }
     }
@@ -202,6 +220,9 @@ void VulkanTessellationShadersTextRenderer::_createVertexAndIndexBuffers() {
     }
 }
 
+/**
+ * @brief Create vulkan pipeline for displaying glyph's inner triangles
+ */
 void VulkanTessellationShadersTextRenderer::_createLineSegmentsPipeline() {
     std::vector<char> vertexShaderCode = this->_readFile("shaders/triangle-vert.spv");
     std::vector<char> fragmentShaderCode = this->_readFile("shaders/triangle-frag.spv");
@@ -230,8 +251,16 @@ void VulkanTessellationShadersTextRenderer::_createLineSegmentsPipeline() {
     dynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicStateCreateInfo.pDynamicStates = dynamicStates.data();
 
-    VkVertexInputBindingDescription vertexInputBindingDescription = vft::getVertexInutBindingDescription();
-    VkVertexInputAttributeDescription vertexInputAttributeDescription = vft::getVertexInputAttributeDescription();
+    VkVertexInputBindingDescription vertexInputBindingDescription{};
+    vertexInputBindingDescription.binding = 0;
+    vertexInputBindingDescription.stride = sizeof(glm::vec2);
+    vertexInputBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputAttributeDescription vertexInputAttributeDescription{};
+    vertexInputAttributeDescription.binding = 0;
+    vertexInputAttributeDescription.location = 0;
+    vertexInputAttributeDescription.format = VK_FORMAT_R32G32_SFLOAT;
+    vertexInputAttributeDescription.offset = 0;
 
     VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo{};
     vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -328,6 +357,9 @@ void VulkanTessellationShadersTextRenderer::_createLineSegmentsPipeline() {
     vkDestroyShaderModule(this->_logicalDevice, fragmentShaderModule, nullptr);
 }
 
+/**
+ * @brief Create vulkan pipeline for displaying glyph's curve segments
+ */
 void VulkanTessellationShadersTextRenderer::_createCurveSegmentsPipeline() {
     std::vector<char> vertexShaderCode = this->_readFile("shaders/curve-vert.spv");
     std::vector<char> tcsCode = this->_readFile("shaders/curve-tesc.spv");
@@ -392,8 +424,16 @@ void VulkanTessellationShadersTextRenderer::_createCurveSegmentsPipeline() {
     dynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicStateCreateInfo.pDynamicStates = dynamicStates.data();
 
-    VkVertexInputBindingDescription vertexInputBindingDescription = vft::getVertexInutBindingDescription();
-    VkVertexInputAttributeDescription vertexInputAttributeDescription = vft::getVertexInputAttributeDescription();
+    VkVertexInputBindingDescription vertexInputBindingDescription{};
+    vertexInputBindingDescription.binding = 0;
+    vertexInputBindingDescription.stride = sizeof(glm::vec2);
+    vertexInputBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputAttributeDescription vertexInputAttributeDescription{};
+    vertexInputAttributeDescription.binding = 0;
+    vertexInputAttributeDescription.location = 0;
+    vertexInputAttributeDescription.format = VK_FORMAT_R32G32_SFLOAT;
+    vertexInputAttributeDescription.offset = 0;
 
     VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo{};
     vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

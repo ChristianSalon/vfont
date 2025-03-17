@@ -7,28 +7,36 @@
 
 #include <stdexcept>
 
-#include "text_renderer_utils.h"
+#include "edge.h"
 
 namespace vft {
 
+/**
+ * @brief Circular doubly linked list
+ */
 template <typename T>
 class CircularDLL {
 public:
+    /**
+     * @class Node
+     *
+     * @brief One element of CircularDLL
+     */
     class Node {
     public:
-        T value;
-        Node *previous;
-        Node *next;
+        T value;        /**< Value of elemnt */
+        Node *previous; /**< Previous element of list */
+        Node *next;     /**< Next element of list */
 
         Node(T value);
         ~Node() = default;
     };
 
 protected:
-    unsigned int _size{0};
+    unsigned int _size{0}; /**< Size of list */
 
-    Node *_front{nullptr};
-    Node *_back{nullptr};
+    Node *_front{nullptr}; /**< First element of list */
+    Node *_back{nullptr};  /**< Last element of list */
 
 public:
     CircularDLL() = default;

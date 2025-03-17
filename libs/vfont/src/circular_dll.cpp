@@ -7,14 +7,33 @@
 
 namespace vft {
 
+/**
+ * @brief Constructor for an element in CircularDLL
+ *
+ * @tparam T Type of values stored in list
+ *
+ * @param value Value of element
+ */
 template <typename T>
 CircularDLL<T>::Node::Node(T value) : value{value} {}
 
+/**
+ * @brief Destructor for CircularDLL. Deallocates used memory
+ *
+ * @tparam T
+ */
 template <typename T>
 CircularDLL<T>::~CircularDLL() {
     this->clear();
 }
 
+/**
+ * @brief Copy constructor for CircularDLL
+ *
+ * @tparam T Type of values stored in list
+ *
+ * @param other List used for copying
+ */
 template <typename T>
 CircularDLL<T>::CircularDLL(const CircularDLL &other) {
     Node *current = other.getFirst();
@@ -25,6 +44,15 @@ CircularDLL<T>::CircularDLL(const CircularDLL &other) {
     }
 }
 
+/**
+ * @brief Assignment operator for CircularDLL
+ *
+ * @tparam T Type of values stored in list
+ *
+ * @param other Other list
+ *
+ * @return Reference to list after assignment
+ */
 template <typename T>
 CircularDLL<T> &CircularDLL<T>::operator=(const CircularDLL &other) {
     if (this == &other) {
@@ -42,6 +70,11 @@ CircularDLL<T> &CircularDLL<T>::operator=(const CircularDLL &other) {
     return *this;
 }
 
+/**
+ * @brief Delete all elements of list
+ *
+ * @tparam T Type of values stored in list
+ */
 template <typename T>
 void CircularDLL<T>::clear() {
     if (this->_size == 0) {
@@ -63,6 +96,14 @@ void CircularDLL<T>::clear() {
     this->_back = nullptr;
 }
 
+/**
+ * @brief Inserts new element at given index
+ *
+ * @tparam T Type of values stored in list
+ *
+ * @param value Value of new element
+ * @param index Index where to insert new element
+ */
 template <typename T>
 void CircularDLL<T>::insertAt(T value, unsigned int index) {
     index = index % (this->_size + 1);
@@ -93,6 +134,13 @@ void CircularDLL<T>::insertAt(T value, unsigned int index) {
     this->_size++;
 }
 
+/**
+ * @brief Insert new element at start of list
+ *
+ * @tparam T Type of values stored in list
+ *
+ * @param value Value of new element
+ */
 template <typename T>
 void CircularDLL<T>::insertFirst(T value) {
     Node *newNode = new Node(value);
@@ -116,6 +164,13 @@ void CircularDLL<T>::insertFirst(T value) {
     this->_size++;
 }
 
+/**
+ * @brief Insert new element at end of list
+ *
+ * @tparam T Type of values stored in list
+ *
+ * @param value Value of new element
+ */
 template <typename T>
 void CircularDLL<T>::insertLast(T value) {
     Node *newNode = new Node(value);
@@ -139,6 +194,13 @@ void CircularDLL<T>::insertLast(T value) {
     this->_size++;
 }
 
+/**
+ * @brief Removes element from list at given index
+ *
+ * @tparam T Type of values stored in list
+ *
+ * @param index Index of element which to remove
+ */
 template <typename T>
 void CircularDLL<T>::deleteAt(unsigned int index) {
     index = index % this->_size;
@@ -165,6 +227,11 @@ void CircularDLL<T>::deleteAt(unsigned int index) {
     this->_size--;
 }
 
+/**
+ * @brief Removes the first element of list
+ *
+ * @tparam T Type of values stored in list
+ */
 template <typename T>
 void CircularDLL<T>::deleteFirst() {
     if (this->_size == 0) {
@@ -186,6 +253,11 @@ void CircularDLL<T>::deleteFirst() {
     this->_size--;
 }
 
+/**
+ * @brief Removes the last element of list
+ *
+ * @tparam T Type of values stored in list
+ */
 template <typename T>
 void CircularDLL<T>::deleteLast() {
     if (this->_size == 0) {
@@ -207,6 +279,15 @@ void CircularDLL<T>::deleteLast() {
     this->_size--;
 }
 
+/**
+ * @brief Get element at given index
+ *
+ * @tparam T Type of values stored in list
+ *
+ * @param index Index of element
+ *
+ * @return Pointer to element
+ */
 template <typename T>
 CircularDLL<T>::Node *CircularDLL<T>::getAt(unsigned int index) const {
     if (index >= this->_size) {
@@ -221,6 +302,15 @@ CircularDLL<T>::Node *CircularDLL<T>::getAt(unsigned int index) const {
     return current;
 }
 
+/**
+ * @brief Get first element with given value
+ *
+ * @tparam T Type of values stored in list
+ *
+ * @param value Value of element
+ *
+ * @return Pointer to element
+ */
 template <typename T>
 CircularDLL<T>::Node *CircularDLL<T>::getValue(T value) const {
     Node *current = this->_front;
@@ -235,16 +325,37 @@ CircularDLL<T>::Node *CircularDLL<T>::getValue(T value) const {
     return nullptr;
 }
 
+/**
+ * @brief Get first element in list
+ *
+ * @tparam T Type of values stored in list
+ *
+ * @return Pointer to first element
+ */
 template <typename T>
 CircularDLL<T>::Node *CircularDLL<T>::getFirst() const {
     return this->_front;
 }
 
+/**
+ * @brief Get last element in list
+ *
+ * @tparam T Type of values stored in list
+ *
+ * @return Pointer to last element
+ */
 template <typename T>
 CircularDLL<T>::Node *CircularDLL<T>::getLast() const {
     return this->_back;
 }
 
+/**
+ * @brief Getter for the size of list
+ *
+ * @tparam T Type of values stored in list
+ *
+ * @return Size of list
+ */
 template <typename T>
 unsigned int CircularDLL<T>::size() const {
     return this->_size;

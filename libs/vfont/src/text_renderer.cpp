@@ -9,20 +9,16 @@ namespace vft {
 
 /**
  * @brief Initializes text renderer
- *
- * @param physicalDevice Vulkan physical device
- * @param logicalDevice Vulkan logical device
- * @param commandPool Vulkan command pool
- * @param graphicsQueue Vulkan graphics queue
  */
 void TextRenderer::initialize() {
     this->_cache = std::make_shared<GlyphCache>();
 }
 
 /**
- * @brief Must be called to destroy vulkan buffers
+ * @brief Destroys text renderer
  */
 void TextRenderer::destroy() {
+    // Destroy tessellator
     this->_tessellator.reset();
 }
 
@@ -36,15 +32,31 @@ void TextRenderer::add(std::shared_ptr<TextBlock> text) {
     text->onTextChange = [this]() { this->update(); };
 }
 
+/**
+ * @brief Set uniform buffer object used for rendering
+ *
+ * @param ubo Uniform buffer object
+ */
 void TextRenderer::setUniformBuffers(UniformBufferObject ubo) {
     this->_ubo = ubo;
 }
 
+/**
+ * @brief Set viewport size
+ *
+ * @param width Viewport width
+ * @param height Viewport height
+ */
 void TextRenderer::setViewportSize(unsigned int width, unsigned int height) {
     this->_viewportWidth = width;
     this->_viewportHeight = height;
 }
 
+/**
+ * @brief Set glyph cache used for rendering
+ *
+ * @param cache Glyph cache
+ */
 void TextRenderer::setCache(std::shared_ptr<GlyphCache> cache) {
     this->_cache = cache;
 }

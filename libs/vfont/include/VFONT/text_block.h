@@ -29,8 +29,6 @@
 namespace vft {
 
 /**
- * @class TextBlock
- *
  * @brief Groups together characters which are rendered
  */
 class TextBlock {
@@ -38,19 +36,19 @@ public:
     std::function<void()> onTextChange; /**< Callback when text in block changes */
 
 protected:
-    std::shared_ptr<Font> _font; /**< Font of text in text block */
-    unsigned int _fontSize;      /**< Font size in text block */
+    std::shared_ptr<Font> _font{nullptr}; /**< Current font */
+    unsigned int _fontSize{0};            /**< Current Font size */
 
-    int _width;    /**< Width of text block. -1 indicates unlimited width */
-    bool _kerning; /**< Indicates whether to use kerning in text block */
-    std::unique_ptr<TextAlignStrategy> _textAlign;
+    int _width{0};                                          /**< Width of text block. -1 indicates unlimited width */
+    bool _kerning{true};                                    /**< Indicates whether to use kerning in text block */
+    std::unique_ptr<TextAlignStrategy> _textAlign{nullptr}; /**< Text align of text block */
 
-    glm::vec4 _color{glm::vec4{1.f, 1.f, 1.f, 1.f}}; /**< Color of text */
+    glm::vec4 _color{glm::vec4{1.f, 1.f, 1.f, 1.f}}; /**< Color of text in block */
     glm::vec3 _position{glm::vec3{0.f, 0.f, 0.f}};   /**< Position of text block */
     glm::mat4 _transform{glm::mat4(1.f)};            /**< Transform matrix of text block */
 
-    std::list<TextSegment> _segments; /**< Text segments which include characters to render */
-    LineDivider _lineDivider;
+    std::list<TextSegment> _segments{}; /**< Text segments which include characters to render */
+    LineDivider _lineDivider{};         /**< Used to divide characters into lines */
 
 public:
     TextBlock();

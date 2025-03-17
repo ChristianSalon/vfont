@@ -14,12 +14,15 @@
 
 namespace vft {
 
+/**
+ * @brief Builder for constructing text blocks
+ */
 class TextBlockBuilder {
 protected:
-    TextBlock _block;
+    TextBlock _block{}; /**< Text block that will be built */
 
 public:
-    TextBlockBuilder();
+    TextBlockBuilder() = default;
 
     TextBlockBuilder &setFont(std::shared_ptr<Font> font);
     TextBlockBuilder &setFontSize(unsigned int fontSize);

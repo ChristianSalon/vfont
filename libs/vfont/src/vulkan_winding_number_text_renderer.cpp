@@ -7,6 +7,9 @@
 
 namespace vft {
 
+/**
+ * @brief Initialize vulkan text renderer
+ */
 void VulkanWindingNumberTextRenderer::initialize() {
     VulkanTextRenderer::initialize();
 
@@ -16,6 +19,9 @@ void VulkanWindingNumberTextRenderer::initialize() {
     this->_createSegmentsPipeline();
 }
 
+/**
+ * @brief Deallocate memory and destroy vulkan text renderer
+ */
 void VulkanWindingNumberTextRenderer::destroy() {
     // Destroy vulkan buffers
     if (this->_boundingBoxIndexBuffer != nullptr)
@@ -38,6 +44,9 @@ void VulkanWindingNumberTextRenderer::destroy() {
     VulkanTextRenderer::destroy();
 }
 
+/**
+ * @brief Add draw commands to the command buffer for drawing all glyphs in tracked text blocks
+ */
 void VulkanWindingNumberTextRenderer::draw() {
     // Check if there are characters to render
     if (this->_vertices.size() == 0) {
@@ -65,21 +74,26 @@ void VulkanWindingNumberTextRenderer::draw() {
                 SegmentsInfo segmentsInfo =
                     this->_segmentsInfo.at(this->_offsets.at(key).at(SEGMENTS_INFO_OFFSET_BUFFER_INDEX));
 
-                PushConstants pushConstants{character.getModelMatrix(),           this->_textBlocks.at(i)->getColor(),
-                                            segmentsInfo.lineSegmentsStartIndex,  segmentsInfo.lineSegmentsCount,
-                                            segmentsInfo.curveSegmentsStartIndex, segmentsInfo.curveSegmentsCount};
+                CharacterPushConstants pushConstants{
+                    character.getModelMatrix(),           this->_textBlocks.at(i)->getColor(),
+                    segmentsInfo.lineSegmentsStartIndex,  segmentsInfo.lineSegmentsCount,
+                    segmentsInfo.curveSegmentsStartIndex, segmentsInfo.curveSegmentsCount};
                 vkCmdPushConstants(this->_commandBuffer, this->_segmentsPipelineLayout,
-                                   VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants),
-                                   &pushConstants);
+                                   VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                                   sizeof(CharacterPushConstants), &pushConstants);
 
-                vkCmdDrawIndexed(this->_commandBuffer,
-                                 glyph.mesh.getIndexCount(WindingNumberTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX), 1,
-                                 this->_offsets.at(key).at(BOUNDING_BOX_OFFSET_BUFFER_INDEX), 0, 0);
+                vkCmdDrawIndexed(
+                    this->_commandBuffer,
+                    glyph.mesh.getIndexCount(WindingNumberTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX), 1,
+                    this->_offsets.at(key).at(BOUNDING_BOX_OFFSET_BUFFER_INDEX), 0, 0);
             }
         }
     }
 }
 
+/**
+ * @brief Creates a new vertex and index buffer after a change in tracked text blocks
+ */
 void VulkanWindingNumberTextRenderer::update() {
     // Update glyph cache
     for (std::shared_ptr<TextBlock> block : this->_textBlocks) {
@@ -103,6 +117,9 @@ void VulkanWindingNumberTextRenderer::update() {
     this->_createVertexAndIndexBuffers();
 }
 
+/**
+ * @brief Create vulkan vertex and index buffer for all glyphs in tracked text blocks
+ */
 void VulkanWindingNumberTextRenderer::_createVertexAndIndexBuffers() {
     this->_vertices.clear();
     this->_boundingBoxIndices.clear();
@@ -158,7 +175,8 @@ void VulkanWindingNumberTextRenderer::_createVertexAndIndexBuffers() {
                 }
 
                 vertexCount += glyph.mesh.getVertexCount();
-                boundingBoxIndexCount += glyph.mesh.getIndexCount(WindingNumberTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX);
+                boundingBoxIndexCount +=
+                    glyph.mesh.getIndexCount(WindingNumberTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX);
                 segmentsCount += lineSegments.size() + curveSegments.size();
                 segmentsInfoCount++;
             }
@@ -189,6 +207,9 @@ void VulkanWindingNumberTextRenderer::_createVertexAndIndexBuffers() {
     }
 }
 
+/**
+ * @brief Create vulkan descriptor pool
+ */
 void VulkanWindingNumberTextRenderer::_createDescriptorPool() {
     std::array<VkDescriptorPoolSize, 2> poolSizes = {};
 
@@ -211,6 +232,9 @@ void VulkanWindingNumberTextRenderer::_createDescriptorPool() {
     }
 }
 
+/**
+ * @brief Create vulkan ssbo containing line and curve segments of all glyphs
+ */
 void VulkanWindingNumberTextRenderer::_createSsbo() {
     VkDeviceSize segmentsBufferSize = sizeof(this->_segments.at(0)) * this->_segments.size();
     this->_stageAndCreateVulkanBuffer(this->_segments.data(), segmentsBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -234,6 +258,9 @@ void VulkanWindingNumberTextRenderer::_createSsbo() {
     vkUpdateDescriptorSets(this->_logicalDevice, writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
 }
 
+/**
+ * @brief Create vulkan ssbo descriptor set layout
+ */
 void VulkanWindingNumberTextRenderer::_createSegmentsDescriptorSetLayout() {
     std::array<VkDescriptorSetLayoutBinding, 1> layoutBindings;
 
@@ -250,11 +277,14 @@ void VulkanWindingNumberTextRenderer::_createSegmentsDescriptorSetLayout() {
     if (vkCreateDescriptorSetLayout(this->_logicalDevice, &layoutCreateInfo, nullptr,
                                     &(this->_segmentsDescriptorSetLayout)) != VK_SUCCESS) {
         throw std::runtime_error(
-            "VulkanWindingNumberTextRenderer::_createSegmentsDescriptorSetLayout(: Error creating vulkan descriptor "
+            "VulkanWindingNumberTextRenderer::_createSegmentsDescriptorSetLayout(): Error creating vulkan descriptor "
             "set layout");
     }
 }
 
+/**
+ * @brief Create vulkan ssbo descriptor set
+ */
 void VulkanWindingNumberTextRenderer::_createSegmentsDescriptorSet() {
     VkDescriptorSetAllocateInfo allocateInfo{};
     allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -268,6 +298,9 @@ void VulkanWindingNumberTextRenderer::_createSegmentsDescriptorSet() {
     }
 }
 
+/**
+ * @brief Create vulkan pipeline for displaying glyph using the winding number algorithm
+ */
 void VulkanWindingNumberTextRenderer::_createSegmentsPipeline() {
     std::vector<char> vertexShaderCode = this->_readFile("shaders/winding_number-vert.spv");
     std::vector<char> fragmentShaderCode = this->_readFile("shaders/winding_number-frag.spv");
@@ -296,8 +329,16 @@ void VulkanWindingNumberTextRenderer::_createSegmentsPipeline() {
     dynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicStateCreateInfo.pDynamicStates = dynamicStates.data();
 
-    VkVertexInputBindingDescription vertexInputBindingDescription = vft::getVertexInutBindingDescription();
-    VkVertexInputAttributeDescription vertexInputAttributeDescription = vft::getVertexInputAttributeDescription();
+    VkVertexInputBindingDescription vertexInputBindingDescription{};
+    vertexInputBindingDescription.binding = 0;
+    vertexInputBindingDescription.stride = sizeof(glm::vec2);
+    vertexInputBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputAttributeDescription vertexInputAttributeDescription{};
+    vertexInputAttributeDescription.binding = 0;
+    vertexInputAttributeDescription.location = 0;
+    vertexInputAttributeDescription.format = VK_FORMAT_R32G32_SFLOAT;
+    vertexInputAttributeDescription.offset = 0;
 
     VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo{};
     vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -349,7 +390,7 @@ void VulkanWindingNumberTextRenderer::_createSegmentsPipeline() {
     colorBlendStateCreateInfo.pAttachments = &colorBlendAttachmentState;
 
     VkPushConstantRange pushConstantRange{};
-    pushConstantRange.size = sizeof(PushConstants);
+    pushConstantRange.size = sizeof(CharacterPushConstants);
     pushConstantRange.offset = 0;
     pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 

@@ -12,9 +12,11 @@
 #include <unordered_set>
 #include <vector>
 
-#include <glm/vec2.hpp>
+#include <glm/glm.hpp>
 
 #include "circular_dll.h"
+#include "curve.h"
+#include "edge.h"
 #include "font.h"
 #include "glyph.h"
 #include "glyph_cache.h"
@@ -22,18 +24,19 @@
 #include "glyph_mesh.h"
 #include "polygon_operator.h"
 #include "tessellator.h"
-#include "text_renderer_utils.h"
 
 namespace vft {
 
+/**
+ * @brief Composes glyphs that are fully triangulated on the cpu using the constrained delaunay triangulation algorithm
+ */
 class TriangulationTessellator : public Tessellator {
 protected:
-    std::shared_ptr<Font> _font{nullptr};
-    unsigned int _fontSize{0};
+    std::shared_ptr<Font> _font{nullptr}; /**< Font of current glyph */
+    unsigned int _fontSize{0};            /**< Font size of current glyph */
 
-    std::vector<glm::vec2> _vertices{};
-    std::vector<CircularDLL<Edge>> _firstPolygon{};
-    std::vector<CircularDLL<Edge>> _secondPolygon{};
+    std::vector<CircularDLL<Edge>> _firstPolygon{};  /**< Polygon containing processed glyph contours */
+    std::vector<CircularDLL<Edge>> _secondPolygon{}; /**< Polygon containing current contour */
 
 public:
     TriangulationTessellator();

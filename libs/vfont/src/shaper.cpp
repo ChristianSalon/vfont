@@ -7,6 +7,15 @@
 
 namespace vft {
 
+/**
+ * @brief Shape text using harfbuzz
+ *
+ * @param codePoints Unicode code points of input text
+ * @param font Font of text
+ * @param fontSize Font size of text
+ *
+ * @return Shaped characters divided into lines (by CR, LF or CRLF)
+ */
 std::vector<std::vector<ShapedCharacter>> Shaper::shape(std::vector<uint32_t> codePoints,
                                                         std::shared_ptr<Font> font,
                                                         unsigned int fontSize) {
@@ -15,7 +24,7 @@ std::vector<std::vector<ShapedCharacter>> Shaper::shape(std::vector<uint32_t> co
     // Get indices of line breaks in input text
     std::vector<unsigned int> newLines;
     for (unsigned int i = 0; i < codePoints.size(); i++) {
-        if (codePoints[i] == vft::U_LF) {
+        if (codePoints[i] == U_LF) {
             newLines.push_back(i);
         }
     }
@@ -81,19 +90,24 @@ std::vector<std::vector<ShapedCharacter>> Shaper::shape(std::vector<uint32_t> co
     return output;
 }
 
+/**
+ * @brief Preprocess input text
+ *
+ * @param codePoints Input text
+ */
 void Shaper::_preprocessInput(std::vector<uint32_t> &codePoints) {
     for (unsigned int i = 0; i < codePoints.size(); i++) {
-        if (codePoints[i] == vft::U_TAB) {
+        if (codePoints[i] == U_TAB) {
             // Replace TAB with 4 spaces
-            codePoints.insert(codePoints.begin() + i, 4, vft::U_SPACE);
+            codePoints.insert(codePoints.begin() + i, 4, U_SPACE);
             // Erase the original tab
             codePoints.erase(codePoints.begin() + i + 4);
-        } else if (i + 1 < codePoints.size() && codePoints[i] == vft::U_CR && codePoints[i + 1] == vft::U_LF) {
+        } else if (i + 1 < codePoints.size() && codePoints[i] == U_CR && codePoints[i + 1] == U_LF) {
             // Erase CR, leave only LF
             codePoints.erase(codePoints.begin() + i);
-        } else if (codePoints[i] == vft::U_CR) {
+        } else if (codePoints[i] == U_CR) {
             // Replace CR with LF
-            codePoints[i] = vft::U_LF;
+            codePoints[i] = U_LF;
         }
     }
 }

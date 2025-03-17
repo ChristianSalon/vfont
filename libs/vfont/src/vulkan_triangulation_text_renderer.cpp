@@ -7,6 +7,9 @@
 
 namespace vft {
 
+/**
+ * @brief Initialize vulkan text renderer
+ */
 void VulkanTriangulationTextRenderer::initialize() {
     VulkanTextRenderer::initialize();
 
@@ -14,6 +17,9 @@ void VulkanTriangulationTextRenderer::initialize() {
     this->_createPipeline();
 }
 
+/**
+ * @brief Deallocate memory and destroy vulkan text renderer
+ */
 void VulkanTriangulationTextRenderer::destroy() {
     // Destroy vulkan buffers
     if (this->_indexBuffer != nullptr)
@@ -30,6 +36,9 @@ void VulkanTriangulationTextRenderer::destroy() {
     VulkanTextRenderer::destroy();
 }
 
+/**
+ * @brief Add draw commands to the command buffer for drawing all glyphs in tracked text blocks
+ */
 void VulkanTriangulationTextRenderer::draw() {
     // Check if there are characters to render
     if (this->_vertices.size() == 0) {
@@ -61,6 +70,9 @@ void VulkanTriangulationTextRenderer::draw() {
     }
 }
 
+/**
+ * @brief Creates a new vertex and index buffer after a change in tracked text blocks
+ */
 void VulkanTriangulationTextRenderer::update() {
     // Update glyph cache
     for (std::shared_ptr<TextBlock> block : this->_textBlocks) {
@@ -83,6 +95,9 @@ void VulkanTriangulationTextRenderer::update() {
     this->_createVertexAndIndexBuffers();
 }
 
+/**
+ * @brief Create vulkan vertex and index buffer for all glyphs in tracked text blocks
+ */
 void VulkanTriangulationTextRenderer::_createVertexAndIndexBuffers() {
     this->_vertices.clear();
     this->_indices.clear();
@@ -131,6 +146,9 @@ void VulkanTriangulationTextRenderer::_createVertexAndIndexBuffers() {
                                       this->_indexBuffer, this->_indexBufferMemory);
 }
 
+/**
+ * @brief Create vulkan pipeline for displaying glyph's triangles
+ */
 void VulkanTriangulationTextRenderer::_createPipeline() {
     std::vector<char> vertexShaderCode = this->_readFile("shaders/triangle-vert.spv");
     std::vector<char> fragmentShaderCode = this->_readFile("shaders/triangle-frag.spv");
@@ -159,8 +177,16 @@ void VulkanTriangulationTextRenderer::_createPipeline() {
     dynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicStateCreateInfo.pDynamicStates = dynamicStates.data();
 
-    VkVertexInputBindingDescription vertexInputBindingDescription = vft::getVertexInutBindingDescription();
-    VkVertexInputAttributeDescription vertexInputAttributeDescription = vft::getVertexInputAttributeDescription();
+    VkVertexInputBindingDescription vertexInputBindingDescription{};
+    vertexInputBindingDescription.binding = 0;
+    vertexInputBindingDescription.stride = sizeof(glm::vec2);
+    vertexInputBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputAttributeDescription vertexInputAttributeDescription{};
+    vertexInputAttributeDescription.binding = 0;
+    vertexInputAttributeDescription.location = 0;
+    vertexInputAttributeDescription.format = VK_FORMAT_R32G32_SFLOAT;
+    vertexInputAttributeDescription.offset = 0;
 
     VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo{};
     vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

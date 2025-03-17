@@ -13,23 +13,32 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_OUTLINE_H
-#include <glm/vec2.hpp>
+#include <glm/glm.hpp>
 
+#include "curve.h"
+#include "edge.h"
 #include "font.h"
 #include "glyph.h"
-#include "text_renderer_utils.h"
 
 namespace vft {
 
+/**
+ * @brief Base class for all tessellators. Composes a glyph based on rendering method
+ */
 class Tessellator {
 protected:
-    FT_Outline_MoveToFunc _moveToFunc{nullptr};
-    FT_Outline_LineToFunc _lineToFunc{nullptr};
-    FT_Outline_ConicToFunc _conicToFunc{nullptr};
-    FT_Outline_CubicToFunc _cubicToFunc{nullptr};
+    FT_Outline_MoveToFunc _moveToFunc{nullptr};   /**< Freetype moveTo function */
+    FT_Outline_LineToFunc _lineToFunc{nullptr};   /**< Freetype lineTo function */
+    FT_Outline_ConicToFunc _conicToFunc{nullptr}; /**< Freetype conicTo function */
+    FT_Outline_CubicToFunc _cubicToFunc{nullptr}; /**< Freetype cubicTo function */
 
-    Glyph _currentGlyph{};                 /**< Glyph that is currently being composed */
-    ComposedGlyphData _currentGlyphData{}; /**< Data of glyph that is currently being composed */
+    uint32_t vertexIndex{0};             /**< Index of next unique vertex */
+    uint32_t contourStartVertexIndex{0}; /**< Index of vertex that starts current contour */
+    glm::vec2 lastVertex{0, 0};          /**< Last processed vertex */
+    uint32_t lastVertexIndex{0};         /**< Index of last processed vertex */
+    unsigned int contourCount{0};        /**< Number of processed contours */
+
+    Glyph _currentGlyph{}; /**< Glyph that is currently being composed */
 
 public:
     Tessellator();

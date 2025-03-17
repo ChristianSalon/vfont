@@ -11,7 +11,6 @@ set(VFONT_HEADERS
     include/VFONT/vulkan_winding_number_text_renderer.h
     include/VFONT/vulkan_text_renderer_decorator.h
     include/VFONT/vulkan_timed_renderer.h
-    include/VFONT/text_renderer_utils.h
     include/VFONT/glyph.h
     include/VFONT/glyph_mesh.h
     include/VFONT/glyph_compositor.h
@@ -30,6 +29,9 @@ set(VFONT_HEADERS
     include/VFONT/tessellation_shaders_tessellator.h
     include/VFONT/circular_dll.h
     include/VFONT/polygon_operator.h
+    include/VFONT/edge.h
+    include/VFONT/curve.h
+    include/VFONT/unicode.h
 )
 set(VFONT_SOURCES
     src/text_renderer.cpp
@@ -57,6 +59,8 @@ set(VFONT_SOURCES
     src/tessellation_shaders_tessellator.cpp
     src/circular_dll.cpp
     src/polygon_operator.cpp
+    src/edge.cpp
+    src/curve.cpp
 )
 
 add_library(${LIB_NAME} STATIC ${VFONT_HEADERS} ${VFONT_SOURCES})
@@ -114,3 +118,23 @@ add_custom_target(vfont-shaders
 )
 
 add_dependencies(${LIB_NAME} vfont-shaders)
+
+# build documentation if specified
+option(BUILD_DOCS "Build documentation" ON)
+
+find_package(Doxygen)
+if(BUILD_DOCS AND DOXYGEN_FOUND)
+    set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile)
+    set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/docs)
+
+    add_custom_target(docs
+        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_IN}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMENT "vfont: generating documentation"
+        VERBATIM
+    )
+
+    add_dependencies(${LIB_NAME} docs)
+elseif(BUILD_DOC AND NOT DOXYGEN_FOUND)
+    message(WARNING "vfont: could not build documentation, please install doxygen")
+endif()

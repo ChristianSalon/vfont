@@ -9,11 +9,14 @@
 
 namespace vft {
 
+/**
+ * @brief TriangulationTessellator constructor, initializes freetype outline decompose functions
+ */
 TriangulationTessellator::TriangulationTessellator() {
     this->_moveToFunc = [](const FT_Vector *to, void *user) {
         TriangulationTessellator *pThis = reinterpret_cast<TriangulationTessellator *>(user);
 
-        if (pThis->_currentGlyphData.contourCount >= 2) {
+        if (pThis->contourCount >= 2) {
             // Perform union of contours
             PolygonOperator polygonOperator{};
             polygonOperator.join(pThis->_currentGlyph.mesh.getVertices(), pThis->_firstPolygon, pThis->_secondPolygon);
@@ -21,8 +24,8 @@ TriangulationTessellator::TriangulationTessellator() {
             pThis->_firstPolygon = polygonOperator.getPolygon();
             pThis->_secondPolygon = {CircularDLL<Edge>{}};
 
-            pThis->_currentGlyphData.vertexId = pThis->_currentGlyph.mesh.getVertexCount();
-        } else if (pThis->_currentGlyphData.contourCount == 1) {
+            pThis->vertexIndex = pThis->_currentGlyph.mesh.getVertexCount();
+        } else if (pThis->contourCount == 1) {
             pThis->_firstPolygon = pThis->_secondPolygon;
             pThis->_secondPolygon = {CircularDLL<Edge>{}};
         }
@@ -30,16 +33,16 @@ TriangulationTessellator::TriangulationTessellator() {
         // Process contour starting vertex
         glm::vec2 vertex{static_cast<float>(to->x), static_cast<float>(to->y)};
         uint32_t vertexIndex = pThis->_getVertexIndex(vertex);
-        if (vertexIndex == pThis->_currentGlyphData.vertexId) {
+        if (vertexIndex == pThis->vertexIndex) {
             pThis->_currentGlyph.mesh.addVertex(vertex);
-            pThis->_currentGlyphData.vertexId++;
+            pThis->vertexIndex++;
         }
 
         // Update glyph data
-        pThis->_currentGlyphData.contourStartVertexId = vertexIndex;
-        pThis->_currentGlyphData.lastVertex = vertex;
-        pThis->_currentGlyphData.lastVertexIndex = vertexIndex;
-        pThis->_currentGlyphData.contourCount++;
+        pThis->contourStartVertexIndex = vertexIndex;
+        pThis->lastVertex = vertex;
+        pThis->lastVertexIndex = vertexIndex;
+        pThis->contourCount++;
 
         return 0;
     };
@@ -50,20 +53,20 @@ TriangulationTessellator::TriangulationTessellator() {
         // Process line end vertex
         glm::vec2 endVertex{static_cast<float>(to->x), static_cast<float>(to->y)};
         uint32_t endVertexIndex = pThis->_getVertexIndex(endVertex);
-        if (endVertexIndex == pThis->_currentGlyphData.vertexId) {
+        if (endVertexIndex == pThis->vertexIndex) {
             pThis->_currentGlyph.mesh.addVertex(endVertex);
-            pThis->_currentGlyphData.vertexId++;
+            pThis->vertexIndex++;
         }
 
         // Create line segment
-        pThis->_currentGlyph.addLineSegment(Edge{pThis->_currentGlyphData.lastVertexIndex, endVertexIndex});
+        pThis->_currentGlyph.addLineSegment(Edge{pThis->lastVertexIndex, endVertexIndex});
 
         // Add edge to polygon
-        pThis->_secondPolygon[0].insertLast(Edge{pThis->_currentGlyphData.lastVertexIndex, endVertexIndex});
+        pThis->_secondPolygon[0].insertLast(Edge{pThis->lastVertexIndex, endVertexIndex});
 
         // Update glyph data
-        pThis->_currentGlyphData.lastVertex = endVertex;
-        pThis->_currentGlyphData.lastVertexIndex = endVertexIndex;
+        pThis->lastVertex = endVertex;
+        pThis->lastVertexIndex = endVertexIndex;
 
         return 0;
     };
@@ -71,27 +74,27 @@ TriangulationTessellator::TriangulationTessellator() {
     this->_conicToFunc = [](const FT_Vector *control, const FT_Vector *to, void *user) {
         TriangulationTessellator *pThis = reinterpret_cast<TriangulationTessellator *>(user);
 
-        glm::vec2 startPoint = pThis->_currentGlyphData.lastVertex;
+        glm::vec2 startPoint = pThis->lastVertex;
 
         // Process curve control vertex
         glm::vec2 controlPoint{static_cast<float>(control->x), static_cast<float>(control->y)};
         uint32_t controlPointVertexIndex = pThis->_getVertexIndex(controlPoint);
-        if (controlPointVertexIndex == pThis->_currentGlyphData.vertexId) {
+        if (controlPointVertexIndex == pThis->vertexIndex) {
             pThis->_currentGlyph.mesh.addVertex(controlPoint);
-            pThis->_currentGlyphData.vertexId++;
+            pThis->vertexIndex++;
         }
 
         // Process curve end vertex
         glm::vec2 endPoint{static_cast<float>(to->x), static_cast<float>(to->y)};
         uint32_t endPointVertexIndex = pThis->_getVertexIndex(endPoint);
-        if (endPointVertexIndex == pThis->_currentGlyphData.vertexId) {
+        if (endPointVertexIndex == pThis->vertexIndex) {
             pThis->_currentGlyph.mesh.addVertex(endPoint);
-            pThis->_currentGlyphData.vertexId++;
+            pThis->vertexIndex++;
         }
 
         // Create curve segment
         pThis->_currentGlyph.addCurveSegment(
-            Curve{pThis->_currentGlyphData.lastVertexIndex, controlPointVertexIndex, endPointVertexIndex});
+            Curve{pThis->lastVertexIndex, controlPointVertexIndex, endPointVertexIndex});
 
         // Adaptive subdivision of quadratic bezier curve
         std::array<glm::vec2, 3> curve{pThis->_font->getScalingVector(pThis->_fontSize) * startPoint,
@@ -99,7 +102,7 @@ TriangulationTessellator::TriangulationTessellator() {
                                        pThis->_font->getScalingVector(pThis->_fontSize) * endPoint};
         std::set<float> newVertices = pThis->_subdivideQuadraticBezier(curve);
 
-        uint32_t lastVertexIndex = pThis->_currentGlyphData.lastVertexIndex;
+        uint32_t lastVertexIndex = pThis->lastVertexIndex;
         for (float t : newVertices) {
             if (t == 0) {
                 continue;
@@ -107,9 +110,9 @@ TriangulationTessellator::TriangulationTessellator() {
 
             glm::vec2 newVertex{(1 - t) * (1 - t) * startPoint + 2 * (1 - t) * t * controlPoint + (t * t) * endPoint};
             uint32_t newVertexIndex = pThis->_getVertexIndex(newVertex);
-            if (newVertexIndex == pThis->_currentGlyphData.vertexId) {
+            if (newVertexIndex == pThis->vertexIndex) {
                 pThis->_currentGlyph.mesh.addVertex(newVertex);
-                pThis->_currentGlyphData.vertexId++;
+                pThis->vertexIndex++;
             }
 
             // Add edge to polygon
@@ -119,13 +122,20 @@ TriangulationTessellator::TriangulationTessellator() {
         }
 
         // Update glyph data
-        pThis->_currentGlyphData.lastVertex = endPoint;
-        pThis->_currentGlyphData.lastVertexIndex = endPointVertexIndex;
+        pThis->lastVertex = endPoint;
+        pThis->lastVertexIndex = endPointVertexIndex;
 
         return 0;
     };
 }
 
+/**
+ * @brief Composes a glyph ready for rendering
+ *
+ * @param glyphId Id of glyph to compose
+ * @param font Font of glyph
+ * @param fontSize Font size of glyph
+ */
 Glyph TriangulationTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<vft::Font> font, unsigned int fontSize) {
     this->_font = font;
     this->_fontSize = fontSize;
@@ -141,7 +151,7 @@ Glyph TriangulationTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<v
     std::vector<Edge> edges;
     std::vector<uint32_t> triangles;
 
-    if (this->_currentGlyphData.contourCount >= 1) {
+    if (this->contourCount >= 1) {
         // Perform union of contours
         PolygonOperator polygonOperator{};
         polygonOperator.join(this->_currentGlyph.mesh.getVertices(), this->_firstPolygon, this->_secondPolygon);
@@ -176,7 +186,6 @@ Glyph TriangulationTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<v
     // Cleanup
     this->_firstPolygon.clear();
     this->_secondPolygon.clear();
-    this->_vertices.clear();
 
     return glyph;
 }
@@ -184,9 +193,7 @@ Glyph TriangulationTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<v
 /**
  * @brief Computes vertices of a quadratic bezier curve with adaptive level of detail
  *
- * @param startPoint Bezier curve starting point
- * @param controlPoint Bezier curve control point
- * @param endPoint Bezier curve ending point
+ * @param curve Bezier curve start, control and end points
  */
 std::set<float> TriangulationTessellator::_subdivideQuadraticBezier(const std::array<glm::vec2, 3> curve) {
     std::set<float> newVertices{0.f, 1.f};
@@ -198,12 +205,10 @@ std::set<float> TriangulationTessellator::_subdivideQuadraticBezier(const std::a
 /**
  * @brief Subdivides a quadratic bezier curve until there is no loss of quality
  *
- * @param startPoint Bezier curve starting point
- * @param controlPoint Bezier curve control point
- * @param endPoint Bezier curve ending point
+ * @param curve Bezier curve start, control and end points
  * @param t Parameter for the position on the bezier curve (t = <0, 1>)
  * @param delta Indicates distance between current point and computed points in the previous step
- * @param vertices Created vertices by dividing bezier curve into line segments
+ * @param newVertices T parameters created by dividing bezier curve into line segments
  */
 void TriangulationTessellator::_subdivide(const std::array<glm::vec2, 3> curve,
                                           float t,
