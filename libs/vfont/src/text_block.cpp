@@ -19,13 +19,13 @@ TextBlock::TextBlock() : _font{nullptr}, _kerning{false} {
 }
 
 /**
- * @brief Add unicode code points to text block at given position
+ * @brief Add utf-32 encoded text to text block at given position
  *
- * @param codePoints Unicode code points
+ * @param text Utf-32 encoded text
  * @param start Position at which to start inserting text
  */
-void TextBlock::add(std::vector<uint32_t> codePoints, unsigned int start) {
-    if (codePoints.size() == 0) {
+void TextBlock::add(std::u32string text, unsigned int start) {
+    if (text.size() == 0) {
         return;
     }
 
@@ -52,7 +52,7 @@ void TextBlock::add(std::vector<uint32_t> codePoints, unsigned int start) {
         // No text segment exists, create one
         TextSegment newSegment{this->_font, this->_fontSize};
         newSegment.setTransform(this->_transform);
-        newSegment.add(codePoints);
+        newSegment.add(text);
 
         this->_segments.push_back(newSegment);
     } else {
@@ -63,11 +63,11 @@ void TextBlock::add(std::vector<uint32_t> codePoints, unsigned int start) {
         if (this->_font == segment.getFont() && this->_fontSize == segment.getFontSize()) {
             // Add text to selected segment at specified position
             // No need to create a new text segment
-            segment.add(codePoints, start - this->_getCodePointGlobalIndexBasedOnSegment(segment));
+            segment.add(text, start - this->_getCodePointGlobalIndexBasedOnSegment(segment));
         } else {
             TextSegment newSegment{this->_font, this->_fontSize};
             newSegment.setTransform(this->_transform);
-            newSegment.add(codePoints);
+            newSegment.add(text);
             unsigned int localIndex = start - this->_getCodePointGlobalIndexBasedOnSegment(segment);
 
             if (localIndex == 0) {
@@ -82,8 +82,8 @@ void TextBlock::add(std::vector<uint32_t> codePoints, unsigned int start) {
                 // Create right segment and add code points from range <localIndex, end)
                 TextSegment rightSegment{segment.getFont(), segment.getFontSize()};
                 rightSegment.setTransform(this->_transform);
-                rightSegment.add(std::vector<uint32_t>(std::next(segment.getCodePoints().begin(), localIndex),
-                                                       segment.getCodePoints().end()));
+                rightSegment.add(
+                    std::u32string(std::next(segment.getText().begin(), localIndex), segment.getText().end()));
 
                 // Erase code points from left segment from range <localIndex, end)
                 segment.remove(localIndex);
@@ -112,18 +112,23 @@ void TextBlock::add(std::vector<uint32_t> codePoints, unsigned int start) {
 }
 
 /**
- * @brief Add text into text block at given position
+ * @brief Add utf-8 ennoded text into text block at given position
  *
- * @param text Input text
+ * @param text Utf-8 encoded text
  * @param start Position at which to start inserting text
  */
-void TextBlock::add(std::string text, unsigned int start) {
-    std::vector<uint32_t> codePoints;
-    for (unsigned char character : text) {
-        codePoints.push_back(character);
-    }
+void TextBlock::add(std::u8string text, unsigned int start) {
+    this->add(Unicode::utf8ToUtf32(text), start);
+}
 
-    this->add(codePoints, start);
+/**
+ * @brief Add utf-16 ennoded text into text block at given position
+ *
+ * @param text Utf-16 encoded text
+ * @param start Position at which to start inserting text
+ */
+void TextBlock::add(std::u16string text, unsigned int start) {
+    this->add(Unicode::utf16ToUtf32(text), start);
 }
 
 /**
@@ -380,17 +385,17 @@ unsigned int TextBlock::getCharacterCount() {
 }
 
 /**
- * @brief Get all unicode code points in text block
+ * @brief Get the full utf-32 encoded text in text block
  *
- * @return Unicode code points
+ * @return Utf-32 text
  */
-std::vector<uint32_t> TextBlock::getCodePoints() {
-    std::vector<uint32_t> codePoints;
+std::u32string TextBlock::getUtf32Text() {
+    std::u32string text;
     for (TextSegment &segment : this->_segments) {
-        codePoints.insert(codePoints.end(), segment.getCodePoints().begin(), segment.getCodePoints().end());
+        text.insert(text.end(), segment.getText().begin(), segment.getText().end());
     }
 
-    return codePoints;
+    return text;
 }
 
 /**
@@ -480,7 +485,7 @@ void TextBlock::_updateCharacters() {
         this->_font = segment.getFont();
         this->_fontSize = segment.getFontSize();
 
-        this->add(segment.getCodePoints());
+        this->add(segment.getText());
     }
 
     this->remove(0, codePointCount);
@@ -557,7 +562,7 @@ std::list<TextSegment>::iterator TextBlock::_mergeSegmentsIfPossible(std::list<T
 
     if (first->getFont() == second->getFont() && first->getFontSize() == second->getFontSize()) {
         // Move characters from second segment to first
-        first->add(second->getCodePoints());
+        first->add(second->getText());
 
         // Return iterator to segment one after merged segment
         return this->_segments.erase(second);

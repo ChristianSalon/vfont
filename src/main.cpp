@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file main.cpp
  * @author Christian Saloň
  */
@@ -17,9 +17,9 @@
 int main(int argc, char **argv) {
     try {
         CameraType cameraType = CameraType::PERSPECTIVE;
-        std::string sceneType = "benchmark";
+        std::string sceneType = "demo";
         vft::TessellationStrategy tessellationAlgorithm = vft::TessellationStrategy::WINDING_NUMBER;
-        bool measureTime = true;
+        bool measureTime = false;
 
         for(int i = 1; i < argc; i++) {
             if(strcmp(argv[i], "-h") == 0) {

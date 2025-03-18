@@ -28,19 +28,19 @@ protected:
 
     glm::mat4 _transform{1.f}; /**< Transform matrix of text block */
 
-    std::vector<uint32_t> _codePoints{};  /**< Unicode code points to render */
+    std::u32string _text{};               /**< Utf-32 text to render */
     std::vector<Character> _characters{}; /**< Characters to render */
 
 public:
     TextSegment(std::shared_ptr<Font> font, unsigned int fontSize);
 
-    void add(const std::vector<uint32_t> &codePoints, unsigned int start = std::numeric_limits<unsigned int>::max());
+    void add(const std::u32string &text, unsigned int start = std::numeric_limits<unsigned int>::max());
     void remove(unsigned int start, unsigned int count = 1);
 
     void setTransform(glm::mat4 transform);
     glm::mat4 getTransform() const;
 
-    const std::vector<uint32_t> &getCodePoints();
+    const std::u32string &getText();
     std::vector<Character> &getCharacters();
     unsigned int getCodePointCount() const;
     unsigned int getCharacterCount() const;

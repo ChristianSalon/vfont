@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file demo_scene.h
  * @author Christian Saloň
  */
@@ -34,10 +34,10 @@ public:
     static const std::string NOTO_SANS_JP_PATH;
     static const std::string NOTO_EMOJI_PATH;
 
-    static const std::vector<uint32_t> ENGLISH_CODE_POINTS;
-    static const std::vector<uint32_t> SLOVAK_CODE_POINTS;
-    static const std::vector<uint32_t> JAPANESE_CODE_POINTS;
-    static const std::vector<uint32_t> EMOJI_CODE_POINTS;
+    static const std::u8string ENGLISH_CODE_POINTS;
+    static const std::u16string SLOVAK_CODE_POINTS;
+    static const std::u32string JAPANESE_CODE_POINTS;
+    static const std::u32string EMOJI_CODE_POINTS;
 
 private:
 

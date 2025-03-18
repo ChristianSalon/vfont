@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file editor_scene.cpp
  * @author Christian Saloň
  */
@@ -30,6 +30,6 @@ void EditorScene::_updateText(uint32_t codePoint) {
         this->_textBlock->remove();
     }
     else {
-        this->_textBlock->add(std::vector<uint32_t>{codePoint});
+        this->_textBlock->add(std::u32string{codePoint});
     }
 }

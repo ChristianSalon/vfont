@@ -7,7 +7,7 @@
 
 const std::string BenchmarkScene::ROBOTO_PATH = "assets/Roboto-Regular.ttf";
 
-const std::string BenchmarkScene::CODE_POINTS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+const std::u8string BenchmarkScene::TEXT = u8"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
 BenchmarkScene::BenchmarkScene(CameraType cameraType, vft::TessellationStrategy tessellationAlgorithm, bool measureTime) : Scene{cameraType, tessellationAlgorithm, measureTime} {
     // this->_renderer->setCacheSize(0);
@@ -127,19 +127,19 @@ BenchmarkScene::BenchmarkScene(CameraType cameraType, vft::TessellationStrategy 
     auto startTime = std::chrono::high_resolution_clock::now();
 
     for (int i = 0; i < 10; i++) {
-        this->_block1->add(BenchmarkScene::CODE_POINTS);
-        this->_block2->add(BenchmarkScene::CODE_POINTS);
-        this->_block3->add(BenchmarkScene::CODE_POINTS);
-        this->_block4->add(BenchmarkScene::CODE_POINTS);
-        this->_block5->add(BenchmarkScene::CODE_POINTS);
-        this->_block6->add(BenchmarkScene::CODE_POINTS);
+        this->_block1->add(BenchmarkScene::TEXT);
+        this->_block2->add(BenchmarkScene::TEXT);
+        this->_block3->add(BenchmarkScene::TEXT);
+        this->_block4->add(BenchmarkScene::TEXT);
+        this->_block5->add(BenchmarkScene::TEXT);
+        this->_block6->add(BenchmarkScene::TEXT);
 
-        this->_block7->add(BenchmarkScene::CODE_POINTS);
-        this->_block8->add(BenchmarkScene::CODE_POINTS);
-        this->_block9->add(BenchmarkScene::CODE_POINTS);
-        this->_block10->add(BenchmarkScene::CODE_POINTS);
-        this->_block11->add(BenchmarkScene::CODE_POINTS);
-        this->_block12->add(BenchmarkScene::CODE_POINTS);
+        this->_block7->add(BenchmarkScene::TEXT);
+        this->_block8->add(BenchmarkScene::TEXT);
+        this->_block9->add(BenchmarkScene::TEXT);
+        this->_block10->add(BenchmarkScene::TEXT);
+        this->_block11->add(BenchmarkScene::TEXT);
+        this->_block12->add(BenchmarkScene::TEXT);
     }
 
     auto endTime = std::chrono::high_resolution_clock::now();

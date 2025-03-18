@@ -28,7 +28,7 @@ class BenchmarkScene : public Scene {
 public:
 
 	static const std::string ROBOTO_PATH;
-	static const std::string CODE_POINTS;
+	static const std::u8string TEXT;
 
 private:
 

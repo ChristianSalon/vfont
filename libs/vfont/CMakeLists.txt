@@ -61,6 +61,7 @@ set(VFONT_SOURCES
     src/polygon_operator.cpp
     src/edge.cpp
     src/curve.cpp
+    src/unicode.cpp
 )
 
 add_library(${LIB_NAME} STATIC ${VFONT_HEADERS} ${VFONT_SOURCES})

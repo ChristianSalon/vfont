@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file demo_scene.cpp
  * @author Christian Saloň
  */
@@ -12,13 +12,10 @@ const std::string DemoScene::ROBOTO_MONO_PATH = "assets/RobotoMono-Bold.ttf";
 const std::string DemoScene::NOTO_SANS_JP_PATH = "assets/NotoSansJP-Regular.ttf";
 const std::string DemoScene::NOTO_EMOJI_PATH = "assets/NotoEmoji.ttf";
 
-const std::vector<uint32_t> DemoScene::ENGLISH_CODE_POINTS =
-    {0x54, 0x68, 0x69, 0x73, 0x20, 0x69, 0x73, 0x20, 0x64, 0x65, 0x6D, 0x6F, 0x20, 0x74, 0x65, 0x78, 0x74};
-const std::vector<uint32_t> DemoScene::SLOVAK_CODE_POINTS =
-    {0x0044, 0x0065, 0x006d, 0x006f, 0x006e, 0x0161, 0x0074, 0x0072, 0x0061, 0x010d, 0x006e, 0x00fd, 0x0020, 0x0074, 0x0065, 0x0078, 0x0074};
-const std::vector<uint32_t> DemoScene::JAPANESE_CODE_POINTS =
-    {0x3053, 0x308C, 0x306F, 0x30C7, 0x30E2, 0x30C6, 0x30AD, 0x30B9, 0x30C8, 0x3067, 0x3059};
-const std::vector<uint32_t> DemoScene::EMOJI_CODE_POINTS =
+const std::u8string DemoScene::ENGLISH_CODE_POINTS = u8"This is demo text";
+const std::u16string DemoScene::SLOVAK_CODE_POINTS = u"Demonštračný text";
+const std::u32string DemoScene::JAPANESE_CODE_POINTS = U"これはデモテキストです";
+const std::u32string DemoScene::EMOJI_CODE_POINTS =
     {0x1F970, 0x1F480, 0x270C, 0xFE0F, 0x1F334, 0x1F422, 0x1F410, 0x1F344, 0x26BD, 0x1F37B, 0x1F451, 0x1F4F8};
 
 DemoScene::DemoScene(CameraType cameraType, vft::TessellationStrategy tessellationAlgorithm, bool measureTime) : Scene{cameraType, tessellationAlgorithm, measureTime} {

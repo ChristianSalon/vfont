@@ -57,8 +57,9 @@ public:
     void translate(float x, float y, float z);
     void rotate(float x, float y, float z);
 
-    void add(std::vector<uint32_t> codePoints, unsigned int start = std::numeric_limits<unsigned int>::max());
-    void add(std::string text, unsigned int start = std::numeric_limits<unsigned int>::max());
+    void add(std::u8string text, unsigned int start = std::numeric_limits<unsigned int>::max());
+    void add(std::u16string text, unsigned int start = std::numeric_limits<unsigned int>::max());
+    void add(std::u32string text, unsigned int start = std::numeric_limits<unsigned int>::max());
     void remove(unsigned int start = std::numeric_limits<unsigned int>::max(), unsigned int count = 1);
     void clear();
 
@@ -73,7 +74,7 @@ public:
 
     std::vector<Character> getCharacters();
     unsigned int getCharacterCount();
-    std::vector<uint32_t> getCodePoints();
+    std::u32string getUtf32Text();
     unsigned int getCodePointCount();
 
     std::shared_ptr<Font> getFont() const;

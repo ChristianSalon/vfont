@@ -16,22 +16,22 @@ namespace vft {
 TextSegment::TextSegment(std::shared_ptr<Font> font, unsigned int fontSize) : _font{font}, _fontSize{fontSize} {}
 
 /**
- * @brief Add unicode code points to segment at given position
+ * @brief Add utf-32 text to segment at given position
  *
- * @param codePoints Unicode code points
+ * @param text Utf-32 encoded text
  * @param start Index where to start adding code points
  */
-void TextSegment::add(const std::vector<uint32_t> &codePoints, unsigned int start) {
+void TextSegment::add(const std::u32string &text, unsigned int start) {
     if (start == std::numeric_limits<unsigned int>::max()) {
-        start = this->_codePoints.size();
+        start = this->_text.size();
     }
 
-    if (start > this->_codePoints.size()) {
+    if (start > this->_text.size()) {
         throw std::out_of_range("TextSegment::add(): Start index is out of bounds");
     }
 
     // Add unicode code points to segment
-    this->_codePoints.insert(this->_codePoints.begin() + start, codePoints.begin(), codePoints.end());
+    this->_text.insert(this->_text.begin() + start, text.begin(), text.end());
 
     // Shape segment and update characters
     this->_shape();
@@ -48,15 +48,15 @@ void TextSegment::remove(unsigned int start, unsigned int count) {
         return;
     }
 
-    if (start >= this->_codePoints.size()) {
+    if (start >= this->_text.size()) {
         throw std::out_of_range("TextSegment::remove(): Start index is out of bounds");
     }
 
-    if (start + count > this->_codePoints.size()) {
+    if (start + count > this->_text.size()) {
         throw std::out_of_range("TextSegment::remove(): Range exceeds available code points");
     }
 
-    this->_codePoints.erase(this->_codePoints.begin() + start, this->_codePoints.begin() + start + count);
+    this->_text.erase(this->_text.begin() + start, this->_text.begin() + start + count);
 
     // Shape segment and update characters
     this->_shape();
@@ -85,12 +85,12 @@ glm::mat4 TextSegment::getTransform() const {
 }
 
 /**
- * @brief Get unicode code points in segment
+ * @brief Get utf-32 encoded text in segment
  *
- * @return Code points
+ * @return Utf-32 encoded text
  */
-const std::vector<uint32_t> &TextSegment::getCodePoints() {
-    return this->_codePoints;
+const std::u32string &TextSegment::getText() {
+    return this->_text;
 }
 
 /**
@@ -108,7 +108,7 @@ std::vector<Character> &TextSegment::getCharacters() {
  * @return Number of code points
  */
 unsigned int TextSegment::getCodePointCount() const {
-    return this->_codePoints.size();
+    return this->_text.size();
 }
 
 /**
@@ -143,7 +143,7 @@ unsigned int TextSegment::getFontSize() const {
  */
 void TextSegment::_shape() {
     // Shape whole segment
-    std::vector<std::vector<ShapedCharacter>> shaped = Shaper::shape(this->_codePoints, this->_font, this->_fontSize);
+    std::vector<std::vector<ShapedCharacter>> shaped = Shaper::shape(this->_text, this->_font, this->_fontSize);
 
     unsigned int originalCharacterCount = this->_characters.size();
 

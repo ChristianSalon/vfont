@@ -34,12 +34,12 @@ typedef struct {
  */
 class Shaper {
 public:
-    static std::vector<std::vector<ShapedCharacter>> shape(std::vector<uint32_t> codePoints,
+    static std::vector<std::vector<ShapedCharacter>> shape(std::u32string text,
                                                            std::shared_ptr<Font> font,
                                                            unsigned int fontSize);
 
 protected:
-    static void _preprocessInput(std::vector<uint32_t> &codePoints);
+    static void _preprocessInput(std::u32string &text);
 };
 
 }  // namespace vft

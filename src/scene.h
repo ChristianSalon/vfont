@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file scene.h
  * @author Christian Saloň
  */

@@ -8,27 +8,27 @@
 namespace vft {
 
 /**
- * @brief Shape text using harfbuzz
+ * @brief Shape utf-32 encoded text using harfbuzz
  *
- * @param codePoints Unicode code points of input text
+ * @param text Utf-32 encoded text
  * @param font Font of text
  * @param fontSize Font size of text
  *
  * @return Shaped characters divided into lines (by CR, LF or CRLF)
  */
-std::vector<std::vector<ShapedCharacter>> Shaper::shape(std::vector<uint32_t> codePoints,
+std::vector<std::vector<ShapedCharacter>> Shaper::shape(std::u32string text,
                                                         std::shared_ptr<Font> font,
                                                         unsigned int fontSize) {
-    Shaper::_preprocessInput(codePoints);
+    Shaper::_preprocessInput(text);
 
     // Get indices of line breaks in input text
     std::vector<unsigned int> newLines;
-    for (unsigned int i = 0; i < codePoints.size(); i++) {
-        if (codePoints[i] == U_LF) {
+    for (unsigned int i = 0; i < text.size(); i++) {
+        if (text[i] == U_LF) {
             newLines.push_back(i);
         }
     }
-    newLines.push_back(codePoints.size());
+    newLines.push_back(text.size());
 
     // Create font objects
     hb_face_t *hbFace = hb_ft_face_create(font->getFace(), 0);
@@ -47,7 +47,8 @@ std::vector<std::vector<ShapedCharacter>> Shaper::shape(std::vector<uint32_t> co
             hb_buffer_t *buffer = hb_buffer_create();
 
             // Add input to buffer
-            hb_buffer_add_utf32(buffer, codePoints.data(), codePoints.size(), lineStart, lineEnd - lineStart);
+            hb_buffer_add_utf32(buffer, reinterpret_cast<const uint32_t *>(text.data()), text.size(), lineStart,
+                                lineEnd - lineStart);
 
             // Set text properties
             hb_buffer_set_direction(buffer, HB_DIRECTION_LTR);
@@ -91,23 +92,23 @@ std::vector<std::vector<ShapedCharacter>> Shaper::shape(std::vector<uint32_t> co
 }
 
 /**
- * @brief Preprocess input text
+ * @brief Preprocess input utf-32 text
  *
- * @param codePoints Input text
+ * @param text Utf-32 encoded input text
  */
-void Shaper::_preprocessInput(std::vector<uint32_t> &codePoints) {
-    for (unsigned int i = 0; i < codePoints.size(); i++) {
-        if (codePoints[i] == U_TAB) {
+void Shaper::_preprocessInput(std::u32string &text) {
+    for (unsigned int i = 0; i < text.size(); i++) {
+        if (text[i] == U_TAB) {
             // Replace TAB with 4 spaces
-            codePoints.insert(codePoints.begin() + i, 4, U_SPACE);
+            text.insert(text.begin() + i, 4, U_SPACE);
             // Erase the original tab
-            codePoints.erase(codePoints.begin() + i + 4);
-        } else if (i + 1 < codePoints.size() && codePoints[i] == U_CR && codePoints[i + 1] == U_LF) {
+            text.erase(text.begin() + i + 4);
+        } else if (i + 1 < text.size() && text[i] == U_CR && text[i + 1] == U_LF) {
             // Erase CR, leave only LF
-            codePoints.erase(codePoints.begin() + i);
-        } else if (codePoints[i] == U_CR) {
+            text.erase(text.begin() + i);
+        } else if (text[i] == U_CR) {
             // Replace CR with LF
-            codePoints[i] = U_LF;
+            text[i] = U_LF;
         }
     }
 }
