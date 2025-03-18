@@ -36,7 +36,10 @@ class Shaper {
 public:
     static std::vector<std::vector<ShapedCharacter>> shape(std::u32string text,
                                                            std::shared_ptr<Font> font,
-                                                           unsigned int fontSize);
+                                                           unsigned int fontSize,
+                                                           hb_direction_t direction = HB_DIRECTION_LTR,
+                                                           hb_script_t script = HB_SCRIPT_LATIN,
+                                                           hb_language_t language = hb_language_from_string("en", -1));
 
 protected:
     static void _preprocessInput(std::u32string &text);

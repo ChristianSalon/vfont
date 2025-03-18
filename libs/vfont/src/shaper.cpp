@@ -10,15 +10,25 @@ namespace vft {
 /**
  * @brief Shape utf-32 encoded text using harfbuzz
  *
+ * This function processes input text encoded in utf-32, which is provided in logical order.
+ * Using the specified properties, it applies text shaping and reorders the glyphs into visual order.
+ * The output is divided into lines, ensuring proper text rendering.
+ *
  * @param text Utf-32 encoded text
  * @param font Font of text
  * @param fontSize Font size of text
+ * @param direction Direction in which to render text (e.g. left-to-right, right-to-left)
+ * @param script Script of input text
+ * @param language Language of input text
  *
  * @return Shaped characters divided into lines (by CR, LF or CRLF)
  */
 std::vector<std::vector<ShapedCharacter>> Shaper::shape(std::u32string text,
                                                         std::shared_ptr<Font> font,
-                                                        unsigned int fontSize) {
+                                                        unsigned int fontSize,
+                                                        hb_direction_t direction,
+                                                        hb_script_t script,
+                                                        hb_language_t language) {
     Shaper::_preprocessInput(text);
 
     // Get indices of line breaks in input text
@@ -51,9 +61,9 @@ std::vector<std::vector<ShapedCharacter>> Shaper::shape(std::u32string text,
                                 lineEnd - lineStart);
 
             // Set text properties
-            hb_buffer_set_direction(buffer, HB_DIRECTION_LTR);
-            hb_buffer_set_script(buffer, HB_SCRIPT_LATIN);
-            hb_buffer_set_language(buffer, hb_language_from_string("en", -1));
+            hb_buffer_set_direction(buffer, direction);
+            hb_buffer_set_script(buffer, script);
+            hb_buffer_set_language(buffer, language);
 
             // Shape text
             hb_shape(hbFont, buffer, nullptr, 0);
