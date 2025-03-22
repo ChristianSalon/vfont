@@ -96,6 +96,8 @@ protected:
     void _copyBuffer(VkBuffer sourceBuffer, VkBuffer destinationBuffer, VkDeviceSize size);
     void _destroyBuffer(VkBuffer &buffer, VkDeviceMemory &bufferMemory);
     uint32_t _selectMemoryType(uint32_t memoryType, VkMemoryPropertyFlags properties);
+    VkCommandBuffer _beginOneTimeCommands();
+    void _endOneTimeCommands(VkCommandBuffer commandBuffer);
 };
 
 }  // namespace vft

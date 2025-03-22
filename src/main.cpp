@@ -18,8 +18,8 @@ int main(int argc, char **argv) {
     try {
         CameraType cameraType = CameraType::PERSPECTIVE;
         std::string sceneType = "demo";
-        vft::TessellationStrategy tessellationAlgorithm = vft::TessellationStrategy::WINDING_NUMBER;
-        bool measureTime = false;
+        vft::TessellationStrategy tessellationAlgorithm = vft::TessellationStrategy::SDF;
+        bool measureTime = true;
 
         for(int i = 1; i < argc; i++) {
             if(strcmp(argv[i], "-h") == 0) {
@@ -66,6 +66,9 @@ int main(int argc, char **argv) {
                 }
                 else if (type == "combined") {
                     tessellationAlgorithm = vft::TessellationStrategy::TESSELLATION_SHADERS;
+                }
+                else if (type == "sdf") {
+                    tessellationAlgorithm = vft::TessellationStrategy::SDF;
                 }
                 else {
                     std::cerr << "Tessellation algorithm must be cpu or gpu or combined" << std::endl;

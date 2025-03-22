@@ -162,7 +162,7 @@ void TextSegment::_shape() {
         shapedLineCount++;
         if (shapedLineCount != shaped.size()) {
             // Add new line
-            Character character{0, vft::U_LF, this->_font, this->_fontSize};
+            Character character{0, U_LF, this->_font, this->_fontSize};
             character.setTransform(this->_transform);
 
             this->_characters.push_back(character);

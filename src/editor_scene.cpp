@@ -9,6 +9,11 @@ const std::string EditorScene::ROBOTO_PATH = "assets/Roboto-Regular.ttf";
 
 EditorScene::EditorScene(CameraType cameraType, vft::TessellationStrategy tessellationAlgorithm, bool measureTime) : Scene{cameraType, tessellationAlgorithm, measureTime} {
     this->_roboto = std::make_shared<vft::Font>(EditorScene::ROBOTO_PATH);
+    if (tessellationAlgorithm == vft::TessellationStrategy::SDF) {
+        vft::FontAtlas robotoAtlas{this->_roboto};
+        this->_renderer->addFontAtlas(robotoAtlas);
+    }
+
     this->_textBlock = vft::TextBlockBuilder()
         .setFont(this->_roboto)
         .setFontSize(32)

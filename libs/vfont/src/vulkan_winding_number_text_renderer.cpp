@@ -32,13 +32,13 @@ void VulkanWindingNumberTextRenderer::destroy() {
         this->_destroyBuffer(this->_vertexBuffer, this->_vertexBufferMemory);
 
     // Destroy descriptor set
-    if (this->_vertexBuffer != nullptr)
+    if (this->_segmentsDescriptorSetLayout != nullptr)
         vkDestroyDescriptorSetLayout(this->_logicalDevice, this->_segmentsDescriptorSetLayout, nullptr);
 
     // Destroy pipeline
-    if (this->_vertexBuffer != nullptr)
+    if (this->_segmentsPipeline != nullptr)
         vkDestroyPipeline(this->_logicalDevice, this->_segmentsPipeline, nullptr);
-    if (this->_vertexBuffer != nullptr)
+    if (this->_segmentsPipelineLayout != nullptr)
         vkDestroyPipelineLayout(this->_logicalDevice, this->_segmentsPipelineLayout, nullptr);
 
     VulkanTextRenderer::destroy();
@@ -169,7 +169,7 @@ void VulkanWindingNumberTextRenderer::_createVertexAndIndexBuffers() {
                 this->_segmentsInfo.push_back(SegmentsInfo{
                     segmentsCount, lineCount, segmentsCount + static_cast<uint32_t>(lineSegments.size()), curveCount});
 
-                // Add an offset to line segment indices of current character
+                // Add an offset to bounding box indices of current character
                 for (int j = boundingBoxIndexCount; j < this->_boundingBoxIndices.size(); j++) {
                     this->_boundingBoxIndices.at(j) += vertexCount;
                 }
@@ -233,32 +233,6 @@ void VulkanWindingNumberTextRenderer::_createDescriptorPool() {
 }
 
 /**
- * @brief Create vulkan ssbo containing line and curve segments of all glyphs
- */
-void VulkanWindingNumberTextRenderer::_createSsbo() {
-    VkDeviceSize segmentsBufferSize = sizeof(this->_segments.at(0)) * this->_segments.size();
-    this->_stageAndCreateVulkanBuffer(this->_segments.data(), segmentsBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                      this->_segmentsBuffer, this->_segmentsBufferMemory);
-
-    VkDescriptorBufferInfo lineSegmentsBufferInfo{};
-    lineSegmentsBufferInfo.buffer = this->_segmentsBuffer;
-    lineSegmentsBufferInfo.offset = 0;
-    lineSegmentsBufferInfo.range = segmentsBufferSize;
-
-    std::array<VkWriteDescriptorSet, 1> writeDescriptorSets = {};
-
-    writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writeDescriptorSets[0].dstSet = this->_segmentsDescriptorSet;
-    writeDescriptorSets[0].dstBinding = 0;
-    writeDescriptorSets[0].dstArrayElement = 0;
-    writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    writeDescriptorSets[0].descriptorCount = 1;
-    writeDescriptorSets[0].pBufferInfo = &lineSegmentsBufferInfo;
-
-    vkUpdateDescriptorSets(this->_logicalDevice, writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
-}
-
-/**
  * @brief Create vulkan ssbo descriptor set layout
  */
 void VulkanWindingNumberTextRenderer::_createSegmentsDescriptorSetLayout() {
@@ -296,6 +270,32 @@ void VulkanWindingNumberTextRenderer::_createSegmentsDescriptorSet() {
         throw std::runtime_error(
             "VulkanWindingNumberTextRenderer::_createSegmentsDescriptorSet(): Error allocating vulkan descriptor sets");
     }
+}
+
+/**
+ * @brief Create vulkan ssbo containing line and curve segments of all glyphs
+ */
+void VulkanWindingNumberTextRenderer::_createSsbo() {
+    VkDeviceSize segmentsBufferSize = sizeof(this->_segments.at(0)) * this->_segments.size();
+    this->_stageAndCreateVulkanBuffer(this->_segments.data(), segmentsBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                      this->_segmentsBuffer, this->_segmentsBufferMemory);
+
+    VkDescriptorBufferInfo lineSegmentsBufferInfo{};
+    lineSegmentsBufferInfo.buffer = this->_segmentsBuffer;
+    lineSegmentsBufferInfo.offset = 0;
+    lineSegmentsBufferInfo.range = segmentsBufferSize;
+
+    std::array<VkWriteDescriptorSet, 1> writeDescriptorSets = {};
+
+    writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writeDescriptorSets[0].dstSet = this->_segmentsDescriptorSet;
+    writeDescriptorSets[0].dstBinding = 0;
+    writeDescriptorSets[0].dstArrayElement = 0;
+    writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    writeDescriptorSets[0].descriptorCount = 1;
+    writeDescriptorSets[0].pBufferInfo = &lineSegmentsBufferInfo;
+
+    vkUpdateDescriptorSets(this->_logicalDevice, writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
 }
 
 /**

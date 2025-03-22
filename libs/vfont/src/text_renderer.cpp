@@ -32,6 +32,10 @@ void TextRenderer::add(std::shared_ptr<TextBlock> text) {
     text->onTextChange = [this]() { this->update(); };
 }
 
+void TextRenderer::addFontAtlas(const FontAtlas &atlas) {
+    throw std::runtime_error("TextRenderer::addFontAtlas(): Selected text renderer does not support font atlases");
+}
+
 /**
  * @brief Set uniform buffer object used for rendering
  *

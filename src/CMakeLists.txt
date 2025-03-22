@@ -60,6 +60,8 @@ add_custom_command(TARGET vfont-demo POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/libs/vfont/shaders/curve-frag.spv" "$<TARGET_FILE_DIR:vfont-demo>/shaders"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/libs/vfont/shaders/winding_number-vert.spv" "$<TARGET_FILE_DIR:vfont-demo>/shaders"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/libs/vfont/shaders/winding_number-frag.spv" "$<TARGET_FILE_DIR:vfont-demo>/shaders"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/libs/vfont/shaders/sdf-vert.spv" "$<TARGET_FILE_DIR:vfont-demo>/shaders"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/libs/vfont/shaders/sdf-frag.spv" "$<TARGET_FILE_DIR:vfont-demo>/shaders"
 )
 
 target_sources(vfont-demo PRIVATE ${VFONT_DEMO_SOURCES})

@@ -25,7 +25,7 @@ Font::Font(std::string fontFile) {
         throw std::runtime_error("Font::Font(): Error loading font face, check path to .ttf file");
     }
 
-    FT_Set_Pixel_Sizes(this->_face, DEFAULT_FONT_SIZE, 0);
+    FT_Set_Pixel_Sizes(this->_face, this->_pixelSize, 0);
 
     this->_supportsKerning = FT_HAS_KERNING(this->_face);
 }
@@ -49,9 +49,14 @@ Font::Font(uint8_t *buffer, long size) {
         throw std::runtime_error("Font::Font(): Error loading font from memory");
     }
 
-    FT_Set_Pixel_Sizes(this->_face, DEFAULT_FONT_SIZE, 0);
+    FT_Set_Pixel_Sizes(this->_face, this->_pixelSize, 0);
 
     this->_supportsKerning = FT_HAS_KERNING(this->_face);
+}
+
+void Font::setPixelSize(unsigned int pixelSize) {
+    this->_pixelSize = pixelSize;
+    FT_Set_Pixel_Sizes(this->_face, this->_pixelSize, this->_pixelSize);
 }
 
 /**
@@ -62,10 +67,14 @@ Font::Font(uint8_t *buffer, long size) {
  * @return Scale vector
  */
 glm::vec2 Font::getScalingVector(unsigned int fontSize) const {
-    return glm::vec2((static_cast<double>(fontSize) / static_cast<double>(DEFAULT_FONT_SIZE)) *
+    return glm::vec2((static_cast<double>(fontSize) / static_cast<double>(this->_pixelSize)) *
                          (static_cast<double>(this->_face->size->metrics.x_scale) / 4194304.f),
-                     (static_cast<double>(fontSize) / static_cast<double>(DEFAULT_FONT_SIZE)) *
+                     (static_cast<double>(fontSize) / static_cast<double>(this->_pixelSize)) *
                          (static_cast<double>(this->_face->size->metrics.y_scale) / 4194304.f));
+}
+
+unsigned int Font::getPixelSize() const {
+    return this->_pixelSize;
 }
 
 /**

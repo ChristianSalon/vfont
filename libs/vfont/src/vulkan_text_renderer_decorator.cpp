@@ -163,4 +163,8 @@ VkCommandBuffer VulkanTextRendererDecorator::getCommandBuffer() {
     return this->_renderer->getCommandBuffer();
 }
 
+void VulkanTextRendererDecorator::addFontAtlas(const FontAtlas &atlas) {
+    this->_renderer->addFontAtlas(atlas);
+}
+
 }  // namespace vft

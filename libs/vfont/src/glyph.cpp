@@ -27,6 +27,13 @@ void Glyph::addCurveSegment(Curve curve) {
 
 /**
  * @brief Get bounding box of glyph
+ * 
+ * 1 ---- 2
+ * |      |
+ * |      |
+ * |      |
+ * |      |
+ * 0 ---- 3
  *
  * @return Bounding box
  */

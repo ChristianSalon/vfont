@@ -79,8 +79,11 @@ Scene::Scene(CameraType cameraType, vft::TessellationStrategy tessellationAlgori
         else if(tessellationAlgorithm == vft::TessellationStrategy::TESSELLATION_SHADERS) {
             renderer = new vft::VulkanTessellationShadersTextRenderer();
         }
-        else {
+        else if(tessellationAlgorithm == vft::TessellationStrategy::WINDING_NUMBER) {
             renderer = new vft::VulkanWindingNumberTextRenderer();
+        }
+        else {
+            renderer = new vft::VulkanSdfTextRenderer();
         }
 
         this->_renderer = std::make_shared<vft::VulkanTimedRenderer>(renderer);
@@ -92,8 +95,10 @@ Scene::Scene(CameraType cameraType, vft::TessellationStrategy tessellationAlgori
         else if (tessellationAlgorithm == vft::TessellationStrategy::TESSELLATION_SHADERS) {
             this->_renderer = std::make_shared<vft::VulkanTessellationShadersTextRenderer>();
         }
-        else {
+        else if (tessellationAlgorithm == vft::TessellationStrategy::WINDING_NUMBER) {
             this->_renderer = std::make_shared<vft::VulkanWindingNumberTextRenderer>();
+        } else {
+            this->_renderer = std::make_shared<vft::VulkanSdfTextRenderer>();
         }
     }
 

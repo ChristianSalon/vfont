@@ -19,21 +19,23 @@ namespace vft {
  * @brief Represents a freetype font
  */
 class Font {
-public:
-    static constexpr unsigned int DEFAULT_FONT_SIZE = 64; /**< Default font size used when initializing freetype font */
-
 protected:
-    FT_Library _ft;        /**< Freetype library */
-    FT_Face _face;         /**< Freetype font face */
-    bool _supportsKerning; /**< Indicates whether this font supprots kerning. */
+    FT_Library _ft{nullptr}; /**< Freetype library */
+    FT_Face _face{nullptr};  /**< Freetype font face */
+
+    unsigned int _pixelSize{64}; /**< Font size in pixels */
+    bool _supportsKerning;       /**< Indicates whether this font supprots kerning. */
 
 public:
     Font(std::string fontFile);
     Font(uint8_t *buffer, long size);
 
+    void setPixelSize(unsigned int pixelSize);
+
     bool supportsKerning() const;
-    std::string getFontFamily() const;
     glm::vec2 getScalingVector(unsigned int fontSize) const;
+    unsigned int getPixelSize() const;
+    std::string getFontFamily() const;
     FT_Face getFace() const;
 };
 

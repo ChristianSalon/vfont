@@ -28,6 +28,7 @@
 #include <VFONT/vulkan_triangulation_text_renderer.h>
 #include <VFONT/vulkan_tessellation_shaders_text_renderer.h>
 #include <VFONT/vulkan_winding_number_text_renderer.h>
+#include <VFONT/vulkan_sdf_text_renderer.h>
 #include <VFONT/i_vulkan_text_renderer.h>
 #include <VFONT/vulkan_timed_renderer.h>
 

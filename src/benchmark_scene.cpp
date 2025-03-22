@@ -126,6 +126,11 @@ BenchmarkScene::BenchmarkScene(CameraType cameraType, vft::TessellationStrategy 
 
     auto startTime = std::chrono::high_resolution_clock::now();
 
+    if (tessellationAlgorithm == vft::TessellationStrategy::SDF) {
+        vft::FontAtlas robotoAtlas{this->_roboto, vft::Unicode::utf8ToUtf32(TEXT)};
+        this->_renderer->addFontAtlas(robotoAtlas);
+    }
+
     for (int i = 0; i < 10; i++) {
         this->_block1->add(BenchmarkScene::TEXT);
         this->_block2->add(BenchmarkScene::TEXT);

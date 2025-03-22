@@ -12,6 +12,7 @@
 
 #include <glm/mat4x4.hpp>
 
+#include "font_atlas.h"
 #include "glyph_cache.h"
 #include "tessellator.h"
 #include "text_block.h"
@@ -57,6 +58,8 @@ public:
     virtual void add(std::shared_ptr<TextBlock> text);
     virtual void draw() = 0;
     virtual void update() = 0;
+
+    virtual void addFontAtlas(const FontAtlas &atlas);
 
     virtual void setUniformBuffers(UniformBufferObject ubo);
     virtual void setViewportSize(unsigned int width, unsigned int height);

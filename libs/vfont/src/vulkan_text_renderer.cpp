@@ -120,45 +120,6 @@ void VulkanTextRenderer::setCommandBuffer(VkCommandBuffer commandBuffer) {
 }
 
 /**
- * @brief Create a vulkan buffer
- *
- * @param size Size of buffer
- * @param usage Vulkan buffer usage flags
- * @param properties Vulkan memory property flags
- * @param buffer Handle to vulkan buffer
- * @param bufferMemory Handle to vulkan buffer memory
- */
-void VulkanTextRenderer::_createBuffer(VkDeviceSize size,
-                                       VkBufferUsageFlags usage,
-                                       VkMemoryPropertyFlags properties,
-                                       VkBuffer &buffer,
-                                       VkDeviceMemory &bufferMemory) {
-    VkBufferCreateInfo bufferCreateInfo{};
-    bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferCreateInfo.size = size;
-    bufferCreateInfo.usage = usage;
-    bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    if (vkCreateBuffer(this->_logicalDevice, &bufferCreateInfo, nullptr, &buffer) != VK_SUCCESS) {
-        throw std::runtime_error("VulkanTextRenderer::_createBuffer(): Error creating vulkan buffer");
-    }
-
-    VkMemoryRequirements memoryRequirements;
-    vkGetBufferMemoryRequirements(this->_logicalDevice, buffer, &memoryRequirements);
-
-    VkMemoryAllocateInfo memoryAllocateInfo{};
-    memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    memoryAllocateInfo.allocationSize = memoryRequirements.size;
-    memoryAllocateInfo.memoryTypeIndex = _selectMemoryType(memoryRequirements.memoryTypeBits, properties);
-
-    if (vkAllocateMemory(this->_logicalDevice, &memoryAllocateInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
-        throw std::runtime_error("VulkanTextRenderer::_createBuffer(): Error allocating vulkan buffer memory");
-    }
-
-    vkBindBufferMemory(this->_logicalDevice, buffer, bufferMemory, 0);
-}
-
-/**
  * @brief Getter for vulkan physical device
  *
  * @return Physical device
@@ -213,6 +174,45 @@ VkCommandBuffer VulkanTextRenderer::getCommandBuffer() {
 }
 
 /**
+ * @brief Create a vulkan buffer
+ *
+ * @param size Size of buffer
+ * @param usage Vulkan buffer usage flags
+ * @param properties Vulkan memory property flags
+ * @param buffer Handle to vulkan buffer
+ * @param bufferMemory Handle to vulkan buffer memory
+ */
+void VulkanTextRenderer::_createBuffer(VkDeviceSize size,
+                                       VkBufferUsageFlags usage,
+                                       VkMemoryPropertyFlags properties,
+                                       VkBuffer &buffer,
+                                       VkDeviceMemory &bufferMemory) {
+    VkBufferCreateInfo bufferCreateInfo{};
+    bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferCreateInfo.size = size;
+    bufferCreateInfo.usage = usage;
+    bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateBuffer(this->_logicalDevice, &bufferCreateInfo, nullptr, &buffer) != VK_SUCCESS) {
+        throw std::runtime_error("VulkanTextRenderer::_createBuffer(): Error creating vulkan buffer");
+    }
+
+    VkMemoryRequirements memoryRequirements;
+    vkGetBufferMemoryRequirements(this->_logicalDevice, buffer, &memoryRequirements);
+
+    VkMemoryAllocateInfo memoryAllocateInfo{};
+    memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memoryAllocateInfo.allocationSize = memoryRequirements.size;
+    memoryAllocateInfo.memoryTypeIndex = _selectMemoryType(memoryRequirements.memoryTypeBits, properties);
+
+    if (vkAllocateMemory(this->_logicalDevice, &memoryAllocateInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+        throw std::runtime_error("VulkanTextRenderer::_createBuffer(): Error allocating vulkan buffer memory");
+    }
+
+    vkBindBufferMemory(this->_logicalDevice, buffer, bufferMemory, 0);
+}
+
+/**
  * @brief Selects a suitable memory type for Vulkan allocation.
  *
  * @param memoryType A bitmask specifying the memory type indices that are compatible
@@ -244,20 +244,7 @@ uint32_t VulkanTextRenderer::_selectMemoryType(uint32_t memoryType, VkMemoryProp
  * @param bufferSize The size of the data to copy, in bytes
  */
 void VulkanTextRenderer::_copyBuffer(VkBuffer sourceBuffer, VkBuffer destinationBuffer, VkDeviceSize bufferSize) {
-    VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
-    commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    commandBufferAllocateInfo.commandPool = this->_commandPool;
-    commandBufferAllocateInfo.commandBufferCount = 1;
-
-    VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(this->_logicalDevice, &commandBufferAllocateInfo, &commandBuffer);
-
-    VkCommandBufferBeginInfo commandBufferBeginInfo{};
-    commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo);
+    VkCommandBuffer commandBuffer = this->_beginOneTimeCommands();
 
     VkBufferCopy copyRegion{};
     copyRegion.srcOffset = 0;
@@ -265,17 +252,7 @@ void VulkanTextRenderer::_copyBuffer(VkBuffer sourceBuffer, VkBuffer destination
     copyRegion.size = bufferSize;
     vkCmdCopyBuffer(commandBuffer, sourceBuffer, destinationBuffer, 1, &copyRegion);
 
-    vkEndCommandBuffer(commandBuffer);
-
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer;
-
-    vkQueueSubmit(this->_graphicsQueue, 1, &submitInfo, nullptr);
-    vkQueueWaitIdle(this->_graphicsQueue);
-
-    vkFreeCommandBuffers(this->_logicalDevice, this->_commandPool, 1, &commandBuffer);
+    this->_endOneTimeCommands(commandBuffer);
 }
 
 /**
@@ -335,6 +312,39 @@ void VulkanTextRenderer::_destroyBuffer(VkBuffer &buffer, VkDeviceMemory &buffer
 
     buffer = nullptr;
     bufferMemory = nullptr;
+}
+
+VkCommandBuffer VulkanTextRenderer::_beginOneTimeCommands() {
+    VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
+    commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    commandBufferAllocateInfo.commandPool = this->_commandPool;
+    commandBufferAllocateInfo.commandBufferCount = 1;
+
+    VkCommandBuffer commandBuffer;
+    vkAllocateCommandBuffers(this->_logicalDevice, &commandBufferAllocateInfo, &commandBuffer);
+
+    VkCommandBufferBeginInfo commandBufferBeginInfo{};
+    commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo);
+
+    return commandBuffer;
+}
+
+void VulkanTextRenderer::_endOneTimeCommands(VkCommandBuffer commandBuffer) {
+    vkEndCommandBuffer(commandBuffer);
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+
+    vkQueueSubmit(this->_graphicsQueue, 1, &submitInfo, nullptr);
+    vkQueueWaitIdle(this->_graphicsQueue);
+
+    vkFreeCommandBuffers(this->_logicalDevice, this->_commandPool, 1, &commandBuffer);
 }
 
 /**

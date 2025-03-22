@@ -6,9 +6,11 @@
 #pragma once
 
 #include <memory>
+#include <stdexcept>
 
 #include <vulkan/vulkan.h>
 
+#include "font_atlas.h"
 #include "i_vulkan_text_renderer.h"
 #include "text_renderer.h"
 #include "vulkan_text_renderer.h"
@@ -49,6 +51,8 @@ public:
     VkQueue getGraphicsQueue() override;
     VkRenderPass getRenderPass() override;
     VkCommandBuffer getCommandBuffer() override;
+
+    void addFontAtlas(const FontAtlas &atlas) override;
 };
 
 }  // namespace vft

@@ -9,6 +9,7 @@ set(VFONT_HEADERS
     include/VFONT/vulkan_triangulation_text_renderer.h
     include/VFONT/vulkan_tessellation_shaders_text_renderer.h
     include/VFONT/vulkan_winding_number_text_renderer.h
+    include/VFONT/vulkan_sdf_text_renderer.h
     include/VFONT/vulkan_text_renderer_decorator.h
     include/VFONT/vulkan_timed_renderer.h
     include/VFONT/glyph.h
@@ -17,6 +18,7 @@ set(VFONT_HEADERS
     include/VFONT/glyph_cache.h
     include/VFONT/character.h
     include/VFONT/font.h
+    include/VFONT/font_atlas.h
     include/VFONT/shaper.h
     include/VFONT/text_block.h
     include/VFONT/text_block_builder.h
@@ -27,6 +29,7 @@ set(VFONT_HEADERS
     include/VFONT/triangulation_tessellator.h
     include/VFONT/winding_number_tessellator.h
     include/VFONT/tessellation_shaders_tessellator.h
+    include/VFONT/sdf_tessellator.h
     include/VFONT/circular_dll.h
     include/VFONT/polygon_operator.h
     include/VFONT/edge.h
@@ -39,6 +42,7 @@ set(VFONT_SOURCES
     src/vulkan_triangulation_text_renderer.cpp
     src/vulkan_tessellation_shaders_text_renderer.cpp
     src/vulkan_winding_number_text_renderer.cpp
+    src/vulkan_sdf_text_renderer.cpp
     src/vulkan_text_renderer_decorator.cpp
     src/vulkan_timed_renderer.cpp
     src/glyph.cpp
@@ -47,6 +51,7 @@ set(VFONT_SOURCES
     src/glyph_cache.cpp
     src/character.cpp
     src/font.cpp
+    src/font_atlas.cpp
     src/shaper.cpp
     src/text_block.cpp
     src/text_block_builder.cpp
@@ -57,6 +62,7 @@ set(VFONT_SOURCES
     src/triangulation_tessellator.cpp
     src/winding_number_tessellator.cpp
     src/tessellation_shaders_tessellator.cpp
+    src/sdf_tessellator.cpp
     src/circular_dll.cpp
     src/polygon_operator.cpp
     src/edge.cpp
@@ -108,6 +114,8 @@ add_custom_target(vfont-shaders
     COMMAND ${Vulkan_GLSLC_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/shaders/curve.frag" -o "${CMAKE_CURRENT_BINARY_DIR}/shaders/curve-frag.spv"
     COMMAND ${Vulkan_GLSLC_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/shaders/winding_number.vert" -o "${CMAKE_CURRENT_BINARY_DIR}/shaders/winding_number-vert.spv"
     COMMAND ${Vulkan_GLSLC_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/shaders/winding_number.frag" -o "${CMAKE_CURRENT_BINARY_DIR}/shaders/winding_number-frag.spv"
+    COMMAND ${Vulkan_GLSLC_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/shaders/sdf.vert" -o "${CMAKE_CURRENT_BINARY_DIR}/shaders/sdf-vert.spv"
+    COMMAND ${Vulkan_GLSLC_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/shaders/sdf.frag" -o "${CMAKE_CURRENT_BINARY_DIR}/shaders/sdf-frag.spv"
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.vert"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.frag"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/curve.vert"
@@ -116,12 +124,14 @@ add_custom_target(vfont-shaders
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/curve.frag"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/winding_number.vert"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/winding_number.frag"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/sdf.vert"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/sdf.frag"
 )
 
 add_dependencies(${LIB_NAME} vfont-shaders)
 
 # build documentation if specified
-option(BUILD_DOCS "Build documentation" ON)
+option(BUILD_DOCS "Build documentation" OFF)
 
 find_package(Doxygen)
 if(BUILD_DOCS AND DOXYGEN_FOUND)

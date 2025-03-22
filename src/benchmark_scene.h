@@ -17,6 +17,7 @@
 #include <VFONT/text_block.h>
 #include <VFONT/text_block_builder.h>
 #include <VFONT/text_renderer.h>
+#include <VFONT/font_atlas.h>
 
 #include "scene.h"
 
