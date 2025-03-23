@@ -34,6 +34,19 @@ TextBlockBuilder &TextBlockBuilder::setFontSize(unsigned int fontSize) {
 }
 
 /**
+ * @brief Set line spacing of text block
+ *
+ * @param lineSpacing Line spacing
+ *
+ * @return Reference to text block that is being built
+ */
+TextBlockBuilder &TextBlockBuilder::setLineSpacing(double lineSpacing) {
+    this->_block.setLineSpacing(lineSpacing);
+
+    return *this;
+}
+
+/**
  * @brief Set width of text block
  *
  * @param width Width

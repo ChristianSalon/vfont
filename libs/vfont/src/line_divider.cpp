@@ -61,7 +61,7 @@ const std::map<unsigned int, LineData> &LineDivider::divide(unsigned int startCh
             character.getCodePoint() == U_LF) {
             // Set pen position after the first character on new line
             pen.x = character.getAdvance().x;
-            pen.y += character.getFontSize();
+            pen.y += character.getFontSize() * this->_lineSpacing;
 
             // Character should be on new line
             this->_lines.insert({characterIndex, LineData{character.getAdvance().x,
@@ -79,7 +79,7 @@ const std::map<unsigned int, LineData> &LineDivider::divide(unsigned int startCh
         // character is
         if (character.getFontSize() > this->_lines.rbegin()->second.height) {
             // Update height and y coordinate of line
-            this->_lines.rbegin()->second.y += character.getFontSize() - this->_lines.rbegin()->second.height;
+            this->_lines.rbegin()->second.y += (character.getFontSize() - this->_lines.rbegin()->second.height) * this->_lineSpacing;
             this->_lines.rbegin()->second.height = character.getFontSize();
 
             // Update y coordinate of pen
@@ -102,10 +102,19 @@ void LineDivider::setCharacters(const std::vector<Character> &characters) {
 /**
  * @brief Set the maximum size of lines
  *
- * @param maxLineSize
+ * @param maxLineSize New maximum size of one line
  */
 void LineDivider::setMaxLineSize(double maxLineSize) {
     this->_maxLineSize = maxLineSize;
+}
+
+/**
+ * @brief Set line spacing between two lines
+ *
+ * @param lineSpacing New line spacing
+ */
+void LineDivider::setLineSpacing(double lineSpacing) {
+    this->_lineSpacing = lineSpacing;
 }
 
 /**

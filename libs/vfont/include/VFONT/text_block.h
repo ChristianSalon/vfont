@@ -42,10 +42,10 @@ protected:
 
     int _width{0};                                          /**< Width of text block. -1 indicates unlimited width */
     std::unique_ptr<TextAlignStrategy> _textAlign{nullptr}; /**< Text align of text block */
-
-    glm::vec4 _color{glm::vec4{1.f, 1.f, 1.f, 1.f}}; /**< Color of text in block */
-    glm::vec3 _position{glm::vec3{0.f, 0.f, 0.f}};   /**< Position of text block */
-    glm::mat4 _transform{glm::mat4(1.f)};            /**< Transform matrix of text block */
+    double _lineSpacing{1};                                 /**< Line spacing in block */
+    glm::vec4 _color{glm::vec4{1.f, 1.f, 1.f, 1.f}};        /**< Color of text in block */
+    glm::vec3 _position{glm::vec3{0.f, 0.f, 0.f}};          /**< Position of text block */
+    glm::mat4 _transform{glm::mat4(1.f)};                   /**< Transform matrix of text block */
 
     std::list<TextSegment> _segments{}; /**< Text segments which include characters to render */
     LineDivider _lineDivider{};         /**< Used to divide characters into lines */
@@ -89,6 +89,7 @@ public:
 
     void setFont(std::shared_ptr<Font> font);
     void setFontSize(unsigned int fontSize);
+    void setLineSpacing(double lineSpacing);
     void setColor(glm::vec4 color);
     void setPosition(glm::vec3 position);
     void setTransform(glm::mat4 transform);
@@ -102,6 +103,7 @@ public:
 
     std::shared_ptr<Font> getFont() const;
     unsigned int getFontSize() const;
+    double getLineSpacing() const;
     glm::vec4 getColor() const;
     glm::vec3 getPosition() const;
     glm::mat4 getTransform() const;

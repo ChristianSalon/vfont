@@ -17,6 +17,7 @@ EditorScene::EditorScene(CameraType cameraType, vft::TessellationStrategy tessel
     this->_textBlock = vft::TextBlockBuilder()
         .setFont(this->_roboto)
         .setFontSize(32)
+        .setLineSpacing(1.2)
         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
         .setPosition(glm::vec3(0.f, 0.f, 0.f))
         .build();

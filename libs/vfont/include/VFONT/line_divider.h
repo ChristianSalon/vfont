@@ -31,6 +31,7 @@ typedef struct {
 class LineDivider {
 protected:
     double _maxLineSize{0}; /**< Maximum width of lines */
+    double _lineSpacing{1}; /**< Line spacing used when calculating positions of lines */
 
     std::map<unsigned int, LineData>
         _lines{}; /**< Divided lines. Key is index of starting character at given line. Value is line data */
@@ -41,6 +42,7 @@ public:
 
     void setCharacters(const std::vector<Character> &characters);
     void setMaxLineSize(double maxLineSize);
+    void setLineSpacing(double lineSpacing);
 
     std::pair<unsigned int, LineData> getLineOfCharacter(unsigned int characterIndex) const;
     const std::map<unsigned int, LineData> &getLines() const;

@@ -13,6 +13,7 @@ namespace vft {
 TextBlock::TextBlock() : _font{nullptr} {
     this->setFontSize(0);
     this->setWidth(-1);
+    this->setLineSpacing(1);
     this->setColor(glm::vec4(1, 1, 1, 1));
     this->setPosition(glm::vec3(0, 0, 0));
     this->setTextAlign(std::make_unique<LeftTextAlign>());
@@ -343,6 +344,16 @@ void TextBlock::setFontSize(unsigned int fontSize) {
 }
 
 /**
+ * @brief Set line spacing in text block. Default line spacing is 1
+ *
+ * @param lineSpacing New line spacing
+ */
+void TextBlock::setLineSpacing(double lineSpacing) {
+    this->_lineSpacing = lineSpacing;
+    this->_lineDivider.setLineSpacing(this->_lineSpacing);
+}
+
+/**
  * @brief Set color of characters in text block
  *
  * @param color New color
@@ -464,6 +475,15 @@ std::shared_ptr<Font> TextBlock::getFont() const {
  */
 unsigned int TextBlock::getFontSize() const {
     return this->_fontSize;
+}
+
+/**
+ * @brief Get current line spacing used in text block
+ *
+ * @return Line spacing
+ */
+double TextBlock::getLineSpacing() const {
+    return this->_lineSpacing;
 }
 
 /**
