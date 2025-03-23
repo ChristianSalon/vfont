@@ -23,8 +23,15 @@ TextBlock::TextBlock() : _font{nullptr} {
  *
  * @param text Utf-32 encoded text
  * @param start Position at which to start inserting text
+ * @param direction Direction in which to render text (e.g., left-to-right, right-to-left)
+ * @param script Script of input text
+ * @param language Language of input text
  */
-void TextBlock::add(std::u32string text, unsigned int start) {
+void TextBlock::add(std::u32string text,
+                    unsigned int start,
+                    hb_direction_t direction,
+                    hb_script_t script,
+                    hb_language_t language) {
     if (text.size() == 0) {
         return;
     }
@@ -32,11 +39,6 @@ void TextBlock::add(std::u32string text, unsigned int start) {
     // If font is not set, characters can not be processed
     if (this->_font == nullptr) {
         throw std::runtime_error("TextBlock::add(): Font must be set before adding text to text block");
-    }
-
-    // Check if parameter start was set
-    if (start == std::numeric_limits<unsigned int>::max()) {
-        start = this->getCodePointCount();
     }
 
     // Check if code point at index start exists or if start is one index after last code point
@@ -50,7 +52,7 @@ void TextBlock::add(std::u32string text, unsigned int start) {
     // Edit text segments
     if (this->_segments.size() == 0) {
         // No text segment exists, create one
-        TextSegment newSegment{this->_font, this->_fontSize};
+        TextSegment newSegment{this->_font, this->_fontSize, direction, script, language};
         newSegment.setTransform(this->_transform);
         newSegment.add(text);
 
@@ -60,12 +62,13 @@ void TextBlock::add(std::u32string text, unsigned int start) {
         TextSegment &segment = this->_getSegmentBasedOnCodePointGlobalIndex(start);
         auto segmentIterator = this->_getSegmentIteratorBasedOnCodePointGlobalIndex(start);
 
-        if (this->_font == segment.getFont() && this->_fontSize == segment.getFontSize()) {
+        if (this->_font == segment.getFont() && this->_fontSize == segment.getFontSize() &&
+            direction == segment.getDirection() && script == segment.getScript() && language == segment.getLanguage()) {
             // Add text to selected segment at specified position
             // No need to create a new text segment
             segment.add(text, start - this->_getCodePointGlobalIndexBasedOnSegment(segment));
         } else {
-            TextSegment newSegment{this->_font, this->_fontSize};
+            TextSegment newSegment{this->_font, this->_fontSize, direction, script, language};
             newSegment.setTransform(this->_transform);
             newSegment.add(text);
             unsigned int localIndex = start - this->_getCodePointGlobalIndexBasedOnSegment(segment);
@@ -112,23 +115,73 @@ void TextBlock::add(std::u32string text, unsigned int start) {
 }
 
 /**
- * @brief Add utf-8 ennoded text into text block at given position
+ * @brief Add utf-8 encoded text into text block at given position
  *
  * @param text Utf-8 encoded text
  * @param start Position at which to start inserting text
+ * @param direction Direction in which to render text (e.g., left-to-right, right-to-left)
+ * @param script Script of input text
+ * @param language Language of input text
  */
-void TextBlock::add(std::u8string text, unsigned int start) {
-    this->add(Unicode::utf8ToUtf32(text), start);
+void TextBlock::add(std::u8string text,
+                    unsigned int start,
+                    hb_direction_t direction,
+                    hb_script_t script,
+                    hb_language_t language) {
+    this->add(Unicode::utf8ToUtf32(text), start, direction, script, language);
 }
 
 /**
- * @brief Add utf-16 ennoded text into text block at given position
+ * @brief Add utf-16 encoded text into text block at given position
  *
  * @param text Utf-16 encoded text
  * @param start Position at which to start inserting text
+ * @param direction Direction in which to render text (e.g., left-to-right, right-to-left)
+ * @param script Script of input text
+ * @param language Language of input text
  */
-void TextBlock::add(std::u16string text, unsigned int start) {
-    this->add(Unicode::utf16ToUtf32(text), start);
+void TextBlock::add(std::u16string text,
+                    unsigned int start,
+                    hb_direction_t direction,
+                    hb_script_t script,
+                    hb_language_t language) {
+    this->add(Unicode::utf16ToUtf32(text), start, direction, script, language);
+}
+
+/**
+ * @brief Add utf-8 encoded text at the back of text bleck
+ *
+ * @param text Utf-8 encoded text
+ * @param direction Direction in which to render text (e.g., left-to-right, right-to-left)
+ * @param script Script of input text
+ * @param language Language of input text
+ */
+void TextBlock::add(std::u8string text, hb_direction_t direction, hb_script_t script, hb_language_t language) {
+    this->add(Unicode::utf8ToUtf32(text), this->getCodePointCount(), direction, script, language);
+}
+
+/**
+ * @brief Add utf-16 encoded text at the back of text bleck
+ *
+ * @param text Utf-16 encoded text
+ * @param direction Direction in which to render text (e.g., left-to-right, right-to-left)
+ * @param script Script of input text
+ * @param language Language of input text
+ */
+void TextBlock::add(std::u16string text, hb_direction_t direction, hb_script_t script, hb_language_t language) {
+    this->add(Unicode::utf16ToUtf32(text), this->getCodePointCount(), direction, script, language);
+}
+
+/**
+ * @brief Add utf-32 encoded text at the back of text bleck
+ *
+ * @param text Utf-32 encoded text
+ * @param direction Direction in which to render text (e.g., left-to-right, right-to-left)
+ * @param script Script of input text
+ * @param language Language of input text
+ */
+void TextBlock::add(std::u32string text, hb_direction_t direction, hb_script_t script, hb_language_t language) {
+    this->add(text, this->getCodePointCount(), direction, script, language);
 }
 
 /**

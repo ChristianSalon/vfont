@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 
+#include <hb.h>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
@@ -56,9 +57,33 @@ public:
     void translate(float x, float y, float z);
     void rotate(float x, float y, float z);
 
-    void add(std::u8string text, unsigned int start = std::numeric_limits<unsigned int>::max());
-    void add(std::u16string text, unsigned int start = std::numeric_limits<unsigned int>::max());
-    void add(std::u32string text, unsigned int start = std::numeric_limits<unsigned int>::max());
+    void add(std::u8string text,
+             unsigned int start,
+             hb_direction_t direction = HB_DIRECTION_LTR,
+             hb_script_t script = HB_SCRIPT_LATIN,
+             hb_language_t language = hb_language_from_string("en", -1));
+    void add(std::u16string text,
+             unsigned int start,
+             hb_direction_t direction = HB_DIRECTION_LTR,
+             hb_script_t script = HB_SCRIPT_LATIN,
+             hb_language_t language = hb_language_from_string("en", -1));
+    void add(std::u32string text,
+             unsigned int start,
+             hb_direction_t direction = HB_DIRECTION_LTR,
+             hb_script_t script = HB_SCRIPT_LATIN,
+             hb_language_t language = hb_language_from_string("en", -1));
+    void add(std::u8string text,
+             hb_direction_t direction = HB_DIRECTION_LTR,
+             hb_script_t script = HB_SCRIPT_LATIN,
+             hb_language_t language = hb_language_from_string("en", -1));
+    void add(std::u16string text,
+             hb_direction_t direction = HB_DIRECTION_LTR,
+             hb_script_t script = HB_SCRIPT_LATIN,
+             hb_language_t language = hb_language_from_string("en", -1));
+    void add(std::u32string text,
+             hb_direction_t direction = HB_DIRECTION_LTR,
+             hb_script_t script = HB_SCRIPT_LATIN,
+             hb_language_t language = hb_language_from_string("en", -1));
     void remove(unsigned int start = std::numeric_limits<unsigned int>::max(), unsigned int count = 1);
     void clear();
 

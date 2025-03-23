@@ -12,8 +12,16 @@ namespace vft {
  *
  * @param font Font of characters in segment
  * @param fontSize Font size of characters in segment
+ * @param direction Direction in which to render text (e.g., left-to-right, right-to-left)
+ * @param script Script of text in segment
+ * @param language Language of text in segment
  */
-TextSegment::TextSegment(std::shared_ptr<Font> font, unsigned int fontSize) : _font{font}, _fontSize{fontSize} {}
+TextSegment::TextSegment(std::shared_ptr<Font> font,
+                         unsigned int fontSize,
+                         hb_direction_t direction,
+                         hb_script_t script,
+                         hb_language_t language)
+    : _font{font}, _fontSize{fontSize}, _direction{direction}, _script{script}, _language{language} {}
 
 /**
  * @brief Add utf-32 text to segment at given position
@@ -139,11 +147,39 @@ unsigned int TextSegment::getFontSize() const {
 }
 
 /**
+ * @brief Getter for direction of text in segment (e.g., left-to-right, right-to-left)
+ *
+ * @return Direction of text
+ */
+hb_direction_t TextSegment::getDirection() const {
+    return this->_direction;
+}
+
+/**
+ * @brief Getter for script of text in segment
+ *
+ * @return Script of text
+ */
+hb_script_t TextSegment::getScript() const {
+    return this->_script;
+}
+
+/**
+ * @brief Getter for language of text in segment
+ *
+ * @return Language of text
+ */
+hb_language_t TextSegment::getLanguage() const {
+    return this->_language;
+}
+
+/**
  * @brief Shape all code points in segment
  */
 void TextSegment::_shape() {
     // Shape whole segment
-    std::vector<std::vector<ShapedCharacter>> shaped = Shaper::shape(this->_text, this->_font, this->_fontSize);
+    std::vector<std::vector<ShapedCharacter>> shaped =
+        Shaper::shape(this->_text, this->_font, this->_fontSize, this->_direction, this->_script, this->_language);
 
     unsigned int originalCharacterCount = this->_characters.size();
 

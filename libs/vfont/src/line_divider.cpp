@@ -59,8 +59,8 @@ const std::map<unsigned int, LineData> &LineDivider::divide(unsigned int startCh
 
         if ((this->_maxLineSize > 0 && pen.x + character.getAdvance().x > this->_maxLineSize) ||
             character.getCodePoint() == U_LF) {
-            // Set pen position to start of new line
-            pen.x = 0;
+            // Set pen position after the first character on new line
+            pen.x = character.getAdvance().x;
             pen.y += character.getFontSize();
 
             // Character should be on new line
