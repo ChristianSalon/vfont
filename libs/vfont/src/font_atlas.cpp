@@ -7,6 +7,12 @@
 
 namespace vft {
 
+/**
+ * @brief Construct texture containing sdfs of selected glyphs using the freetype sdf rasterizer
+ *
+ * @param font Font used to rasterize glyphs into sdfs
+ * @param glyphIds Glyph indices to rasterize
+ */
 FontAtlas::FontAtlas(std::shared_ptr<Font> font, std::vector<uint32_t> glyphIds) : _fontFamily{font->getFontFamily()} {
     // Set size of each glyph bitmap to approximetly 64 x 64
     // Freetype does not produce exact size of bitmap
@@ -93,14 +99,38 @@ FontAtlas::FontAtlas(std::shared_ptr<Font> font, std::vector<uint32_t> glyphIds)
     }
 }
 
+/**
+ * @brief Construct texture containing sdfs of selected unicode code points using the freetype sdf rasterizer
+ *
+ * @param font Font used to rasterize glyphs into sdfs
+ * @param characterRanges Ranges of unicode code points to rasterize
+ */
 FontAtlas::FontAtlas(std::shared_ptr<Font> font, std::vector<CharacterRange> characterRanges)
     : FontAtlas{font, this->_getRangesGlyphIds(font, characterRanges)} {}
 
+/**
+ * @brief Construct texture containing sdfs of selected utf-32 encoded characters using the freetype sdf rasterizer
+ *
+ * @param font Font used to rasterize glyphs into sdfs
+ * @param characters Utf-32 encoded characters to rasterize
+ */
 FontAtlas::FontAtlas(std::shared_ptr<Font> font, std::u32string characters)
     : FontAtlas{font, this->_getUtf32GlyphIds(font, characters)} {}
 
+/**
+ * @brief Construct texture containing sdfs of all glyphs in font file using the freetype sdf rasterizer
+ *
+ * @param font Font used to rasterize glyphs into sdfs
+ */
 FontAtlas::FontAtlas(std::shared_ptr<Font> font) : FontAtlas{font, this->_getAllGlyphIds(font)} {}
 
+/**
+ * @brief Get glyph info (UVs) of selected glyph
+ *
+ * @param glyphId Glyph index of selected glyph
+ *
+ * @return Glyph info of selected glyph
+ */
 FontAtlas::GlyphInfo FontAtlas::getGlyph(uint32_t glyphId) const {
     if (!this->_glyphs.contains(glyphId)) {
         throw std::invalid_argument("FontAtlas::getGlyph(): Font atlas does not contain glyph with given glyph id");
@@ -109,18 +139,40 @@ FontAtlas::GlyphInfo FontAtlas::getGlyph(uint32_t glyphId) const {
     return this->_glyphs.at(glyphId);
 }
 
+/**
+ * @brief Getter for font family of font atlas
+ *
+ * @return FOnt family
+ */
 std::string FontAtlas::getFontFamily() const {
     return this->_fontFamily;
 }
 
+/**
+ * @brief Getter for the size of final texture
+ *
+ * @return Size of texture
+ */
 glm::uvec2 FontAtlas::getSize() const {
     return glm::uvec2{this->_width, this->_height};
 }
 
+/**
+ * @brief Get raw bytes of texture
+ *
+ * @return Vector of bytes containing texture data
+ */
 const std::vector<uint8_t> &FontAtlas::getTexture() const {
     return this->_texture;
 }
 
+/**
+ * @brief Get all glyph indices in selected font
+ *
+ * @param font Font used for loading glyphs
+ *
+ * @return All glyph indices
+ */
 std::vector<uint32_t> FontAtlas::_getAllGlyphIds(std::shared_ptr<Font> font) const {
     std::vector<uint32_t> glyphIds;
     uint32_t charcode;
@@ -135,6 +187,14 @@ std::vector<uint32_t> FontAtlas::_getAllGlyphIds(std::shared_ptr<Font> font) con
     return glyphIds;
 }
 
+/**
+ * @brief Get glyph indices for the selected ranges of unicode code point
+ *
+ * @param font Font used for loading glyphs
+ * @param characterRanges Ranges of unicode code points
+ *
+ * @return Glyph indices representing unicode code points
+ */
 std::vector<uint32_t> FontAtlas::_getRangesGlyphIds(std::shared_ptr<Font> font,
                                                     std::vector<CharacterRange> characterRanges) const {
     std::vector<uint32_t> glyphIds;
@@ -148,6 +208,14 @@ std::vector<uint32_t> FontAtlas::_getRangesGlyphIds(std::shared_ptr<Font> font,
     return glyphIds;
 }
 
+/**
+ * @brief Get glyph indices for utf-32 encoded characters
+ *
+ * @param font Font used for loading glyphs
+ * @param characters Utf-32 encoded characters
+ *
+ * @return Glyph indices representing utf-32 encoded characters
+ */
 std::vector<uint32_t> FontAtlas::_getUtf32GlyphIds(std::shared_ptr<Font> font, std::u32string characters) const {
     std::vector<uint32_t> glyphIds;
 

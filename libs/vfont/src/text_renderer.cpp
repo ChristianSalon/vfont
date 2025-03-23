@@ -32,6 +32,13 @@ void TextRenderer::add(std::shared_ptr<TextBlock> text) {
     text->onTextChange = [this]() { this->update(); };
 }
 
+/**
+ * @brief Add font atlas used for rendering characters
+ *
+ * @param atlas Font atlas
+ *
+ * @throws std::runtime_error If text renderer does not support font atlases
+ */
 void TextRenderer::addFontAtlas(const FontAtlas &atlas) {
     throw std::runtime_error("TextRenderer::addFontAtlas(): Selected text renderer does not support font atlases");
 }

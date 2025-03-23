@@ -13,7 +13,7 @@ namespace vft {
 SdfTessellator::SdfTessellator() {}
 
 /**
- * @brief Composes a glyph ready for rendering
+ * @brief Composes a glyph ready for rendering using sdfs
  *
  * @param glyphId Id of glyph to compose
  * @param font Font of glyph

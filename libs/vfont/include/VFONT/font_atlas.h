@@ -16,29 +16,42 @@
 
 namespace vft {
 
+/**
+ * @brief Font atlas containing sdfs of selected glyphs
+ */
 class FontAtlas {
 public:
+    /**
+     * @brief Range of unicode characters
+     */
     class CharacterRange {
     public:
-        char32_t start;
-        char32_t end;
+        char32_t start; /**< First unicode code point of range */
+        char32_t end;   /**< Last unicode code point of range */
 
         CharacterRange(char32_t start, char32_t end) : start{start}, end{end} {}
 
         unsigned int size() const { return end - start + 1; }
     };
 
+    /**
+     * @brief UVs of glyph in font atlas
+     */
     struct GlyphInfo {
-        glm::vec2 uvTopLeft;
-        glm::vec2 uvBottomRight;
+        glm::vec2 uvTopLeft;     /**< UV of top left corner of glyph */
+        glm::vec2 uvBottomRight; /**< UV of bottom right corner of glyph */
     };
 
 protected:
-    std::string _fontFamily{};
-    unsigned int _width{1024};
-    unsigned int _height{1024};
+    std::string _fontFamily{};  /**< Font family of font atlas */
+    unsigned int _width{1024};  /**< Width of font atlas */
+    unsigned int _height{1024}; /**< Height of font atlas */
 
-    std::vector<uint8_t> _texture{};
+    std::vector<uint8_t> _texture{}; /**< Texture containing sdfs of selected glyphs */
+    /**
+     * Hash map containing UVs of selected glyphs stored in texture (key: glyphId, value: UV).
+     * Because new lines have glyphId 0, we need to make sure we insert a default record with glyphId 0
+     */
     std::unordered_map<uint32_t, GlyphInfo> _glyphs{{0, GlyphInfo{glm::vec2{0, 0}, glm::vec2{0, 0}}}};
 
 public:

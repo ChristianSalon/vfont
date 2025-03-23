@@ -314,6 +314,11 @@ void VulkanTextRenderer::_destroyBuffer(VkBuffer &buffer, VkDeviceMemory &buffer
     bufferMemory = nullptr;
 }
 
+/**
+ * @brief Create and begin a command buffer used only once
+ *
+ * @return Created command buffer
+ */
 VkCommandBuffer VulkanTextRenderer::_beginOneTimeCommands() {
     VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
     commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -333,6 +338,11 @@ VkCommandBuffer VulkanTextRenderer::_beginOneTimeCommands() {
     return commandBuffer;
 }
 
+/**
+ * @brief End and destroy command buffer used for one time commands
+ *
+ * @param commandBuffer Command buffer to destroy
+ */
 void VulkanTextRenderer::_endOneTimeCommands(VkCommandBuffer commandBuffer) {
     vkEndCommandBuffer(commandBuffer);
 

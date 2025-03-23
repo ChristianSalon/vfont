@@ -54,6 +54,11 @@ Font::Font(uint8_t *buffer, long size) {
     this->_supportsKerning = FT_HAS_KERNING(this->_face);
 }
 
+/**
+ * @brief Set pixel size of freetype font using FT_Set_Pixel_Sizes()
+ *
+ * @param pixelSize New pixel size
+ */
 void Font::setPixelSize(unsigned int pixelSize) {
     this->_pixelSize = pixelSize;
     FT_Set_Pixel_Sizes(this->_face, this->_pixelSize, this->_pixelSize);
@@ -73,6 +78,11 @@ glm::vec2 Font::getScalingVector(unsigned int fontSize) const {
                          (static_cast<double>(this->_face->size->metrics.y_scale) / 4194304.f));
 }
 
+/**
+ * @brief Getter for the current pixel size
+ *
+ * @return Current pixel size
+ */
 unsigned int Font::getPixelSize() const {
     return this->_pixelSize;
 }

@@ -122,6 +122,11 @@ void VulkanSdfTextRenderer::update() {
     this->_createVertexAndIndexBuffers();
 }
 
+/**
+ * @brief Add font atlas and create the required vulkan objects used to rneder text using sdf textures
+ *
+ * @param atlas New font atlas
+ */
 void VulkanSdfTextRenderer::addFontAtlas(const FontAtlas &atlas) {
     // Create staging buffer
     VkDeviceSize size = atlas.getSize().x * atlas.getSize().y;
@@ -199,6 +204,7 @@ void VulkanSdfTextRenderer::addFontAtlas(const FontAtlas &atlas) {
             "VulkanSdfTextRenderer::addFontAtlas(): Could not create vulkan image view for font atlas");
     }
 
+    // Create vulkan sampler
     VkSamplerCreateInfo samplerCreateInfo{};
     samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     samplerCreateInfo.magFilter = VK_FILTER_LINEAR;
@@ -212,7 +218,6 @@ void VulkanSdfTextRenderer::addFontAtlas(const FontAtlas &atlas) {
     samplerCreateInfo.compareEnable = false;
     samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
-    // Create vulkan sampler
     VkSampler sampler;
     if (vkCreateSampler(this->_logicalDevice, &samplerCreateInfo, nullptr, &sampler) != VK_SUCCESS) {
         throw std::runtime_error(
@@ -314,13 +319,13 @@ void VulkanSdfTextRenderer::_createDescriptorPool() {
     poolSizes[0].descriptorCount = 1;
 
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = 15;
+    poolSizes[1].descriptorCount = 64;
 
     VkDescriptorPoolCreateInfo poolCreateInfo{};
     poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolCreateInfo.poolSizeCount = poolSizes.size();
     poolCreateInfo.pPoolSizes = poolSizes.data();
-    poolCreateInfo.maxSets = 16;
+    poolCreateInfo.maxSets = 65;
 
     if (vkCreateDescriptorPool(this->_logicalDevice, &poolCreateInfo, nullptr, &this->_descriptorPool) != VK_SUCCESS) {
         throw std::runtime_error(
@@ -392,6 +397,14 @@ VkDescriptorSet VulkanSdfTextRenderer::_createFontAtlasDescriptorSet(VkImageView
     return descriptorSet;
 }
 
+/**
+ * @brief Transitions an image from one layout to another
+ *
+ * @param image Vulkan image to transition
+ * @param format Format of the image
+ * @param oldLayout Current layout of the image
+ * @param newLayout Target layout to transition the image to
+ */
 void VulkanSdfTextRenderer::_transitionImageLayout(VkImage image,
                                                    VkFormat format,
                                                    VkImageLayout oldLayout,
@@ -436,6 +449,14 @@ void VulkanSdfTextRenderer::_transitionImageLayout(VkImage image,
     this->_endOneTimeCommands(commandBuffer);
 }
 
+/**
+ * @brief Copy data from vulkan buffer to vulkan image
+ *
+ * @param buffer Source vulkan buffer
+ * @param image Destination vulkan image
+ * @param width Width of vulkan image
+ * @param height Height of vulkan image
+ */
 void VulkanSdfTextRenderer::_copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
     VkCommandBuffer commandBuffer = this->_beginOneTimeCommands();
 

@@ -27,14 +27,17 @@ public:
     /** Index into the array containing index buffer offsets of glyph's bounding boxes */
     static constexpr unsigned int BOUNDING_BOX_OFFSET_BUFFER_INDEX = 0;
 
+    /**
+     * @brief Represents a font atlas texture containing vulkan objects used to render charcaters
+     */
     class FontTexture {
     public:
-        FontAtlas atlas;
-        VkImage image{nullptr};
-        VkDeviceMemory memory{nullptr};
-        VkImageView imageView{nullptr};
-        VkSampler sampler{nullptr};
-        VkDescriptorSet descriptorSet{nullptr};
+        FontAtlas atlas;                        /**< Font atlas containing glyphs */
+        VkImage image{nullptr};                 /**< Vulkan image containing font texture */
+        VkDeviceMemory memory{nullptr};         /**< Vulkan memory containing the font texture */
+        VkImageView imageView{nullptr};         /**< Vulkan image view of font texture */
+        VkSampler sampler{nullptr};             /**< Vulkan sampler of font texture */
+        VkDescriptorSet descriptorSet{nullptr}; /**< Vulkan descriptor set of font texure */
 
         FontTexture(const FontAtlas &atlas,
                     VkImage image,
@@ -51,15 +54,23 @@ public:
         FontTexture(const FontAtlas &atlas) : atlas{atlas} {}
     };
 
+    /**
+     * @brief Vertex structure used for rendering text using sdfs
+     */
     struct Vertex {
-        glm::vec2 position;
-        glm::vec2 uv;
+        glm::vec2 position; /**< Vertex position */
+        glm::vec2 uv;       /**< Vertex uv */
     };
 
 protected:
+    /**
+     * Hash map containing font textures of selected font atlases containng info about glyphs (key: Font family, value:
+     * FontTexture object)
+     */
     std::unordered_map<std::string, FontTexture> _fontTextures{};
 
-    /** Hash map containing glyph offsets into the index buffers (key: glyph key, value: array of offsets into the index
+    /**
+     * Hash map containing glyph offsets into the index buffers (key: glyph key, value: array of offsets into the index
      * buffer)
      */
     std::unordered_map<GlyphKey, std::array<uint32_t, 1>, GlyphKeyHash> _offsets{};
