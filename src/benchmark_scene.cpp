@@ -19,7 +19,6 @@ BenchmarkScene::BenchmarkScene(CameraType cameraType, vft::TessellationStrategy 
         .setFontSize(256)
         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
         .setPosition(glm::vec3(0.f, 0.f, 0.f))
-        .setKerning(true)
         .build();
 
     this->_block2 = vft::TextBlockBuilder()
@@ -27,7 +26,6 @@ BenchmarkScene::BenchmarkScene(CameraType cameraType, vft::TessellationStrategy 
         .setFontSize(128)
         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
         .setPosition(glm::vec3(0.f, 256.f, 0.f))
-        .setKerning(true)
         .build();
 
     this->_block3 = vft::TextBlockBuilder()
@@ -35,7 +33,6 @@ BenchmarkScene::BenchmarkScene(CameraType cameraType, vft::TessellationStrategy 
         .setFontSize(64)
         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
         .setPosition(glm::vec3(0.f, 384.f, 0.f))
-        .setKerning(true)
         .build();
 
     this->_block4 = vft::TextBlockBuilder()
@@ -43,7 +40,6 @@ BenchmarkScene::BenchmarkScene(CameraType cameraType, vft::TessellationStrategy 
         .setFontSize(32)
         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
         .setPosition(glm::vec3(0.f, 448.f, 0.f))
-        .setKerning(true)
         .build();
 
     this->_block5 = vft::TextBlockBuilder()
@@ -51,7 +47,6 @@ BenchmarkScene::BenchmarkScene(CameraType cameraType, vft::TessellationStrategy 
         .setFontSize(16)
         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
         .setPosition(glm::vec3(0.f, 480.f, 0.f))
-        .setKerning(true)
         .build();
 
     this->_block6 = vft::TextBlockBuilder()
@@ -59,7 +54,6 @@ BenchmarkScene::BenchmarkScene(CameraType cameraType, vft::TessellationStrategy 
         .setFontSize(8)
         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
         .setPosition(glm::vec3(0.f, 496.f, 0.f))
-        .setKerning(true)
         .build();
 
     this->_block7 = vft::TextBlockBuilder()
@@ -67,7 +61,6 @@ BenchmarkScene::BenchmarkScene(CameraType cameraType, vft::TessellationStrategy 
         .setFontSize(256)
         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
         .setPosition(glm::vec3(0.f, 504.f, 0.f))
-        .setKerning(true)
         .build();
 
     this->_block8 = vft::TextBlockBuilder()
@@ -75,7 +68,6 @@ BenchmarkScene::BenchmarkScene(CameraType cameraType, vft::TessellationStrategy 
         .setFontSize(128)
         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
         .setPosition(glm::vec3(0.f, 760.f, 0.f))
-        .setKerning(true)
         .build();
 
     this->_block9 = vft::TextBlockBuilder()
@@ -83,7 +75,6 @@ BenchmarkScene::BenchmarkScene(CameraType cameraType, vft::TessellationStrategy 
         .setFontSize(64)
         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
         .setPosition(glm::vec3(0.f, 888.f, 0.f))
-        .setKerning(true)
         .build();
 
     this->_block10 = vft::TextBlockBuilder()
@@ -91,7 +82,6 @@ BenchmarkScene::BenchmarkScene(CameraType cameraType, vft::TessellationStrategy 
         .setFontSize(32)
         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
         .setPosition(glm::vec3(0.f, 952.f, 0.f))
-        .setKerning(true)
         .build();
 
     this->_block11 = vft::TextBlockBuilder()
@@ -99,7 +89,6 @@ BenchmarkScene::BenchmarkScene(CameraType cameraType, vft::TessellationStrategy 
         .setFontSize(16)
         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
         .setPosition(glm::vec3(0.f, 984.f, 0.f))
-        .setKerning(true)
         .build();
 
     this->_block12 = vft::TextBlockBuilder()
@@ -107,7 +96,6 @@ BenchmarkScene::BenchmarkScene(CameraType cameraType, vft::TessellationStrategy 
         .setFontSize(8)
         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
         .setPosition(glm::vec3(0.f, 1000.f, 0.f))
-        .setKerning(true)
         .build();
 
     this->_renderer->add(this->_block1);

@@ -10,7 +10,7 @@ namespace vft {
 /**
  * @brief TextBlock constructor
  */
-TextBlock::TextBlock() : _font{nullptr}, _kerning{false} {
+TextBlock::TextBlock() : _font{nullptr} {
     this->setFontSize(0);
     this->setWidth(-1);
     this->setColor(glm::vec4(1, 1, 1, 1));
@@ -331,23 +331,6 @@ void TextBlock::setWidth(int width) {
 }
 
 /**
- * @brief Check if font supports kerning and apply if supported
- *
- * @param kerning Indicates whether to use kerning in text block
- */
-void TextBlock::setKerning(bool kerning) {
-    if (kerning && !this->_font->supportsKerning()) {
-        std::cerr << "Font " << this->_font->getFontFamily() << " does not support kerning" << std::endl;
-        return;
-    }
-
-    if (this->getKerning() != kerning) {
-        this->_kerning = kerning;
-        this->_updateCharacters();
-    }
-}
-
-/**
  * @brief Set text align of text block
  *
  * @param textAlign Text align
@@ -464,15 +447,6 @@ int TextBlock::getWidth() const {
  */
 glm::mat4 TextBlock::getTransform() const {
     return this->_transform;
-}
-
-/**
- * @brief Get whether kerning is used in text block
- *
- * @return True if kerning is used, else false
- */
-bool TextBlock::getKerning() const {
-    return this->_kerning;
 }
 
 /**

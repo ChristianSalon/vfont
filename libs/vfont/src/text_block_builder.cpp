@@ -47,19 +47,6 @@ TextBlockBuilder &TextBlockBuilder::setWidth(int width) {
 }
 
 /**
- * @brief Set whether to use kerning in text block
- *
- * @param kerning True if text block should use kerning
- *
- * @return Reference to text block that is being built
- */
-TextBlockBuilder &TextBlockBuilder::setKerning(bool kerning) {
-    this->_block.setKerning(kerning);
-
-    return *this;
-}
-
-/**
  * @brief Set text color in text block
  *
  * @param color Text color

@@ -24,7 +24,6 @@ protected:
     FT_Face _face{nullptr};  /**< Freetype font face */
 
     unsigned int _pixelSize{64}; /**< Font size in pixels */
-    bool _supportsKerning;       /**< Indicates whether this font supprots kerning. */
 
 public:
     Font(std::string fontFile);
@@ -32,7 +31,6 @@ public:
 
     void setPixelSize(unsigned int pixelSize);
 
-    bool supportsKerning() const;
     glm::vec2 getScalingVector(unsigned int fontSize) const;
     unsigned int getPixelSize() const;
     std::string getFontFamily() const;

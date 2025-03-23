@@ -26,8 +26,6 @@ Font::Font(std::string fontFile) {
     }
 
     FT_Set_Pixel_Sizes(this->_face, this->_pixelSize, 0);
-
-    this->_supportsKerning = FT_HAS_KERNING(this->_face);
 }
 
 /**
@@ -50,8 +48,6 @@ Font::Font(uint8_t *buffer, long size) {
     }
 
     FT_Set_Pixel_Sizes(this->_face, this->_pixelSize, 0);
-
-    this->_supportsKerning = FT_HAS_KERNING(this->_face);
 }
 
 /**
@@ -85,15 +81,6 @@ glm::vec2 Font::getScalingVector(unsigned int fontSize) const {
  */
 unsigned int Font::getPixelSize() const {
     return this->_pixelSize;
-}
-
-/**
- * @brief Indicates whether font supports kerning
- *
- * @return True if suports kerning, else false
- */
-bool Font::supportsKerning() const {
-    return this->_supportsKerning;
 }
 
 /**

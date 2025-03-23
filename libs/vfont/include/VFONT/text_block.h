@@ -40,7 +40,6 @@ protected:
     unsigned int _fontSize{0};            /**< Current Font size */
 
     int _width{0};                                          /**< Width of text block. -1 indicates unlimited width */
-    bool _kerning{true};                                    /**< Indicates whether to use kerning in text block */
     std::unique_ptr<TextAlignStrategy> _textAlign{nullptr}; /**< Text align of text block */
 
     glm::vec4 _color{glm::vec4{1.f, 1.f, 1.f, 1.f}}; /**< Color of text in block */
@@ -69,7 +68,6 @@ public:
     void setPosition(glm::vec3 position);
     void setTransform(glm::mat4 transform);
     void setWidth(int width);
-    void setKerning(bool kerning);
     void setTextAlign(std::unique_ptr<TextAlignStrategy> textAlign);
 
     std::vector<Character> getCharacters();
@@ -83,7 +81,6 @@ public:
     glm::vec3 getPosition() const;
     glm::mat4 getTransform() const;
     int getWidth() const;
-    bool getKerning() const;
 
 protected:
     void _updateCharacters();

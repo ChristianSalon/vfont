@@ -19,7 +19,6 @@ EditorScene::EditorScene(CameraType cameraType, vft::TessellationStrategy tessel
         .setFontSize(32)
         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
         .setPosition(glm::vec3(0.f, 0.f, 0.f))
-        .setKerning(true)
         .build();
     this->_renderer->add(this->_textBlock);
 

@@ -27,7 +27,6 @@ public:
     TextBlockBuilder &setFont(std::shared_ptr<Font> font);
     TextBlockBuilder &setFontSize(unsigned int fontSize);
     TextBlockBuilder &setWidth(int width);
-    TextBlockBuilder &setKerning(bool kerning);
     TextBlockBuilder &setColor(glm::vec4 color);
     TextBlockBuilder &setPosition(glm::vec3 position);
     TextBlockBuilder &setTextAlign(std::unique_ptr<TextAlignStrategy> textAlign);

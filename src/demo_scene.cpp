@@ -47,7 +47,6 @@ DemoScene::DemoScene(CameraType cameraType, vft::TessellationStrategy tessellati
         .setFontSize(64)
         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
         .setPosition(glm::vec3(0.f, 0.f, 0.f))
-        .setKerning(true)
         .build();
 
     this->_block2 = vft::TextBlockBuilder()
@@ -55,7 +54,6 @@ DemoScene::DemoScene(CameraType cameraType, vft::TessellationStrategy tessellati
         .setFontSize(32)
         .setColor(glm::vec4(1.f, 0.f, 0.f, 1.f))
         .setPosition(glm::vec3(0.f, 64.f, 0.f))
-        .setKerning(true)
         .build();
 
     this->_block3 = vft::TextBlockBuilder()
@@ -63,7 +61,6 @@ DemoScene::DemoScene(CameraType cameraType, vft::TessellationStrategy tessellati
         .setFontSize(32)
         .setColor(glm::vec4(0.f, 1.f, 0.f, 1.f))
         .setPosition(glm::vec3(0.f, 96.f, 0.f))
-        .setKerning(true)
         .build();
 
     this->_block4 = vft::TextBlockBuilder()
@@ -71,7 +68,6 @@ DemoScene::DemoScene(CameraType cameraType, vft::TessellationStrategy tessellati
         .setFontSize(32)
         .setColor(glm::vec4(0.f, 0.f, 1.f, 0.5f))
         .setPosition(glm::vec3(0.f, 128.f, 0.f))
-        .setKerning(true)
         .build();
 
     this->_block5 = vft::TextBlockBuilder()
@@ -79,7 +75,6 @@ DemoScene::DemoScene(CameraType cameraType, vft::TessellationStrategy tessellati
         .setFontSize(32)
         .setColor(glm::vec4(1.f, 1.f, 0.f, 1.f))
         .setPosition(glm::vec3(0.f, 160.f, 0.f))
-        .setKerning(true)
         .build();
 
     this->_block6 = vft::TextBlockBuilder()
@@ -87,7 +82,6 @@ DemoScene::DemoScene(CameraType cameraType, vft::TessellationStrategy tessellati
         .setFontSize(32)
         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
         .setPosition(glm::vec3(0.f, 192.f, 0.f))
-        .setKerning(false)
         .build();
 
     this->_block7 = vft::TextBlockBuilder()
@@ -95,7 +89,6 @@ DemoScene::DemoScene(CameraType cameraType, vft::TessellationStrategy tessellati
         .setFontSize(32)
         .setColor(glm::vec4(0.f, 1.f, 1.f, 1.f))
         .setPosition(glm::vec3(0.f, 224.f, 0.f))
-        .setKerning(false)
         .build();
 
     this->_renderer->add(this->_block1);
