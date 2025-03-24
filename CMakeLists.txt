@@ -1,95 +1,172 @@
 cmake_minimum_required(VERSION 3.25)
-project(vfont-demo VERSION 1.0)
+project(vfont VERSION 1.0)
 
+# Enable c++20
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/")
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(VFONT_PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libs/vfont")
-set(LIBS "vfont")
-set(INCLUDES ${CMAKE_CURRENT_BINARY_DIR})
-set(DEFINES "")
+# Set cmake modules path
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
-# Set platform specific stuff
-if(WIN32)
-    set(DEFINES ${DEFINES} USE_WIN32 NOMINMAX UNICODE VK_USE_PLATFORM_WIN32_KHR)
-    set(PLATFORM "USE_WIN32")
-elseif(UNIX AND NOT APPLE)
-    if(NOT DEFINED PLATFORM OR "${PLATFORM}" STREQUAL "USE_WAYLAND")
-        # Use Wayland by default on linux if PLATFORM is not defined
-        find_package(Wayland)
+set(LIB_NAME vfont)
+set(VFONT_HEADERS
+    include/VFONT/text_renderer.h
+    include/VFONT/i_vulkan_text_renderer.h
+    include/VFONT/vulkan_text_renderer.h
+    include/VFONT/vulkan_triangulation_text_renderer.h
+    include/VFONT/vulkan_tessellation_shaders_text_renderer.h
+    include/VFONT/vulkan_winding_number_text_renderer.h
+    include/VFONT/vulkan_sdf_text_renderer.h
+    include/VFONT/vulkan_text_renderer_decorator.h
+    include/VFONT/vulkan_timed_renderer.h
+    include/VFONT/glyph.h
+    include/VFONT/glyph_mesh.h
+    include/VFONT/glyph_compositor.h
+    include/VFONT/glyph_cache.h
+    include/VFONT/character.h
+    include/VFONT/font.h
+    include/VFONT/font_atlas.h
+    include/VFONT/shaper.h
+    include/VFONT/text_block.h
+    include/VFONT/text_block_builder.h
+    include/VFONT/text_segment.h
+    include/VFONT/line_divider.h
+    include/VFONT/text_align_strategy.h
+    include/VFONT/tessellator.h
+    include/VFONT/triangulation_tessellator.h
+    include/VFONT/winding_number_tessellator.h
+    include/VFONT/tessellation_shaders_tessellator.h
+    include/VFONT/sdf_tessellator.h
+    include/VFONT/circular_dll.h
+    include/VFONT/polygon_operator.h
+    include/VFONT/edge.h
+    include/VFONT/curve.h
+    include/VFONT/unicode.h
+)
+set(VFONT_SOURCES
+    src/text_renderer.cpp
+    src/vulkan_text_renderer.cpp
+    src/vulkan_triangulation_text_renderer.cpp
+    src/vulkan_tessellation_shaders_text_renderer.cpp
+    src/vulkan_winding_number_text_renderer.cpp
+    src/vulkan_sdf_text_renderer.cpp
+    src/vulkan_text_renderer_decorator.cpp
+    src/vulkan_timed_renderer.cpp
+    src/glyph.cpp
+    src/glyph_mesh.cpp
+    src/glyph_compositor.cpp
+    src/glyph_cache.cpp
+    src/character.cpp
+    src/font.cpp
+    src/font_atlas.cpp
+    src/shaper.cpp
+    src/text_block.cpp
+    src/text_block_builder.cpp
+    src/text_segment.cpp
+    src/line_divider.cpp
+    src/text_align_strategy.cpp
+    src/tessellator.cpp
+    src/triangulation_tessellator.cpp
+    src/winding_number_tessellator.cpp
+    src/tessellation_shaders_tessellator.cpp
+    src/sdf_tessellator.cpp
+    src/circular_dll.cpp
+    src/polygon_operator.cpp
+    src/edge.cpp
+    src/curve.cpp
+    src/unicode.cpp
+)
 
-        # xkbcommon - library for handling keyboard input on Wayland
-        find_package(Xkbcommon)
+add_library(${LIB_NAME} STATIC ${VFONT_HEADERS} ${VFONT_SOURCES})
 
-        if(Wayland_FOUND AND Xkbcommon_FOUND)
-            set(DEFINES ${DEFINES} USE_WAYLAND VK_USE_PLATFORM_WAYLAND_KHR ${Xkbcommon_DEFINES})
-            set(LIBS ${LIBS} ${Wayland_client_LIBRARIES} ${Xkbcommon_LIBRARIES} -lrt)
-            set(INCLUDES ${INCLUDES} ${Wayland_client_INCLUDE_DIRS} ${Xkbcommon_INCLUDE_DIRS})
-            set(PLATFORM "USE_WAYLAND")
-        elseif("${PLATFORM}" STREQUAL "USE_WAYLAND")
-            message(WARNING "Try installing wayland, wayland-protocols and xkbcommon")
-            message(FATAL_ERROR "Selected platform is not supported")
-        elseif(NOT DEFINED PLATFORM)
-            message(WARNING "To build for Wayland, try installing wayland, wayland-protocols and xkbcommon")
-            message(WARNING "Platform Wayland is not supported, trying X11")
-        endif()
-    endif()
+target_include_directories(${LIB_NAME} PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/VFONT>
+    $<INSTALL_INTERFACE:include/VFONT>
+)
+target_include_directories(${LIB_NAME} PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
 
-    if(NOT DEFINED PLATFORM OR "${PLATFORM}" STREQUAL "USE_X11")
-        find_package(X11 REQUIRED)
-        if(X11_FOUND)
-            set(DEFINES ${DEFINES} USE_X11 VK_USE_PLATFORM_XLIB_KHR)
-            set(LIBS ${LIBS} X11)
-            set(PLATFORM "USE_X11")
-        elseif("${PLATFORM}" STREQUAL "USE_X11")
-            message(FATAL_ERROR "Selected platform is not supported")
-        elseif(NOT DEFINED PLATFORM)
-            message(FATAL_ERROR "Platform X11 is not supported")
-        endif()
-    endif()
-endif()
-message(STATUS "Selected platform is ${PLATFORM}")
-
-# Find doxygen and build documentation if specified
-option(BUILD_DOC "Build documentation" OFF)
-
-find_package(Doxygen)
-if(BUILD_DOC AND DOXYGEN_FOUND)
-    set(DOXYGEN_EXTRACT_PRIVATE "YES")
-    set(DOXYGEN_ENABLE_PREPROCESSING "NO")
-
-    # vfont-demo documentation
-    message(STATUS "Generating documentation")
-    set(DOXYGEN_PROJECT_NAME "vfont-demo")
-    set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/doc/vfont-demo")
-    doxygen_add_docs(
-        vfont_demo_doc
-        ALL
-        "${CMAKE_CURRENT_SOURCE_DIR}/src"
-    )
-
-    # vfont documentation
-    set(DOXYGEN_PROJECT_NAME "vfont")
-    set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/doc/vfont")
-    doxygen_add_docs(
-        vfont_doc
-        ALL
-        "${VFONT_PROJECT_DIR}/src"
-    )
-elseif(BUILD_DOC AND NOT DOXYGEN_FOUND)
-    message(WARNING "Could not build documentation, please install doxygen")
-endif()
-
-# Vulkan initialization
-find_package(Vulkan REQUIRED COMPONENTS glslc)
-set(INCLUDES ${INCLUDES} ${Vulkan_INCLUDE_DIRS})
-set(LIBS ${LIBS} Vulkan::Vulkan)
-
-add_compile_definitions(${DEFINES})
-
+# Build third party libraries
 add_subdirectory(thirdparty)
-add_subdirectory(libs/vfont)
-add_subdirectory(src)
 
-target_include_directories(vfont-demo PRIVATE ${INCLUDES})
-target_link_libraries(vfont-demo PRIVATE ${LIBS})
+# Link Vulkan
+find_package(Vulkan REQUIRED COMPONENTS glslc)
+target_include_directories(${LIB_NAME} PUBLIC ${Vulkan_INCLUDE_DIRS})
+target_link_libraries(${LIB_NAME} PUBLIC Vulkan::Vulkan)
+
+# Link freetype
+target_link_libraries(${LIB_NAME} PRIVATE freetype)
+
+# Link CDT
+target_link_libraries(${LIB_NAME} PRIVATE CDT::CDT)
+
+# Link glm
+target_link_libraries(${LIB_NAME} PUBLIC glm::glm)
+add_compile_definitions(GLM_FORCE_DEPTH_ZERO_TO_ONE)
+
+# Link harfbuzz
+target_link_libraries(${LIB_NAME} PUBLIC harfbuzz)
+
+# Compile shaders with glslc
+message(STATUS "vfont: Compiling shaders")
+if(NOT Vulkan_glslc_FOUND)
+    message(FATAL_ERROR "vfont: Error compiling shaders, glslc not found")
+endif()
+
+add_custom_target(shaders
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/shaders"
+    COMMAND ${Vulkan_GLSLC_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.vert" -o "${CMAKE_CURRENT_BINARY_DIR}/shaders/triangle-vert.spv"
+    COMMAND ${Vulkan_GLSLC_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.frag" -o "${CMAKE_CURRENT_BINARY_DIR}/shaders/triangle-frag.spv"
+    COMMAND ${Vulkan_GLSLC_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/shaders/curve.vert" -o "${CMAKE_CURRENT_BINARY_DIR}/shaders/curve-vert.spv"
+    COMMAND ${Vulkan_GLSLC_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/shaders/curve.tesc" -o "${CMAKE_CURRENT_BINARY_DIR}/shaders/curve-tesc.spv"
+    COMMAND ${Vulkan_GLSLC_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/shaders/curve.tese" -o "${CMAKE_CURRENT_BINARY_DIR}/shaders/curve-tese.spv"
+    COMMAND ${Vulkan_GLSLC_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/shaders/curve.frag" -o "${CMAKE_CURRENT_BINARY_DIR}/shaders/curve-frag.spv"
+    COMMAND ${Vulkan_GLSLC_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/shaders/winding_number.vert" -o "${CMAKE_CURRENT_BINARY_DIR}/shaders/winding_number-vert.spv"
+    COMMAND ${Vulkan_GLSLC_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/shaders/winding_number.frag" -o "${CMAKE_CURRENT_BINARY_DIR}/shaders/winding_number-frag.spv"
+    COMMAND ${Vulkan_GLSLC_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/shaders/sdf.vert" -o "${CMAKE_CURRENT_BINARY_DIR}/shaders/sdf-vert.spv"
+    COMMAND ${Vulkan_GLSLC_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/shaders/sdf.frag" -o "${CMAKE_CURRENT_BINARY_DIR}/shaders/sdf-frag.spv"
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.vert"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.frag"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/curve.vert"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/curve.tesc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/curve.tese"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/curve.frag"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/winding_number.vert"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/winding_number.frag"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/sdf.vert"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/sdf.frag"
+)
+
+add_dependencies(${LIB_NAME} shaders)
+
+# Build documentation if specified
+option(BUILD_DOCS "Build documentation" OFF)
+if(BUILD_DOCS)
+    message(STATUS "vfont: Building documentation")
+
+    find_package(Doxygen)
+    if(DOXYGEN_FOUND)
+        set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile)
+        set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/docs)
+
+        add_custom_target(docs
+            COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_IN}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            COMMENT "vfont: Generating documentation"
+            VERBATIM
+        )
+
+        add_dependencies(${LIB_NAME} docs)
+    else()
+        message(WARNING "vfont: Could not build documentation, please install doxygen")
+    endif()
+endif()
+
+# Build examples if specified
+option(BUILD_EXAMPLES "Build examples" ON)
+if(BUILD_EXAMPLES)
+    message(STATUS "vfont: Building examples")
+    add_subdirectory(examples)
+endif()
