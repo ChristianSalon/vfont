@@ -64,33 +64,20 @@ FontAtlas::FontAtlas(std::shared_ptr<Font> font, std::vector<uint32_t> glyphIds)
             currentRowHeight = 0;
         }
 
-        // Bounding box of glyph contours
-        unsigned int xMin = bitmap.width;
-        unsigned int xMax = 0;
-        unsigned int yMin = bitmap.rows;
-        unsigned int yMax = 0;
-
         // Write bitmap data into atlas texture
         for (unsigned int y = 0; y < bitmap.rows; y++) {
             for (unsigned int x = 0; x < bitmap.width; x++) {
                 uint8_t pixel = bitmap.buffer[y * bitmap.width + x];
                 this->_texture[(pen.y + y) * this->_width + (pen.x + x)] = pixel;
-
-                // Check if current pixel is in glyph (127 represents that pixel is on contour)
-                if (pixel >= 127) {
-                    xMin = std::max(std::min(x, xMin), static_cast<unsigned int>(0));
-                    xMax = std::min(std::max(x, xMax), bitmap.width);
-                    yMin = std::max(std::min(y, yMin), static_cast<unsigned int>(0));
-                    yMax = std::min(std::max(y, yMax), bitmap.rows);
-                }
             }
         }
 
+        // Calculate uvs
+        glm::vec2 uvTopLeft{pen.x / static_cast<float>(this->_width), pen.y / static_cast<float>(this->_height)};
+        glm::vec2 uvBottomRight{(pen.x + bitmap.width) / static_cast<float>(this->_width),
+                                (pen.y + bitmap.rows) / static_cast<float>(this->_height)};
+
         // Insert glyph data
-        glm::vec2 uvTopLeft{(pen.x + xMin - 1) / static_cast<float>(this->_width),
-                            (pen.y + yMin - 1) / static_cast<float>(this->_height)};
-        glm::vec2 uvBottomRight{(pen.x + xMax + 1) / static_cast<float>(this->_width),
-                                (pen.y + yMax + 1) / static_cast<float>(this->_height)};
         this->_glyphs.insert({glyphId, GlyphInfo{uvTopLeft, uvBottomRight}});
 
         // Update texture pen position

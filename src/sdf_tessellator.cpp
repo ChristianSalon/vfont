@@ -21,19 +21,24 @@ SdfTessellator::SdfTessellator() {}
  */
 Glyph SdfTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<vft::Font> font, unsigned int fontSize) {
     // Get glyph from .ttf file
-    if (FT_Load_Glyph(font->getFace(), glyphId, FT_LOAD_NO_SCALE)) {
+    if (FT_Load_Glyph(font->getFace(), glyphId, FT_LOAD_RENDER)) {
         throw std::runtime_error("SdfTessellator::composeGlyph(): Error loading glyph");
     }
+    if (FT_Render_Glyph(font->getFace()->glyph, FT_RENDER_MODE_SDF)) {
+        throw std::runtime_error("FontAtlas::FontAtlas(): Error rasterizing sdf bitmap");
+    }
     FT_GlyphSlot slot = font->getFace()->glyph;
+    const FT_Bitmap &bitmap = slot->bitmap;
 
-    // Set glyph metrics
+    // Set glyph metrics (in font units)
+    glm::vec2 scale = font->getScalingVector(font->getPixelSize());
     this->_currentGlyph = Glyph{};
-    this->_currentGlyph.setWidth(slot->metrics.width);
-    this->_currentGlyph.setHeight(slot->metrics.height);
-    this->_currentGlyph.setBearingX(slot->metrics.horiBearingX);
-    this->_currentGlyph.setBearingY(slot->metrics.horiBearingY);
-    this->_currentGlyph.setAdvanceX(slot->advance.x);
-    this->_currentGlyph.setAdvanceY(slot->advance.y);
+    this->_currentGlyph.setWidth(bitmap.width / scale.x);
+    this->_currentGlyph.setHeight(bitmap.rows / scale.y);
+    this->_currentGlyph.setBearingX(slot->bitmap_left / scale.x);
+    this->_currentGlyph.setBearingY(slot->bitmap_top / scale.y);
+    this->_currentGlyph.setAdvanceX(slot->advance.x / scale.x);
+    this->_currentGlyph.setAdvanceY(slot->advance.y/ scale.y);
 
     std::vector<glm::vec2> vertices;
     std::vector<uint32_t> boundingBoxIndices;

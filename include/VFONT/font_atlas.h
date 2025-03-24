@@ -13,6 +13,8 @@
 #include <glm/vec2.hpp>
 
 #include "font.h"
+#include "glyph.h"
+#include "glyph_mesh.h"
 
 namespace vft {
 

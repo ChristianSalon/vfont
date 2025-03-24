@@ -570,6 +570,10 @@ void TextBlock::_updateCharacterPositions(unsigned int start) {
     // Apply calculated positions by shaper and LineData to characters
     while (globalCharacterIndex < this->getCharacterCount()) {
         auto line = this->_lineDivider.getLineOfCharacter(globalCharacterIndex);
+        Character &character = this->_getCharacterBasedOnCharacterGlobalIndex(globalCharacterIndex);
+
+        // Update pen position to start of current character
+        pen += character.getOffset();
 
         if (line.first == globalCharacterIndex) {
             // Character is first on current line, restore pen position
@@ -583,10 +587,8 @@ void TextBlock::_updateCharacterPositions(unsigned int start) {
         }
 
         // Set character position
-        Character &character = this->_getCharacterBasedOnCharacterGlobalIndex(globalCharacterIndex);
         character.setPosition(pen);
-
-        // Update pen position
+        // Update pen position to end of current character
         pen += character.getAdvance();
 
         globalCharacterIndex++;

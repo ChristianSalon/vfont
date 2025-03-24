@@ -30,6 +30,15 @@ void Character::setAdvance(glm::vec2 advance) {
 }
 
 /**
+ * @brief Setter for character offset
+ *
+ * @param offset Offset in pixels
+ */
+void Character::setOffset(glm::vec2 offset) {
+    this->_offset = offset;
+}
+
+/**
  * @brief Setter for character position in text block
  *
  * @param position Position in text block
@@ -74,6 +83,15 @@ uint32_t Character::getCodePoint() const {
  */
 glm::vec2 Character::getAdvance() const {
     return this->_advance;
+}
+
+/**
+ * @brief Getter for character offset
+ *
+ * @return Offset vector
+ */
+glm::vec2 Character::getOffset() const {
+    return this->_offset;
 }
 
 /**

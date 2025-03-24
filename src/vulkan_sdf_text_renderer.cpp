@@ -261,12 +261,10 @@ void VulkanSdfTextRenderer::_createVertexAndIndexBuffers() {
                         character.getFont()->getFontFamily() + " was not found");
                 }
 
-                glm::vec2 uvTopLeft = this->_fontTextures.at(character.getFont()->getFontFamily())
-                                          .atlas.getGlyph(character.getGlyphId())
-                                          .uvTopLeft;
-                glm::vec2 uvBottomRight = this->_fontTextures.at(character.getFont()->getFontFamily())
-                                              .atlas.getGlyph(character.getGlyphId())
-                                              .uvBottomRight;
+                FontAtlas::GlyphInfo glyphInfo =
+                    this->_fontTextures.at(character.getFont()->getFontFamily()).atlas.getGlyph(character.getGlyphId());
+                glm::vec2 uvTopLeft = glyphInfo.uvTopLeft;
+                glm::vec2 uvBottomRight = glyphInfo.uvBottomRight;
                 glm::vec2 uvTopRight{uvBottomRight.x, uvTopLeft.y};
                 glm::vec2 uvBottomLeft{uvTopLeft.x, uvBottomRight.y};
 

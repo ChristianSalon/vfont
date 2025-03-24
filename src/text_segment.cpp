@@ -188,7 +188,8 @@ void TextSegment::_shape() {
     for (const std::vector<ShapedCharacter> &shapedLine : shaped) {
         for (const ShapedCharacter &shapedCharacter : shapedLine) {
             Character character{shapedCharacter.glyphId, 0, this->_font, this->_fontSize};
-            character.setAdvance(glm::vec2(shapedCharacter.xAdvance, shapedCharacter.yAdvance));
+            character.setAdvance(glm::vec2{shapedCharacter.xAdvance, shapedCharacter.yAdvance});
+            character.setOffset(glm::vec2{shapedCharacter.xOffset, shapedCharacter.yOffset});
             character.setTransform(this->_transform);
 
             this->_characters.push_back(character);
