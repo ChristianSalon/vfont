@@ -51,19 +51,15 @@ protected:
     void *_mappedUbo{nullptr};          /**< Pointer to the mapped memory for the uniform buffer object */
 
 public:
-    VulkanTextRenderer() = default;
-    ~VulkanTextRenderer() = default;
-
-    void initialize() override;
-    void destroy() override;
+    VulkanTextRenderer(VkPhysicalDevice physicalDevice,
+                       VkDevice logicalDevice,
+                       VkQueue graphicsQueue,
+                       VkCommandPool commandPool,
+                       VkRenderPass renderPass,
+                       VkCommandBuffer commandBuffer = nullptr);
+    virtual ~VulkanTextRenderer();
 
     void setUniformBuffers(UniformBufferObject ubo) override;
-
-    void setPhysicalDevice(VkPhysicalDevice physicalDevice) override;
-    void setLogicalDevice(VkDevice logicalDevice) override;
-    void setCommandPool(VkCommandPool commandPool) override;
-    void setGraphicsQueue(VkQueue graphicsQueue) override;
-    void setRenderPass(VkRenderPass renderPass) override;
     void setCommandBuffer(VkCommandBuffer commandBuffer) override;
 
     VkPhysicalDevice getPhysicalDevice() override;

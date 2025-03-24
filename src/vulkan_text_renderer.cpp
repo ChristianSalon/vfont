@@ -10,9 +10,18 @@ namespace vft {
 /**
  * @brief Initialize vulkan text renderer
  */
-void VulkanTextRenderer::initialize() {
-    TextRenderer::initialize();
-
+VulkanTextRenderer::VulkanTextRenderer(VkPhysicalDevice physicalDevice,
+                                       VkDevice logicalDevice,
+                                       VkQueue graphicsQueue,
+                                       VkCommandPool commandPool,
+                                       VkRenderPass renderPass,
+                                       VkCommandBuffer commandBuffer)
+    : _physicalDevice{physicalDevice},
+      _logicalDevice{logicalDevice},
+      _graphicsQueue{graphicsQueue},
+      _renderPass{renderPass},
+      _commandPool{commandPool},
+      _commandBuffer{commandBuffer} {
     this->_createDescriptorPool();
 
     this->_createUbo();
@@ -23,8 +32,9 @@ void VulkanTextRenderer::initialize() {
 /**
  * @brief Deallocate memory and destroy vulkan text renderer
  */
-void VulkanTextRenderer::destroy() {
-    this->_destroyBuffer(this->_uboBuffer, this->_uboMemory);
+VulkanTextRenderer::~VulkanTextRenderer() {
+    if (this->_uboBuffer != nullptr)
+        this->_destroyBuffer(this->_uboBuffer, this->_uboMemory);
 
     if (this->_descriptorPool != nullptr)
         vkDestroyDescriptorPool(this->_logicalDevice, this->_descriptorPool, nullptr);
@@ -39,71 +49,6 @@ void VulkanTextRenderer::destroy() {
 void VulkanTextRenderer::setUniformBuffers(UniformBufferObject ubo) {
     this->_ubo = ubo;
     memcpy(this->_mappedUbo, &this->_ubo, sizeof(this->_ubo));
-}
-
-/**
- * @brief Setter for vulkan physical device
- *
- * @param physicalDevice Vulkan physical device
- */
-void VulkanTextRenderer::setPhysicalDevice(VkPhysicalDevice physicalDevice) {
-    if (physicalDevice == nullptr) {
-        throw std::invalid_argument("VulkanTextRenderer::setPhysicalDevice(): Physical device must not be null");
-    }
-
-    this->_physicalDevice = physicalDevice;
-}
-
-/**
- * @brief Setter for vulkan logical device
- *
- * @param logicalDevice Vulkan logical device
- */
-void VulkanTextRenderer::setLogicalDevice(VkDevice logicalDevice) {
-    if (logicalDevice == nullptr) {
-        throw std::invalid_argument("VulkanTextRenderer::setLogicalDevice(): Logical device must not be null");
-    }
-
-    this->_logicalDevice = logicalDevice;
-}
-
-/**
- * @brief Setter for vulkan command pool
- *
- * @param commandPool Vulkan command pool
- */
-void VulkanTextRenderer::setCommandPool(VkCommandPool commandPool) {
-    if (commandPool == nullptr) {
-        throw std::invalid_argument("VulkanTextRenderer::setCommandPool(): Command pool must not be null");
-    }
-
-    this->_commandPool = commandPool;
-}
-
-/**
- * @brief Setter for vulkan graphics queue
- *
- * @param graphicsQueue Vulkan graphics queue
- */
-void VulkanTextRenderer::setGraphicsQueue(VkQueue graphicsQueue) {
-    if (graphicsQueue == nullptr) {
-        throw std::invalid_argument("VulkanTextRenderer::setGraphicsQueue(): Graphics queue must not be null");
-    }
-
-    this->_graphicsQueue = graphicsQueue;
-}
-
-/**
- * @brief Setter for vulkan render pass
- *
- * @param renderPass Vulkan render pass
- */
-void VulkanTextRenderer::setRenderPass(VkRenderPass renderPass) {
-    if (renderPass == nullptr) {
-        throw std::invalid_argument("VulkanTextRenderer::setRenderPass(): Render pass must not be null");
-    }
-
-    this->_renderPass = renderPass;
 }
 
 /**

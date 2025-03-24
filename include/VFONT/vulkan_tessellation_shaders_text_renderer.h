@@ -48,10 +48,11 @@ protected:
     std::vector<uint32_t> _lineSegmentsIndices{};  /**< Index buffer */
     std::vector<uint32_t> _curveSegmentsIndices{}; /**< Index buffer */
 
-    VkBuffer _vertexBuffer{nullptr};                         /**< Vulkan vertex buffer */
-    VkDeviceMemory _vertexBufferMemory{nullptr};             /**< Vulkan vertex buffer memory */
-    VkBuffer _lineSegmentsIndexBuffer{nullptr};              /**< Vulkan index buffer for line segments forming inner triangles */
-    VkDeviceMemory _lineSegmentsIndexBufferMemory{nullptr};  /**< Vulkan index buffer memory for line segments forming inner triangles */
+    VkBuffer _vertexBuffer{nullptr};             /**< Vulkan vertex buffer */
+    VkDeviceMemory _vertexBufferMemory{nullptr}; /**< Vulkan vertex buffer memory */
+    VkBuffer _lineSegmentsIndexBuffer{nullptr};  /**< Vulkan index buffer for line segments forming inner triangles */
+    VkDeviceMemory _lineSegmentsIndexBufferMemory{
+        nullptr}; /**< Vulkan index buffer memory for line segments forming inner triangles */
     VkBuffer _curveSegmentsIndexBuffer{nullptr};             /**< Vulkan index buffer for curve segments */
     VkDeviceMemory _curveSegmentsIndexBufferMemory{nullptr}; /**< Vulkan index buffer memory for curve segments */
 
@@ -61,11 +62,14 @@ protected:
     VkPipeline _curveSegmentsPipeline{nullptr};             /**< Vulkan pipeline for glpyh's curve segments */
 
 public:
-    VulkanTessellationShadersTextRenderer() = default;
-    ~VulkanTessellationShadersTextRenderer() = default;
+    VulkanTessellationShadersTextRenderer(VkPhysicalDevice physicalDevice,
+                                          VkDevice logicalDevice,
+                                          VkQueue graphicsQueue,
+                                          VkCommandPool commandPool,
+                                          VkRenderPass renderPass,
+                                          VkCommandBuffer commandBuffer = nullptr);
+    virtual ~VulkanTessellationShadersTextRenderer();
 
-    void initialize() override;
-    void destroy() override;
     void draw() override;
     void update() override;
 

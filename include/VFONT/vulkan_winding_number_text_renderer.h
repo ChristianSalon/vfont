@@ -101,11 +101,14 @@ protected:
     void *_mappedSSBO{nullptr};          /**< Pointer to the mapped memory for line and curve segments of all glyphs */
 
 public:
-    VulkanWindingNumberTextRenderer() = default;
-    ~VulkanWindingNumberTextRenderer() = default;
+    VulkanWindingNumberTextRenderer(VkPhysicalDevice physicalDevice,
+                                    VkDevice logicalDevice,
+                                    VkQueue graphicsQueue,
+                                    VkCommandPool commandPool,
+                                    VkRenderPass renderPass,
+                                    VkCommandBuffer commandBuffer = nullptr);
+    virtual ~VulkanWindingNumberTextRenderer();
 
-    void initialize() override;
-    void destroy() override;
     void draw() override;
     void update() override;
 

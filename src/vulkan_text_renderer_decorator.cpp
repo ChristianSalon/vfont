@@ -22,20 +22,6 @@ VulkanTextRendererDecorator::~VulkanTextRendererDecorator() {
 }
 
 /**
- * @brief Delegate initialization to wrapped vulkan text renderer
- */
-void VulkanTextRendererDecorator::initialize() {
-    this->_renderer->initialize();
-}
-
-/**
- * @brief Delegate destruction to wrapped vulkan text renderer
- */
-void VulkanTextRendererDecorator::destroy() {
-    this->_renderer->destroy();
-}
-
-/**
  * @brief Delegate add() to wrapped vulkan text renderer
  *
  * @param text Text block
@@ -77,41 +63,6 @@ void VulkanTextRendererDecorator::setViewportSize(unsigned int width, unsigned i
  */
 void VulkanTextRendererDecorator::setCache(std::shared_ptr<GlyphCache> cache) {
     this->_renderer->setCache(cache);
-}
-
-/**
- * @brief Delegate setPhysicalDevice() to wrapped vulkan text renderer
- */
-void VulkanTextRendererDecorator::setPhysicalDevice(VkPhysicalDevice physicalDevice) {
-    this->_renderer->setPhysicalDevice(physicalDevice);
-}
-
-/**
- * @brief Delegate setLogicalDevice() to wrapped vulkan text renderer
- */
-void VulkanTextRendererDecorator::setLogicalDevice(VkDevice logicalDevice) {
-    this->_renderer->setLogicalDevice(logicalDevice);
-}
-
-/**
- * @brief Delegate setCommandPool() to wrapped vulkan text renderer
- */
-void VulkanTextRendererDecorator::setCommandPool(VkCommandPool commandPool) {
-    this->_renderer->setCommandPool(commandPool);
-}
-
-/**
- * @brief Delegate setGraphicsQueue() to wrapped vulkan text renderer
- */
-void VulkanTextRendererDecorator::setGraphicsQueue(VkQueue graphicsQueue) {
-    this->_renderer->setGraphicsQueue(graphicsQueue);
-}
-
-/**
- * @brief Delegate setRenderPass() to wrapped vulkan text renderer
- */
-void VulkanTextRendererDecorator::setRenderPass(VkRenderPass renderPass) {
-    this->_renderer->setRenderPass(renderPass);
 }
 
 /**

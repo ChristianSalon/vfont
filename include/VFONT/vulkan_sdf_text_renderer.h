@@ -90,11 +90,14 @@ protected:
     std::vector<VkDescriptorSet> _fontAtlasDescriptorSets{};      /**< Vulkan descriptor sets for font atlases */
 
 public:
-    VulkanSdfTextRenderer() = default;
-    ~VulkanSdfTextRenderer() = default;
+    VulkanSdfTextRenderer(VkPhysicalDevice physicalDevice,
+                          VkDevice logicalDevice,
+                          VkQueue graphicsQueue,
+                          VkCommandPool commandPool,
+                          VkRenderPass renderPass,
+                          VkCommandBuffer commandBuffer = nullptr);
+    virtual ~VulkanSdfTextRenderer();
 
-    void initialize() override;
-    void destroy() override;
     void draw() override;
     void update() override;
 

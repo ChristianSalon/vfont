@@ -10,9 +10,13 @@ namespace vft {
 /**
  * @brief Initialize vulkan text renderer
  */
-void VulkanTriangulationTextRenderer::initialize() {
-    VulkanTextRenderer::initialize();
-
+VulkanTriangulationTextRenderer::VulkanTriangulationTextRenderer(VkPhysicalDevice physicalDevice,
+                                                                 VkDevice logicalDevice,
+                                                                 VkQueue graphicsQueue,
+                                                                 VkCommandPool commandPool,
+                                                                 VkRenderPass renderPass,
+                                                                 VkCommandBuffer commandBuffer)
+    : VulkanTextRenderer{physicalDevice, logicalDevice, graphicsQueue, commandPool, renderPass, commandBuffer} {
     this->_tessellator = std::make_unique<TriangulationTessellator>();
     this->_createPipeline();
 }
@@ -20,7 +24,7 @@ void VulkanTriangulationTextRenderer::initialize() {
 /**
  * @brief Deallocate memory and destroy vulkan text renderer
  */
-void VulkanTriangulationTextRenderer::destroy() {
+VulkanTriangulationTextRenderer::~VulkanTriangulationTextRenderer() {
     // Destroy vulkan buffers
     if (this->_indexBuffer != nullptr)
         this->_destroyBuffer(this->_indexBuffer, this->_indexBufferMemory);
@@ -32,8 +36,6 @@ void VulkanTriangulationTextRenderer::destroy() {
         vkDestroyPipeline(this->_logicalDevice, this->_pipeline, nullptr);
     if (this->_pipelineLayout != nullptr)
         vkDestroyPipelineLayout(this->_logicalDevice, this->_pipelineLayout, nullptr);
-
-    VulkanTextRenderer::destroy();
 }
 
 /**

@@ -10,14 +10,14 @@ namespace vft {
 /**
  * @brief Initializes text renderer
  */
-void TextRenderer::initialize() {
+TextRenderer::TextRenderer() {
     this->_cache = std::make_shared<GlyphCache>();
 }
 
 /**
  * @brief Destroys text renderer
  */
-void TextRenderer::destroy() {
+TextRenderer::~TextRenderer() {
     // Destroy tessellator
     this->_tessellator.reset();
 }

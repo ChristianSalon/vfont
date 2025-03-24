@@ -50,11 +50,9 @@ protected:
     std::unique_ptr<Tessellator> _tessellator{nullptr}; /**< Tessellator to compose glyphs for rendering */
 
 public:
-    TextRenderer() = default;
-    virtual ~TextRenderer() = default;
+    TextRenderer();
+    virtual ~TextRenderer();
 
-    virtual void initialize();
-    virtual void destroy();
     virtual void add(std::shared_ptr<TextBlock> text);
     virtual void draw() = 0;
     virtual void update() = 0;

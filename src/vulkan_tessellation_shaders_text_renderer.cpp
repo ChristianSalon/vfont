@@ -10,9 +10,13 @@ namespace vft {
 /**
  * @brief Initialize vulkan text renderer
  */
-void VulkanTessellationShadersTextRenderer::initialize() {
-    VulkanTextRenderer::initialize();
-
+VulkanTessellationShadersTextRenderer::VulkanTessellationShadersTextRenderer(VkPhysicalDevice physicalDevice,
+                                                                             VkDevice logicalDevice,
+                                                                             VkQueue graphicsQueue,
+                                                                             VkCommandPool commandPool,
+                                                                             VkRenderPass renderPass,
+                                                                             VkCommandBuffer commandBuffer)
+    : VulkanTextRenderer{physicalDevice, logicalDevice, graphicsQueue, commandPool, renderPass, commandBuffer} {
     this->_tessellator = std::make_unique<TessellationShadersTessellator>();
     this->_createLineSegmentsPipeline();
     this->_createCurveSegmentsPipeline();
@@ -21,7 +25,7 @@ void VulkanTessellationShadersTextRenderer::initialize() {
 /**
  * @brief Deallocate memory and destroy vulkan text renderer
  */
-void VulkanTessellationShadersTextRenderer::destroy() {
+VulkanTessellationShadersTextRenderer::~VulkanTessellationShadersTextRenderer() {
     // Destroy vulkan buffers
     if (this->_lineSegmentsIndexBuffer != nullptr)
         this->_destroyBuffer(this->_lineSegmentsIndexBuffer, this->_lineSegmentsIndexBufferMemory);
@@ -41,8 +45,6 @@ void VulkanTessellationShadersTextRenderer::destroy() {
         vkDestroyPipeline(this->_logicalDevice, this->_curveSegmentsPipeline, nullptr);
     if (this->_curveSegmentsPipelineLayout != nullptr)
         vkDestroyPipelineLayout(this->_logicalDevice, this->_curveSegmentsPipelineLayout, nullptr);
-
-    VulkanTextRenderer::destroy();
 }
 
 /**

@@ -12,20 +12,7 @@ namespace vft {
  *
  * @param renderer Wrapped vulkan text renderer
  */
-VulkanTimedRenderer::VulkanTimedRenderer(VulkanTextRenderer *renderer)
-    : VulkanTextRendererDecorator{renderer}, _queryPool{nullptr} {}
-
-/**
- * @brief VulkanTimedRenderer destructor
- */
-VulkanTimedRenderer::~VulkanTimedRenderer() {}
-
-/**
- * @brief Initialize vulkan timed text renderer
- */
-void VulkanTimedRenderer::initialize() {
-    VulkanTextRendererDecorator::initialize();
-
+VulkanTimedRenderer::VulkanTimedRenderer(VulkanTextRenderer *renderer) : VulkanTextRendererDecorator{renderer} {
     this->_timestampPeriod = this->_getTimestampPeriod();
 
     // Create vulkan query pool
@@ -41,14 +28,12 @@ void VulkanTimedRenderer::initialize() {
 }
 
 /**
- * @brief Destroy vulkan timed text renderer
+ * @brief VulkanTimedRenderer destructor
  */
-void VulkanTimedRenderer::destroy() {
+VulkanTimedRenderer::~VulkanTimedRenderer() {
     if (this->_queryPool != nullptr)
         vkDestroyQueryPool(this->_renderer->getLogicalDevice(), this->_queryPool, nullptr);
-
-    VulkanTextRendererDecorator::destroy();
-};
+}
 
 /**
  * @brief  Add draw commands to the command buffer and add timestamps at top and bottom of pipeline

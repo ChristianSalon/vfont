@@ -10,9 +10,13 @@ namespace vft {
 /**
  * @brief Initialize vulkan text renderer
  */
-void VulkanWindingNumberTextRenderer::initialize() {
-    VulkanTextRenderer::initialize();
-
+VulkanWindingNumberTextRenderer::VulkanWindingNumberTextRenderer(VkPhysicalDevice physicalDevice,
+                                                                 VkDevice logicalDevice,
+                                                                 VkQueue graphicsQueue,
+                                                                 VkCommandPool commandPool,
+                                                                 VkRenderPass renderPass,
+                                                                 VkCommandBuffer commandBuffer)
+    : VulkanTextRenderer{physicalDevice, logicalDevice, graphicsQueue, commandPool, renderPass, commandBuffer} {
     this->_tessellator = std::make_unique<WindingNumberTessellator>();
     this->_createSegmentsDescriptorSetLayout();
     this->_createSegmentsDescriptorSet();
@@ -22,7 +26,7 @@ void VulkanWindingNumberTextRenderer::initialize() {
 /**
  * @brief Deallocate memory and destroy vulkan text renderer
  */
-void VulkanWindingNumberTextRenderer::destroy() {
+VulkanWindingNumberTextRenderer::~VulkanWindingNumberTextRenderer() {
     // Destroy vulkan buffers
     if (this->_boundingBoxIndexBuffer != nullptr)
         this->_destroyBuffer(this->_boundingBoxIndexBuffer, this->_boundingBoxIndexBufferMemory);
@@ -40,8 +44,6 @@ void VulkanWindingNumberTextRenderer::destroy() {
         vkDestroyPipeline(this->_logicalDevice, this->_segmentsPipeline, nullptr);
     if (this->_segmentsPipelineLayout != nullptr)
         vkDestroyPipelineLayout(this->_logicalDevice, this->_segmentsPipelineLayout, nullptr);
-
-    VulkanTextRenderer::destroy();
 }
 
 /**

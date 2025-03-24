@@ -10,9 +10,13 @@ namespace vft {
 /**
  * @brief Initialize vulkan text renderer
  */
-void VulkanSdfTextRenderer::initialize() {
-    VulkanTextRenderer::initialize();
-
+VulkanSdfTextRenderer::VulkanSdfTextRenderer(VkPhysicalDevice physicalDevice,
+                                             VkDevice logicalDevice,
+                                             VkQueue graphicsQueue,
+                                             VkCommandPool commandPool,
+                                             VkRenderPass renderPass,
+                                             VkCommandBuffer commandBuffer)
+    : VulkanTextRenderer{physicalDevice, logicalDevice, graphicsQueue, commandPool, renderPass, commandBuffer} {
     this->_tessellator = std::make_unique<SdfTessellator>();
     this->_createFontAtlasDescriptorSetLayout();
     this->_createPipeline();
@@ -21,7 +25,7 @@ void VulkanSdfTextRenderer::initialize() {
 /**
  * @brief Deallocate memory and destroy vulkan text renderer
  */
-void VulkanSdfTextRenderer::destroy() {
+VulkanSdfTextRenderer::~VulkanSdfTextRenderer() {
     // Destroy textures
     for (auto &texture : this->_fontTextures) {
         vkDestroySampler(this->_logicalDevice, texture.second.sampler, nullptr);
@@ -45,8 +49,6 @@ void VulkanSdfTextRenderer::destroy() {
         vkDestroyPipeline(this->_logicalDevice, this->_pipeline, nullptr);
     if (this->_pipelineLayout != nullptr)
         vkDestroyPipelineLayout(this->_logicalDevice, this->_pipelineLayout, nullptr);
-
-    VulkanTextRenderer::destroy();
 }
 
 /**

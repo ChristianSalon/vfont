@@ -28,8 +28,6 @@ public:
     explicit VulkanTextRendererDecorator(VulkanTextRenderer *renderer);
     virtual ~VulkanTextRendererDecorator() override;
 
-    void initialize() override;
-    void destroy() override;
     void add(std::shared_ptr<TextBlock> text) override;
     void draw() override;
     void update() override;
@@ -38,11 +36,6 @@ public:
     void setViewportSize(unsigned int width, unsigned int height) override;
     void setCache(std::shared_ptr<GlyphCache> cache) override;
 
-    void setPhysicalDevice(VkPhysicalDevice physicalDevice) override;
-    void setLogicalDevice(VkDevice logicalDevice) override;
-    void setCommandPool(VkCommandPool commandPool) override;
-    void setGraphicsQueue(VkQueue graphicsQueue) override;
-    void setRenderPass(VkRenderPass renderPass) override;
     void setCommandBuffer(VkCommandBuffer commandBuffer) override;
 
     VkPhysicalDevice getPhysicalDevice() override;

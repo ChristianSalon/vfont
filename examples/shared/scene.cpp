@@ -74,41 +74,47 @@ Scene::Scene(CameraType cameraType, vft::TessellationStrategy tessellationAlgori
         vft::VulkanTextRenderer *renderer = nullptr;
 
         if (tessellationAlgorithm == vft::TessellationStrategy::TRIANGULATION) {
-            renderer = new vft::VulkanTriangulationTextRenderer();
+            renderer = new vft::VulkanTriangulationTextRenderer(this->_physicalDevice, this->_logicalDevice, this->_graphicsQueue, this->_commandPool, this->_renderPass, this->_commandBuffer);
         }
         else if(tessellationAlgorithm == vft::TessellationStrategy::TESSELLATION_SHADERS) {
-            renderer = new vft::VulkanTessellationShadersTextRenderer();
+            renderer = new vft::VulkanTessellationShadersTextRenderer(this->_physicalDevice, this->_logicalDevice,
+                                                                      this->_graphicsQueue, this->_commandPool,
+                                                                      this->_renderPass, this->_commandBuffer);
         }
         else if(tessellationAlgorithm == vft::TessellationStrategy::WINDING_NUMBER) {
-            renderer = new vft::VulkanWindingNumberTextRenderer();
+            renderer = new vft::VulkanWindingNumberTextRenderer(this->_physicalDevice, this->_logicalDevice,
+                                                                this->_graphicsQueue, this->_commandPool,
+                                                                this->_renderPass, this->_commandBuffer);
         }
         else {
-            renderer = new vft::VulkanSdfTextRenderer();
+            renderer = new vft::VulkanSdfTextRenderer(this->_physicalDevice, this->_logicalDevice, this->_graphicsQueue,
+                                                      this->_commandPool, this->_renderPass, this->_commandBuffer);
         }
 
         this->_renderer = std::make_shared<vft::VulkanTimedRenderer>(renderer);
     }
     else {
         if (tessellationAlgorithm == vft::TessellationStrategy::TRIANGULATION) {
-            this->_renderer = std::make_shared<vft::VulkanTriangulationTextRenderer>();
+            this->_renderer = std::make_shared<vft::VulkanTriangulationTextRenderer>(
+                this->_physicalDevice, this->_logicalDevice, this->_graphicsQueue, this->_commandPool,
+                this->_renderPass, this->_commandBuffer);
         }
         else if (tessellationAlgorithm == vft::TessellationStrategy::TESSELLATION_SHADERS) {
-            this->_renderer = std::make_shared<vft::VulkanTessellationShadersTextRenderer>();
+            this->_renderer = std::make_shared<vft::VulkanTessellationShadersTextRenderer>(
+                this->_physicalDevice, this->_logicalDevice, this->_graphicsQueue, this->_commandPool,
+                this->_renderPass, this->_commandBuffer);
         }
         else if (tessellationAlgorithm == vft::TessellationStrategy::WINDING_NUMBER) {
-            this->_renderer = std::make_shared<vft::VulkanWindingNumberTextRenderer>();
+            this->_renderer = std::make_shared<vft::VulkanWindingNumberTextRenderer>(
+                this->_physicalDevice, this->_logicalDevice, this->_graphicsQueue, this->_commandPool,
+                this->_renderPass, this->_commandBuffer);
         } else {
-            this->_renderer = std::make_shared<vft::VulkanSdfTextRenderer>();
+            this->_renderer = std::make_shared<vft::VulkanSdfTextRenderer>(this->_physicalDevice, this->_logicalDevice,
+                                                                           this->_graphicsQueue, this->_commandPool,
+                                                                           this->_renderPass, this->_commandBuffer);
         }
     }
 
-    this->_renderer->setPhysicalDevice(this->_physicalDevice);
-    this->_renderer->setLogicalDevice(this->_logicalDevice);
-    this->_renderer->setGraphicsQueue(this->_graphicsQueue);
-    this->_renderer->setCommandPool(this->_commandPool);
-    this->_renderer->setRenderPass(this->_renderPass);
-    this->_renderer->setCommandBuffer(this->_commandBuffer);
-    this->_renderer->initialize();
     this->_renderer->setViewportSize(this->_window->getWidth(), this->_window->getHeight());
 }
 
@@ -116,7 +122,7 @@ Scene::Scene(CameraType cameraType, vft::TessellationStrategy tessellationAlgori
  * @brief Scene destructor
  */
 Scene::~Scene() {
-    this->_renderer->destroy();
+    this->_renderer.reset();
     this->_cleanupSwapChain();
 
     vkDestroySemaphore(this->_logicalDevice, this->_imageAvailableSemaphore, nullptr);
@@ -984,7 +990,6 @@ void Scene::_drawFrame() {
     vkResetFences(this->_logicalDevice, 1, &this->_inFlightFence);
 
     vkResetCommandBuffer(this->_commandBuffer, 0);
-    this->_renderer->setCommandBuffer(this->_commandBuffer);
     this->_recordCommandBuffer(this->_commandBuffer, imageIndex);
 
     VkSemaphore signalSemaphores[] = { this->_renderFinishedSemaphore };

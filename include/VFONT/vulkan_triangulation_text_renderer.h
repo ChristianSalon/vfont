@@ -40,11 +40,14 @@ protected:
     VkPipeline _pipeline{nullptr};             /**< Vulkan pipeline for glpyh's triangles */
 
 public:
-    VulkanTriangulationTextRenderer() = default;
-    ~VulkanTriangulationTextRenderer() = default;
+    VulkanTriangulationTextRenderer(VkPhysicalDevice physicalDevice,
+                                    VkDevice logicalDevice,
+                                    VkQueue graphicsQueue,
+                                    VkCommandPool commandPool,
+                                    VkRenderPass renderPass,
+                                    VkCommandBuffer commandBuffer = nullptr);
+    virtual ~VulkanTriangulationTextRenderer();
 
-    void initialize() override;
-    void destroy() override;
     void draw() override;
     void update() override;
 

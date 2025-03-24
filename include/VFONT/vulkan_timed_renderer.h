@@ -28,8 +28,6 @@ public:
     VulkanTimedRenderer(VulkanTextRenderer *renderer);
     ~VulkanTimedRenderer() override;
 
-    void initialize() override;
-    void destroy() override;
     void draw() override;
 
     double readTimestamps();
