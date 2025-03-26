@@ -31,6 +31,10 @@ namespace vft {
  * @brief Composes glyphs that are fully triangulated on the cpu using the constrained delaunay triangulation algorithm
  */
 class TriangulationTessellator : public Tessellator {
+public:
+    /** Index of index buffer containing trinagles in glyph's vector of index buffers */
+    static constexpr unsigned int GLYPH_MESH_TRIANGLE_BUFFER_INDEX = 0;
+
 protected:
     std::shared_ptr<Font> _font{nullptr}; /**< Font of current glyph */
     unsigned int _fontSize{0};            /**< Font size of current glyph */

@@ -17,7 +17,8 @@ VulkanSdfTextRenderer::VulkanSdfTextRenderer(VkPhysicalDevice physicalDevice,
                                              VkRenderPass renderPass,
                                              VkCommandBuffer commandBuffer)
     : VulkanTextRenderer{physicalDevice, logicalDevice, graphicsQueue, commandPool, renderPass, commandBuffer} {
-    this->_tessellator = std::make_unique<SdfTessellator>();
+    this->_initialize();
+
     this->_createFontAtlasDescriptorSetLayout();
     this->_createPipeline();
 }
@@ -72,10 +73,9 @@ void VulkanSdfTextRenderer::draw() {
     // Draw bounding boxes
     for (unsigned int i = 0; i < this->_textBlocks.size(); i++) {
         for (const Character &character : this->_textBlocks[i]->getCharacters()) {
-            GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), 0};
-            const Glyph &glyph = this->_cache->getGlyph(key);
+            GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), 0};;
 
-            if (glyph.mesh.getVertexCount() > 0) {
+            if (this->_offsets.at(key).boundingBoxCount > 0) {
                 if (character.getFont()->getFontFamily() != lastFontFamily) {
                     // Bind descriptor sets if font texture should change
                     std::array<VkDescriptorSet, 2> sets = {
@@ -83,6 +83,8 @@ void VulkanSdfTextRenderer::draw() {
                         this->_fontTextures.at(character.getFont()->getFontFamily()).descriptorSet};
                     vkCmdBindDescriptorSets(this->_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                                             this->_pipelineLayout, 0, sets.size(), sets.data(), 0, nullptr);
+
+                    lastFontFamily = character.getFont()->getFontFamily();
                 }
 
                 // Push constants
@@ -91,9 +93,8 @@ void VulkanSdfTextRenderer::draw() {
                                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                                    sizeof(CharacterPushConstants), &pushConstants);
 
-                vkCmdDrawIndexed(this->_commandBuffer,
-                                 glyph.mesh.getIndexCount(SdfTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX), 1,
-                                 this->_offsets.at(key).at(BOUNDING_BOX_OFFSET_BUFFER_INDEX), 0, 0);
+                vkCmdDrawIndexed(this->_commandBuffer, this->_offsets.at(key).boundingBoxCount, 1,
+                                 this->_offsets.at(key).boundingBoxOffset, 0, 0);
             }
         }
     }
@@ -103,25 +104,27 @@ void VulkanSdfTextRenderer::draw() {
  * @brief Creates a new vertex and index buffer after a change in tracked text blocks
  */
 void VulkanSdfTextRenderer::update() {
-    // Update glyph cache
-    for (std::shared_ptr<TextBlock> block : this->_textBlocks) {
-        for (const Character &character : block->getCharacters()) {
-            GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), 0};
-            if (!this->_cache->exists(key)) {
-                // Tessellate glyph and insert into cache
-                Glyph glyph = this->_tessellator->composeGlyph(character.getGlyphId(), character.getFont(),
-                                                               character.getFontSize());
-                this->_cache->setGlyph(key, glyph);
-            }
-        }
-    }
+    SdfTextRenderer::update();
 
     // Destroy vulkan buffers
     this->_destroyBuffer(this->_boundingBoxIndexBuffer, this->_boundingBoxIndexBufferMemory);
     this->_destroyBuffer(this->_vertexBuffer, this->_vertexBufferMemory);
 
-    // Create vulkan buffers
-    this->_createVertexAndIndexBuffers();
+    // Check if there are characters to render
+    if (this->_vertices.size() == 0) {
+        return;
+    }
+
+    // Create vertex buffer
+    VkDeviceSize vertexBufferSize = sizeof(this->_vertices.at(0)) * this->_vertices.size();
+    this->_stageAndCreateVulkanBuffer(this->_vertices.data(), vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                                      this->_vertexBuffer, this->_vertexBufferMemory);
+
+    // Create index buffer for bounding boxes
+    VkDeviceSize indexBufferSize = sizeof(this->_boundingBoxIndices.at(0)) * this->_boundingBoxIndices.size();
+    this->_stageAndCreateVulkanBuffer(this->_boundingBoxIndices.data(), indexBufferSize,
+                                      VK_BUFFER_USAGE_INDEX_BUFFER_BIT, this->_boundingBoxIndexBuffer,
+                                      this->_boundingBoxIndexBufferMemory);
 }
 
 /**
@@ -130,6 +133,8 @@ void VulkanSdfTextRenderer::update() {
  * @param atlas New font atlas
  */
 void VulkanSdfTextRenderer::addFontAtlas(const FontAtlas &atlas) {
+    SdfTextRenderer::addFontAtlas(atlas);
+
     // Create staging buffer
     VkDeviceSize size = atlas.getSize().x * atlas.getSize().y;
     VkBuffer stagingBuffer;
@@ -229,84 +234,12 @@ void VulkanSdfTextRenderer::addFontAtlas(const FontAtlas &atlas) {
     // Create descriptor set used when rendering with given font atlas
     VkDescriptorSet descriptorSet = this->_createFontAtlasDescriptorSet(imageView, sampler);
 
-    FontTexture texture{atlas, image, imageMemory, imageView, sampler, descriptorSet};
+    FontTexture texture{image, imageMemory, imageView, sampler, descriptorSet};
     this->_fontTextures.insert({atlas.getFontFamily(), texture});
 
     // Destroy and deallocate memory from the staging buffer
     vkDestroyBuffer(this->_logicalDevice, stagingBuffer, nullptr);
     vkFreeMemory(this->_logicalDevice, stagingBufferMemory, nullptr);
-}
-
-/**
- * @brief Create vulkan vertex and index buffer for all glyphs in tracked text blocks
- */
-void VulkanSdfTextRenderer::_createVertexAndIndexBuffers() {
-    this->_vertices.clear();
-    this->_boundingBoxIndices.clear();
-    this->_offsets.clear();
-
-    uint32_t vertexCount = 0;
-    uint32_t boundingBoxIndexCount = 0;
-
-    for (unsigned int i = 0; i < this->_textBlocks.size(); i++) {
-        for (const Character &character : this->_textBlocks[i]->getCharacters()) {
-            GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), 0};
-            const Glyph &glyph = this->_cache->getGlyph(key);
-
-            if (glyph.mesh.getVertexCount() > 0 && !this->_offsets.contains(key)) {
-                this->_offsets.insert({key, {boundingBoxIndexCount}});
-
-                // Get uv coordinnates from font atlas
-                if (!this->_fontTextures.contains(character.getFont()->getFontFamily())) {
-                    throw std::runtime_error(
-                        "VulkanSdfTextRenderer::_createVertexAndIndexBuffers(): Font atlas for font " +
-                        character.getFont()->getFontFamily() + " was not found");
-                }
-
-                FontAtlas::GlyphInfo glyphInfo =
-                    this->_fontTextures.at(character.getFont()->getFontFamily()).atlas.getGlyph(character.getGlyphId());
-                glm::vec2 uvTopLeft = glyphInfo.uvTopLeft;
-                glm::vec2 uvBottomRight = glyphInfo.uvBottomRight;
-                glm::vec2 uvTopRight{uvBottomRight.x, uvTopLeft.y};
-                glm::vec2 uvBottomLeft{uvTopLeft.x, uvBottomRight.y};
-
-                // Insert bounding box vertices to vertex buffer
-                this->_vertices.push_back(Vertex{glyph.mesh.getVertices().at(0), uvBottomLeft});
-                this->_vertices.push_back(Vertex{glyph.mesh.getVertices().at(1), uvTopLeft});
-                this->_vertices.push_back(Vertex{glyph.mesh.getVertices().at(2), uvTopRight});
-                this->_vertices.push_back(Vertex{glyph.mesh.getVertices().at(3), uvBottomRight});
-
-                this->_boundingBoxIndices.insert(
-                    this->_boundingBoxIndices.end(),
-                    glyph.mesh.getIndices(SdfTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX).begin(),
-                    glyph.mesh.getIndices(SdfTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX).end());
-
-                // Add an offset to bounding box indices of current character
-                for (unsigned int j = boundingBoxIndexCount; j < this->_boundingBoxIndices.size(); j++) {
-                    this->_boundingBoxIndices[j] += vertexCount;
-                }
-
-                vertexCount += glyph.mesh.getVertexCount();
-                boundingBoxIndexCount += glyph.mesh.getIndexCount(SdfTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX);
-            }
-        }
-    }
-
-    // Check if there are characters to render
-    if (vertexCount == 0) {
-        return;
-    }
-
-    // Create vertex buffer
-    VkDeviceSize vertexBufferSize = sizeof(this->_vertices.at(0)) * this->_vertices.size();
-    this->_stageAndCreateVulkanBuffer(this->_vertices.data(), vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                                      this->_vertexBuffer, this->_vertexBufferMemory);
-
-    // Create index buffer for bounding boxes
-    VkDeviceSize indexBufferSize = sizeof(this->_boundingBoxIndices.at(0)) * this->_boundingBoxIndices.size();
-    this->_stageAndCreateVulkanBuffer(this->_boundingBoxIndices.data(), indexBufferSize,
-                                      VK_BUFFER_USAGE_INDEX_BUFFER_BIT, this->_boundingBoxIndexBuffer,
-                                      this->_boundingBoxIndexBufferMemory);
 }
 
 /**
@@ -512,16 +445,16 @@ void VulkanSdfTextRenderer::_createPipeline() {
     vertexInputAttributeDescriptions[0].binding = 0;
     vertexInputAttributeDescriptions[0].location = 0;
     vertexInputAttributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
-    vertexInputAttributeDescriptions[1].offset = offsetof(Vertex, position);
+    vertexInputAttributeDescriptions[1].offset = offsetof(SdfTextRenderer::Vertex, position);
 
     vertexInputAttributeDescriptions[1].binding = 0;
     vertexInputAttributeDescriptions[1].location = 1;
     vertexInputAttributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
-    vertexInputAttributeDescriptions[1].offset = offsetof(Vertex, uv);
+    vertexInputAttributeDescriptions[1].offset = offsetof(SdfTextRenderer::Vertex, uv);
 
     VkVertexInputBindingDescription vertexInputBindingDescription{};
     vertexInputBindingDescription.binding = 0;
-    vertexInputBindingDescription.stride = sizeof(Vertex);
+    vertexInputBindingDescription.stride = sizeof(SdfTextRenderer::Vertex);
     vertexInputBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo{};

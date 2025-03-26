@@ -17,7 +17,8 @@ VulkanTriangulationTextRenderer::VulkanTriangulationTextRenderer(VkPhysicalDevic
                                                                  VkRenderPass renderPass,
                                                                  VkCommandBuffer commandBuffer)
     : VulkanTextRenderer{physicalDevice, logicalDevice, graphicsQueue, commandPool, renderPass, commandBuffer} {
-    this->_tessellator = std::make_unique<TriangulationTessellator>();
+    this->_initialize();
+
     this->_createPipeline();
 }
 
@@ -59,14 +60,14 @@ void VulkanTriangulationTextRenderer::draw() {
     for (int i = 0; i < this->_textBlocks.size(); i++) {
         for (const Character &character : this->_textBlocks[i]->getCharacters()) {
             GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), character.getFontSize()};
-            const Glyph &glyph = this->_cache->getGlyph(key);
 
-            if (glyph.mesh.getVertexCount() > 0) {
+            if (this->_offsets.at(key).indicesCount > 0) {
                 vft::CharacterPushConstants pushConstants{character.getModelMatrix(), this->_textBlocks[i]->getColor()};
                 vkCmdPushConstants(this->_commandBuffer, this->_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
                                    sizeof(vft::CharacterPushConstants), &pushConstants);
 
-                vkCmdDrawIndexed(this->_commandBuffer, glyph.mesh.getIndexCount(0), 1, this->_offsets.at(key), 0, 0);
+                vkCmdDrawIndexed(this->_commandBuffer, this->_offsets.at(key).indicesCount, 1,
+                                 this->_offsets.at(key).indicesOffset, 0, 0);
             }
         }
     }
@@ -76,73 +77,23 @@ void VulkanTriangulationTextRenderer::draw() {
  * @brief Creates a new vertex and index buffer after a change in tracked text blocks
  */
 void VulkanTriangulationTextRenderer::update() {
-    // Update glyph cache
-    for (std::shared_ptr<TextBlock> block : this->_textBlocks) {
-        for (const Character &character : block->getCharacters()) {
-            GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), character.getFontSize()};
-            if (!this->_cache->exists(key)) {
-                // Tessellate glyph and insert into cache
-                Glyph glyph = this->_tessellator->composeGlyph(character.getGlyphId(), character.getFont(),
-                                                               character.getFontSize());
-                this->_cache->setGlyph(key, glyph);
-            }
-        }
+    TriangulationTextRenderer::update();
+
+    // Check if there are characters to render
+    if (this->_vertices.size() == 0) {
+        return;
     }
 
     // Destroy vulkan buffers
     this->_destroyBuffer(this->_indexBuffer, this->_indexBufferMemory);
     this->_destroyBuffer(this->_vertexBuffer, this->_vertexBufferMemory);
 
-    // Create vulkan buffers, make sure all glyphs to be rendered are in cache
-    this->_createVertexAndIndexBuffers();
-}
-
-/**
- * @brief Create vulkan vertex and index buffer for all glyphs in tracked text blocks
- */
-void VulkanTriangulationTextRenderer::_createVertexAndIndexBuffers() {
-    this->_vertices.clear();
-    this->_indices.clear();
-    this->_offsets.clear();
-
-    uint32_t vertexCount = 0;
-    uint32_t indexCount = 0;
-
-    for (int i = 0; i < this->_textBlocks.size(); i++) {
-        for (const Character &character : this->_textBlocks[i]->getCharacters()) {
-            GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), character.getFontSize()};
-
-            if (!this->_offsets.contains(key)) {
-                this->_offsets.insert({key, indexCount});
-
-                const Glyph &glyph = this->_cache->getGlyph(key);
-                this->_vertices.insert(this->_vertices.end(), glyph.mesh.getVertices().begin(),
-                                       glyph.mesh.getVertices().end());
-                this->_indices.insert(this->_indices.end(), glyph.mesh.getIndices(0).begin(),
-                                      glyph.mesh.getIndices(0).end());
-
-                // Add an offset to line segment indices of current character
-                for (int j = indexCount; j < this->_indices.size(); j++) {
-                    this->_indices.at(j) += vertexCount;
-                }
-
-                vertexCount += glyph.mesh.getVertexCount();
-                indexCount += glyph.mesh.getIndexCount(0);
-            }
-        }
-    }
-
-    // Check if there are characters to render
-    if (vertexCount == 0) {
-        return;
-    }
-
-    // Create vertex buffer
+    // Create vulkan vertex buffer
     VkDeviceSize vertexBufferSize = sizeof(this->_vertices.at(0)) * this->_vertices.size();
     this->_stageAndCreateVulkanBuffer(this->_vertices.data(), vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                                       this->_vertexBuffer, this->_vertexBufferMemory);
 
-    // Create index buffer
+    // Create vulkan index buffer
     VkDeviceSize indexBufferSize = sizeof(this->_indices.at(0)) * this->_indices.size();
     this->_stageAndCreateVulkanBuffer(this->_indices.data(), indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                                       this->_indexBuffer, this->_indexBufferMemory);

@@ -51,10 +51,9 @@ protected:
 
 public:
     TextRenderer();
-    virtual ~TextRenderer();
+    virtual ~TextRenderer() = default;
 
     virtual void add(std::shared_ptr<TextBlock> text);
-    virtual void draw() = 0;
     virtual void update() = 0;
 
     virtual void addFontAtlas(const FontAtlas &atlas);

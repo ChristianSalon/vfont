@@ -11,6 +11,10 @@ set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 set(LIB_NAME vfont)
 set(VFONT_HEADERS
     include/VFONT/text_renderer.h
+    include/VFONT/triangulation_text_renderer.h
+    include/VFONT/tessellation_shaders_text_renderer.h
+    include/VFONT/winding_number_text_renderer.h
+    include/VFONT/sdf_text_renderer.h
     include/VFONT/i_vulkan_text_renderer.h
     include/VFONT/vulkan_text_renderer.h
     include/VFONT/vulkan_triangulation_text_renderer.h
@@ -45,6 +49,10 @@ set(VFONT_HEADERS
 )
 set(VFONT_SOURCES
     src/text_renderer.cpp
+    src/triangulation_text_renderer.cpp
+    src/tessellation_shaders_text_renderer.cpp
+    src/winding_number_text_renderer.cpp
+    src/sdf_text_renderer.cpp
     src/vulkan_text_renderer.cpp
     src/vulkan_triangulation_text_renderer.cpp
     src/vulkan_tessellation_shaders_text_renderer.cpp

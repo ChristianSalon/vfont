@@ -21,13 +21,7 @@ VulkanTextRenderer::VulkanTextRenderer(VkPhysicalDevice physicalDevice,
       _graphicsQueue{graphicsQueue},
       _renderPass{renderPass},
       _commandPool{commandPool},
-      _commandBuffer{commandBuffer} {
-    this->_createDescriptorPool();
-
-    this->_createUbo();
-    this->_createUboDescriptorSetLayout();
-    this->_createUboDescriptorSet();
-}
+      _commandBuffer{commandBuffer} {}
 
 /**
  * @brief Deallocate memory and destroy vulkan text renderer
@@ -116,6 +110,17 @@ VkRenderPass VulkanTextRenderer::getRenderPass() {
  */
 VkCommandBuffer VulkanTextRenderer::getCommandBuffer() {
     return this->_commandBuffer;
+}
+
+/**
+ * @brief Create descriptor pool and create the ubo descriptors
+ */
+void VulkanTextRenderer::_initialize() {
+    this->_createDescriptorPool();
+
+    this->_createUbo();
+    this->_createUboDescriptorSetLayout();
+    this->_createUboDescriptorSet();
 }
 
 /**

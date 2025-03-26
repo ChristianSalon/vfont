@@ -14,9 +14,11 @@ namespace vft {
 /**
  * @brief Interface for Vulkan text renderers
  */
-class IVulkanTextRenderer : public TextRenderer {
+class IVulkanTextRenderer : public virtual TextRenderer {
 public:
     virtual ~IVulkanTextRenderer() = default;
+
+    virtual void draw() = 0;
 
     // Setters for vulkan objects
     virtual void setCommandBuffer(VkCommandBuffer commandBuffer) = 0;

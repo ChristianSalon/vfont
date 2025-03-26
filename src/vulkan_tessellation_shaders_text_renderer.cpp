@@ -17,7 +17,8 @@ VulkanTessellationShadersTextRenderer::VulkanTessellationShadersTextRenderer(VkP
                                                                              VkRenderPass renderPass,
                                                                              VkCommandBuffer commandBuffer)
     : VulkanTextRenderer{physicalDevice, logicalDevice, graphicsQueue, commandPool, renderPass, commandBuffer} {
-    this->_tessellator = std::make_unique<TessellationShadersTessellator>();
+    this->_initialize();
+
     this->_createLineSegmentsPipeline();
     this->_createCurveSegmentsPipeline();
 }
@@ -66,20 +67,17 @@ void VulkanTessellationShadersTextRenderer::draw() {
 
     // Draw line segments
     vkCmdBindIndexBuffer(this->_commandBuffer, this->_lineSegmentsIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-    for (int i = 0; i < this->_textBlocks.size(); i++) {
+    for (unsigned int i = 0; i < this->_textBlocks.size(); i++) {
         for (const Character &character : this->_textBlocks[i]->getCharacters()) {
             GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), 0};
-            const Glyph &glyph = this->_cache->getGlyph(key);
 
-            if (glyph.mesh.getVertexCount() > 0) {
-                vft::CharacterPushConstants pushConstants{character.getModelMatrix(), this->_textBlocks[i]->getColor()};
+            if (this->_offsets.at(key).lineSegmentsCount > 0) {
+                CharacterPushConstants pushConstants{character.getModelMatrix(), this->_textBlocks[i]->getColor()};
                 vkCmdPushConstants(this->_commandBuffer, this->_lineSegmentsPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
                                    0, sizeof(vft::CharacterPushConstants), &pushConstants);
 
-                vkCmdDrawIndexed(
-                    this->_commandBuffer,
-                    glyph.mesh.getIndexCount(TessellationShadersTessellator::GLYPH_MESH_TRIANGLE_BUFFER_INDEX), 1,
-                    this->_offsets.at(key).at(LINE_OFFSET_BUFFER_INDEX), 0, 0);
+                vkCmdDrawIndexed(this->_commandBuffer, this->_offsets.at(key).lineSegmentsCount, 1,
+                                 this->_offsets.at(key).lineSegmentsOffset, 0, 0);
             }
         }
     }
@@ -91,13 +89,13 @@ void VulkanTessellationShadersTextRenderer::draw() {
 
     // vkCmdBindVertexBuffers(this->_commandBuffer, 0, 1, vertexBuffers, offsets);
     vkCmdBindIndexBuffer(this->_commandBuffer, this->_curveSegmentsIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-    for (int i = 0; i < this->_textBlocks.size(); i++) {
+    for (unsigned int i = 0; i < this->_textBlocks.size(); i++) {
         for (const Character &character : this->_textBlocks[i]->getCharacters()) {
             GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), 0};
             const Glyph &glyph = this->_cache->getGlyph(key);
 
-            if (glyph.mesh.getVertexCount() > 0) {
-                vft::CharacterPushConstants pushConstants{character.getModelMatrix(), this->_textBlocks[i]->getColor()};
+            if (this->_offsets.at(key).curveSegmentsCount > 0) {
+                CharacterPushConstants pushConstants{character.getModelMatrix(), this->_textBlocks[i]->getColor()};
                 vkCmdPushConstants(this->_commandBuffer, this->_curveSegmentsPipelineLayout,
                                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                                    sizeof(vft::CharacterPushConstants), &pushConstants);
@@ -107,10 +105,8 @@ void VulkanTessellationShadersTextRenderer::draw() {
                                    VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(vft::CharacterPushConstants),
                                    sizeof(ViewportPushConstants), &viewportPushConstants);
 
-                vkCmdDrawIndexed(
-                    this->_commandBuffer,
-                    glyph.mesh.getIndexCount(TessellationShadersTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX), 1,
-                    this->_offsets.at(key).at(CURVE_OFFSET_BUFFER_INDEX), 0, 0);
+                vkCmdDrawIndexed(this->_commandBuffer, this->_offsets.at(key).curveSegmentsCount, 1,
+                                 this->_offsets.at(key).curveSegmentsOffset, 0, 0);
             }
         }
     }
@@ -120,17 +116,11 @@ void VulkanTessellationShadersTextRenderer::draw() {
  * @brief Creates a new vertex and index buffer after a change in tracked text blocks
  */
 void VulkanTessellationShadersTextRenderer::update() {
-    // Update glyph cache
-    for (std::shared_ptr<TextBlock> block : this->_textBlocks) {
-        for (const Character &character : block->getCharacters()) {
-            GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), 0};
-            if (!this->_cache->exists(key)) {
-                // Tessellate glyph and insert into cache
-                Glyph glyph = this->_tessellator->composeGlyph(character.getGlyphId(), character.getFont(),
-                                                               character.getFontSize());
-                this->_cache->setGlyph(key, glyph);
-            }
-        }
+    TessellationShadersTextRenderer::update();
+
+    // Check if there are characters to render
+    if (this->_vertices.size() == 0) {
+        return;
     }
 
     // Destroy vulkan buffers
@@ -138,74 +128,14 @@ void VulkanTessellationShadersTextRenderer::update() {
     this->_destroyBuffer(this->_curveSegmentsIndexBuffer, this->_curveSegmentsIndexBufferMemory);
     this->_destroyBuffer(this->_vertexBuffer, this->_vertexBufferMemory);
 
-    // Create vulkan buffers
-    this->_createVertexAndIndexBuffers();
-}
-
-/**
- * @brief Create vulkan vertex and index buffer for all glyphs in tracked text blocks
- */
-void VulkanTessellationShadersTextRenderer::_createVertexAndIndexBuffers() {
-    this->_vertices.clear();
-    this->_lineSegmentsIndices.clear();
-    this->_curveSegmentsIndices.clear();
-    this->_offsets.clear();
-
-    uint32_t vertexCount = 0;
-    uint32_t lineSegmentsIndexCount = 0;
-    uint32_t curveSegmentsIndexCount = 0;
-
-    for (int i = 0; i < this->_textBlocks.size(); i++) {
-        for (const Character &character : this->_textBlocks[i]->getCharacters()) {
-            GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), 0};
-            if (!this->_offsets.contains(key)) {
-                const Glyph &glyph = this->_cache->getGlyph(key);
-
-                this->_offsets.insert({key, {lineSegmentsIndexCount, curveSegmentsIndexCount}});
-
-                this->_vertices.insert(this->_vertices.end(), glyph.mesh.getVertices().begin(),
-                                       glyph.mesh.getVertices().end());
-                this->_lineSegmentsIndices.insert(
-                    this->_lineSegmentsIndices.end(),
-                    glyph.mesh.getIndices(TessellationShadersTessellator::GLYPH_MESH_TRIANGLE_BUFFER_INDEX).begin(),
-                    glyph.mesh.getIndices(TessellationShadersTessellator::GLYPH_MESH_TRIANGLE_BUFFER_INDEX).end());
-                this->_curveSegmentsIndices.insert(
-                    this->_curveSegmentsIndices.end(),
-                    glyph.mesh.getIndices(TessellationShadersTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX).begin(),
-                    glyph.mesh.getIndices(TessellationShadersTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX).end());
-
-                // Add an offset to line segment indices of current character
-                for (int j = lineSegmentsIndexCount; j < this->_lineSegmentsIndices.size(); j++) {
-                    this->_lineSegmentsIndices.at(j) += vertexCount;
-                }
-
-                // Add an offset to curve segment indices of current character
-                for (int j = curveSegmentsIndexCount; j < this->_curveSegmentsIndices.size(); j++) {
-                    this->_curveSegmentsIndices.at(j) += vertexCount;
-                }
-
-                vertexCount += glyph.mesh.getVertexCount();
-                lineSegmentsIndexCount +=
-                    glyph.mesh.getIndexCount(TessellationShadersTessellator::GLYPH_MESH_TRIANGLE_BUFFER_INDEX);
-                curveSegmentsIndexCount +=
-                    glyph.mesh.getIndexCount(TessellationShadersTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX);
-            }
-        }
-    }
-
-    // Check if there are characters to render
-    if (vertexCount == 0) {
-        return;
-    }
-
-    // Create vertex buffer
+    // Create vulkan vertex buffer
     VkDeviceSize bufferSize = sizeof(this->_vertices.at(0)) * this->_vertices.size();
     this->_stageAndCreateVulkanBuffer(this->_vertices.data(), bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                                       this->_vertexBuffer, this->_vertexBufferMemory);
 
     // Check if at least one line segment exists
-    if (lineSegmentsIndexCount > 0) {
-        // Create index buffer for line segments
+    if (this->_lineSegmentsIndices.size() > 0) {
+        // Create vulkan index buffer for line segments
         VkDeviceSize bufferSize = sizeof(this->_lineSegmentsIndices.at(0)) * this->_lineSegmentsIndices.size();
         this->_stageAndCreateVulkanBuffer(this->_lineSegmentsIndices.data(), bufferSize,
                                           VK_BUFFER_USAGE_INDEX_BUFFER_BIT, this->_lineSegmentsIndexBuffer,
@@ -213,8 +143,8 @@ void VulkanTessellationShadersTextRenderer::_createVertexAndIndexBuffers() {
     }
 
     // Check if at least one curve segment exists
-    if (curveSegmentsIndexCount > 0) {
-        // Create index buffer for curve segments
+    if (this->_curveSegmentsIndices.size() > 0) {
+        // Create vulkan index buffer for curve segments
         VkDeviceSize bufferSize = sizeof(this->_curveSegmentsIndices.at(0)) * this->_curveSegmentsIndices.size();
         this->_stageAndCreateVulkanBuffer(this->_curveSegmentsIndices.data(), bufferSize,
                                           VK_BUFFER_USAGE_INDEX_BUFFER_BIT, this->_curveSegmentsIndexBuffer,

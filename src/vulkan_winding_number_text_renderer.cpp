@@ -17,7 +17,8 @@ VulkanWindingNumberTextRenderer::VulkanWindingNumberTextRenderer(VkPhysicalDevic
                                                                  VkRenderPass renderPass,
                                                                  VkCommandBuffer commandBuffer)
     : VulkanTextRenderer{physicalDevice, logicalDevice, graphicsQueue, commandPool, renderPass, commandBuffer} {
-    this->_tessellator = std::make_unique<WindingNumberTessellator>();
+    this->_initialize();
+
     this->_createSegmentsDescriptorSetLayout();
     this->_createSegmentsDescriptorSet();
     this->_createSegmentsPipeline();
@@ -67,14 +68,12 @@ void VulkanWindingNumberTextRenderer::draw() {
 
     // Draw line and curve segments
     vkCmdBindIndexBuffer(this->_commandBuffer, this->_boundingBoxIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-    for (int i = 0; i < this->_textBlocks.size(); i++) {
+    for (unsigned int i = 0; i < this->_textBlocks.size(); i++) {
         for (const Character &character : this->_textBlocks[i]->getCharacters()) {
             GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), 0};
-            const Glyph &glyph = this->_cache->getGlyph(key);
 
-            if (glyph.mesh.getVertexCount() > 0) {
-                SegmentsInfo segmentsInfo =
-                    this->_segmentsInfo.at(this->_offsets.at(key).at(SEGMENTS_INFO_OFFSET_BUFFER_INDEX));
+            if (this->_offsets.at(key).boundingBoxCount > 0) {
+                SegmentsInfo segmentsInfo = this->_segmentsInfo.at(this->_offsets.at(key).segmentsInfoOffset);
 
                 CharacterPushConstants pushConstants{
                     character.getModelMatrix(),           this->_textBlocks.at(i)->getColor(),
@@ -84,118 +83,34 @@ void VulkanWindingNumberTextRenderer::draw() {
                                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                                    sizeof(CharacterPushConstants), &pushConstants);
 
-                vkCmdDrawIndexed(
-                    this->_commandBuffer,
-                    glyph.mesh.getIndexCount(WindingNumberTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX), 1,
-                    this->_offsets.at(key).at(BOUNDING_BOX_OFFSET_BUFFER_INDEX), 0, 0);
+                vkCmdDrawIndexed(this->_commandBuffer, this->_offsets.at(key).boundingBoxCount, 1,
+                                 this->_offsets.at(key).boundingBoxOffset, 0, 0);
             }
         }
     }
 }
 
 /**
- * @brief Creates a new vertex and index buffer after a change in tracked text blocks
+ * @brief Creates a new vertex, index and ssbo buffer after a change in tracked text blocks
  */
 void VulkanWindingNumberTextRenderer::update() {
-    // Update glyph cache
-    for (std::shared_ptr<TextBlock> block : this->_textBlocks) {
-        for (const Character &character : block->getCharacters()) {
-            GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), 0};
-            if (!this->_cache->exists(key)) {
-                // Tessellate glyph and insert into cache
-                Glyph glyph = this->_tessellator->composeGlyph(character.getGlyphId(), character.getFont(),
-                                                               character.getFontSize());
-                this->_cache->setGlyph(key, glyph);
-            }
-        }
-    }
-
-    // Destroy vulkan buffers
-    this->_destroyBuffer(this->_boundingBoxIndexBuffer, this->_boundingBoxIndexBufferMemory);
-    this->_destroyBuffer(this->_segmentsBuffer, this->_segmentsBufferMemory);
-    this->_destroyBuffer(this->_vertexBuffer, this->_vertexBufferMemory);
-
-    // Create vulkan buffers
-    this->_createVertexAndIndexBuffers();
-}
-
-/**
- * @brief Create vulkan vertex and index buffer for all glyphs in tracked text blocks
- */
-void VulkanWindingNumberTextRenderer::_createVertexAndIndexBuffers() {
-    this->_vertices.clear();
-    this->_boundingBoxIndices.clear();
-    this->_segments.clear();
-    this->_segmentsInfo.clear();
-    this->_offsets.clear();
-
-    uint32_t vertexCount = 0;
-    uint32_t boundingBoxIndexCount = 0;
-    uint32_t segmentsCount = 0;
-    uint32_t segmentsInfoCount = 0;
-
-    for (int i = 0; i < this->_textBlocks.size(); i++) {
-        for (const Character &character : this->_textBlocks[i]->getCharacters()) {
-            GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), 0};
-            const Glyph &glyph = this->_cache->getGlyph(key);
-
-            if (!this->_offsets.contains(key)) {
-                this->_offsets.insert({key, {boundingBoxIndexCount, segmentsInfoCount}});
-
-                this->_vertices.insert(this->_vertices.end(), glyph.mesh.getVertices().begin(),
-                                       glyph.mesh.getVertices().end());
-                this->_boundingBoxIndices.insert(
-                    this->_boundingBoxIndices.end(),
-                    glyph.mesh.getIndices(WindingNumberTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX).begin(),
-                    glyph.mesh.getIndices(WindingNumberTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX).end());
-
-                std::vector<glm::vec2> vertices = glyph.mesh.getVertices();
-
-                std::vector<uint32_t> lineSegments =
-                    glyph.mesh.getIndices(WindingNumberTessellator::GLYPH_MESH_LINE_BUFFER_INDEX);
-                uint32_t lineCount = lineSegments.size() / 2;
-                for (int j = 0; j < lineSegments.size(); j += 2) {
-                    this->_segments.push_back(vertices.at(lineSegments.at(j)));
-                    this->_segments.push_back(vertices.at(lineSegments.at(j + 1)));
-                }
-
-                std::vector<uint32_t> curveSegments =
-                    glyph.mesh.getIndices(WindingNumberTessellator::GLYPH_MESH_CURVE_BUFFER_INDEX);
-                uint32_t curveCount = curveSegments.size() / 3;
-                for (int j = 0; j < curveSegments.size(); j += 3) {
-                    this->_segments.push_back(vertices.at(curveSegments.at(j)));
-                    this->_segments.push_back(vertices.at(curveSegments.at(j + 1)));
-                    this->_segments.push_back(vertices.at(curveSegments.at(j + 2)));
-                }
-
-                this->_segmentsInfo.push_back(SegmentsInfo{
-                    segmentsCount, lineCount, segmentsCount + static_cast<uint32_t>(lineSegments.size()), curveCount});
-
-                // Add an offset to bounding box indices of current character
-                for (int j = boundingBoxIndexCount; j < this->_boundingBoxIndices.size(); j++) {
-                    this->_boundingBoxIndices.at(j) += vertexCount;
-                }
-
-                vertexCount += glyph.mesh.getVertexCount();
-                boundingBoxIndexCount +=
-                    glyph.mesh.getIndexCount(WindingNumberTessellator::GLYPH_MESH_BOUNDING_BOX_BUFFER_INDEX);
-                segmentsCount += lineSegments.size() + curveSegments.size();
-                segmentsInfoCount++;
-            }
-        }
-    }
+    WindingNumberTextRenderer::update();
 
     // Check if there are characters to render
-    if (vertexCount == 0) {
+    if (this->_vertices.size() == 0) {
         return;
     }
+
+    this->_destroyBuffer(this->_segmentsBuffer, this->_segmentsBufferMemory);
+    this->_destroyBuffer(this->_boundingBoxIndexBuffer, this->_boundingBoxIndexBufferMemory);
+    this->_destroyBuffer(this->_vertexBuffer, this->_vertexBufferMemory);
 
     // Create vertex buffer
     VkDeviceSize bufferSize = sizeof(this->_vertices.at(0)) * this->_vertices.size();
     this->_stageAndCreateVulkanBuffer(this->_vertices.data(), bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                                       this->_vertexBuffer, this->_vertexBufferMemory);
 
-    if (boundingBoxIndexCount > 0) {
+    if (this->_boundingBoxIndices.size() > 0) {
         // Create index buffer for bounding boxes
         VkDeviceSize bufferSize = sizeof(this->_boundingBoxIndices.at(0)) * this->_boundingBoxIndices.size();
         this->_stageAndCreateVulkanBuffer(this->_boundingBoxIndices.data(), bufferSize,
@@ -204,7 +119,7 @@ void VulkanWindingNumberTextRenderer::_createVertexAndIndexBuffers() {
     }
 
     // Check if at least one line or curve segment exists
-    if (segmentsCount > 0) {
+    if (this->_segments.size() > 0) {
         this->_createSsbo();
     }
 }

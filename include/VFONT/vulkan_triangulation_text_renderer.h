@@ -16,6 +16,7 @@
 
 #include "glyph_cache.h"
 #include "triangulation_tessellator.h"
+#include "triangulation_text_renderer.h"
 #include "vulkan_text_renderer.h"
 
 namespace vft {
@@ -23,14 +24,8 @@ namespace vft {
 /**
  * @brief Basic implementation of vulkan text renderer where glyphs are tessellated and triangulized on the cpu
  */
-class VulkanTriangulationTextRenderer : public VulkanTextRenderer {
+class VulkanTriangulationTextRenderer : public VulkanTextRenderer, public TriangulationTextRenderer {
 protected:
-    /** Hash map containing glyph offsets into the index buffer (key: glyph key, value: offset into the index buffer) */
-    std::unordered_map<GlyphKey, uint32_t, GlyphKeyHash> _offsets{};
-
-    std::vector<glm::vec2> _vertices{}; /**< Vertex buffer */
-    std::vector<uint32_t> _indices{};   /**< Index buffer */
-
     VkBuffer _vertexBuffer{nullptr};             /**< Vulkan vertex buffer */
     VkDeviceMemory _vertexBufferMemory{nullptr}; /**< Vulkan vertex buffer memory */
     VkBuffer _indexBuffer{nullptr};              /**< Vulkan index buffer for glyph's triangles */
@@ -53,7 +48,6 @@ public:
 
 protected:
     void _createPipeline();
-    void _createVertexAndIndexBuffers();
 };
 
 }  // namespace vft

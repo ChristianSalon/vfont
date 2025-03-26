@@ -70,8 +70,9 @@ public:
     VkCommandBuffer getCommandBuffer() override;
 
 protected:
-    virtual void _createDescriptorPool();
+    void _initialize();
 
+    virtual void _createDescriptorPool();
     void _createUbo();
     void _createUboDescriptorSetLayout();
     void _createUboDescriptorSet();

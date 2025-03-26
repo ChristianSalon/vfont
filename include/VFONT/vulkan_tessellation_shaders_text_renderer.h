@@ -15,6 +15,7 @@
 
 #include "glyph_cache.h"
 #include "tessellation_shaders_tessellator.h"
+#include "tessellation_shaders_text_renderer.h"
 #include "vulkan_text_renderer.h"
 
 namespace vft {
@@ -23,13 +24,8 @@ namespace vft {
  * @brief Basic implementation of vulkan text renderer where outer triangles are tessellated using shaders and inner
  * triangles are triangulized on the cpu
  */
-class VulkanTessellationShadersTextRenderer : public VulkanTextRenderer {
+class VulkanTessellationShadersTextRenderer : public VulkanTextRenderer, public TessellationShadersTextRenderer {
 public:
-    /** Index into the array containing index buffer offsets of glyph's triangles */
-    static constexpr unsigned int LINE_OFFSET_BUFFER_INDEX = 0;
-    /** Index into the array containing index buffer offsets of glyph's curve segments */
-    static constexpr unsigned int CURVE_OFFSET_BUFFER_INDEX = 1;
-
     /**
      * @brief Push constants for the viewport size
      */
@@ -39,15 +35,6 @@ public:
     };
 
 protected:
-    /** Hash map containing glyph offsets into the index buffers (key: glyph key, value: array of offsets into the index
-     * buffer)
-     */
-    std::unordered_map<GlyphKey, std::array<uint32_t, 2>, GlyphKeyHash> _offsets{};
-
-    std::vector<glm::vec2> _vertices{};            /**< Vertex buffer */
-    std::vector<uint32_t> _lineSegmentsIndices{};  /**< Index buffer */
-    std::vector<uint32_t> _curveSegmentsIndices{}; /**< Index buffer */
-
     VkBuffer _vertexBuffer{nullptr};             /**< Vulkan vertex buffer */
     VkDeviceMemory _vertexBufferMemory{nullptr}; /**< Vulkan vertex buffer memory */
     VkBuffer _lineSegmentsIndexBuffer{nullptr};  /**< Vulkan index buffer for line segments forming inner triangles */
@@ -74,8 +61,6 @@ public:
     void update() override;
 
 protected:
-    void _createVertexAndIndexBuffers();
-
     void _createLineSegmentsPipeline();
     void _createCurveSegmentsPipeline();
 };

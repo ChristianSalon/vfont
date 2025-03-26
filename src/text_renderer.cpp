@@ -15,14 +15,6 @@ TextRenderer::TextRenderer() {
 }
 
 /**
- * @brief Destroys text renderer
- */
-TextRenderer::~TextRenderer() {
-    // Destroy tessellator
-    this->_tessellator.reset();
-}
-
-/**
  * @brief Add text block for rendering
  *
  * @param text Text block to render
