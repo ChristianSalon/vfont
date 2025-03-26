@@ -20,7 +20,16 @@ int main(int argc, char **argv) {
         for (int i = 1; i < argc; i++) {
             if (strcmp(argv[i], "-h") == 0) {
                 // Show help message
-                std::cout << "./demo [-h] [-c <perspective/orthographic>] [-a <cdt/ts/wn/sdf>] -t" << std::endl;
+                std::cout << "./demo [-h] [-c <perspective/orthographic>] [-a <cdt/ts/wn/sdf>] [-t]" << std::endl;
+                std::cout << "-h: Show help message" << std::endl;
+                std::cout << "-c: Select the type of camera used" << std::endl;
+                std::cout << "-a: Select the rendering algorithm" << std::endl;
+                std::cout << "  cdt - Constrained delaunay triangulation on the cpu" << std::endl;
+                std::cout << "  ts - Outer triangles processed by tessellation shaders, inner triangulated on the cpu"
+                          << std::endl;
+                std::cout << "  wn - Winding number calculated in fragment shader" << std::endl;
+                std::cout << "  sdf - Signed distance field" << std::endl;
+                std::cout << "-t: Measure the gpu draw time" << std::endl;
                 return EXIT_SUCCESS;
             } else if (strcmp(argv[i], "-c") == 0) {
                 // Set camera type

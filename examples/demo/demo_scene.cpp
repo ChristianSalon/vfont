@@ -22,7 +22,7 @@ DemoScene::DemoScene(CameraType cameraType, vft::TessellationStrategy tessellati
     : Scene{cameraType, tessellationAlgorithm, measureTime} {
     this->_jersey = std::make_shared<vft::Font>(JERSEY_PATH);
     this->_crimsontext = std::make_shared<vft::Font>(CRIMSON_TEXT_PATH);
-    this->_roboto = std::make_shared<vft::Font>(ROBOTO_PATH);
+    this->_font = std::make_shared<vft::Font>(ROBOTO_PATH);
     this->_robotomono = std::make_shared<vft::Font>(ROBOTO_MONO_PATH);
     this->_notosansjp = std::make_shared<vft::Font>(NOTO_SANS_JP_PATH);
     this->_notoemoji = std::make_shared<vft::Font>(NOTO_EMOJI_PATH);
@@ -31,7 +31,7 @@ DemoScene::DemoScene(CameraType cameraType, vft::TessellationStrategy tessellati
         vft::FontAtlas jerseyAtlas{this->_jersey, vft::Unicode::utf8ToUtf32(ENGLISH_TEXT)};
         vft::FontAtlas crimsonTextAtlas{this->_crimsontext, vft::Unicode::utf8ToUtf32(ENGLISH_TEXT)};
         vft::FontAtlas robotoAtlas{
-            this->_roboto, vft::Unicode::utf8ToUtf32(ENGLISH_TEXT).append(vft::Unicode::utf16ToUtf32(SLOVAK_TEXT))};
+            this->_font, vft::Unicode::utf8ToUtf32(ENGLISH_TEXT).append(vft::Unicode::utf16ToUtf32(SLOVAK_TEXT))};
         vft::FontAtlas robotoMonoAtlas{this->_robotomono, vft::Unicode::utf8ToUtf32(ENGLISH_TEXT)};
         vft::FontAtlas notoSansJpAtlas{this->_notosansjp, JAPANESE_TEXT};
         vft::FontAtlas notoEmojiAtlas{this->_notoemoji, EMOJI_TEXT};
@@ -45,14 +45,14 @@ DemoScene::DemoScene(CameraType cameraType, vft::TessellationStrategy tessellati
     }
 
     this->_block1 = vft::TextBlockBuilder()
-                        .setFont(this->_roboto)
+                        .setFont(this->_font)
                         .setFontSize(64)
                         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
                         .setPosition(glm::vec3(0.f, 0.f, 0.f))
                         .build();
 
     this->_block2 = vft::TextBlockBuilder()
-                        .setFont(this->_roboto)
+                        .setFont(this->_font)
                         .setFontSize(32)
                         .setColor(glm::vec4(1.f, 0.f, 0.f, 1.f))
                         .setPosition(glm::vec3(0.f, 64.f, 0.f))

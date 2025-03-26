@@ -20,15 +20,16 @@
 #include "scene.h"
 
 class EditorScene : public Scene {
-public:
-    static const std::string ROBOTO_PATH;
-
 private:
-    std::shared_ptr<vft::Font> _roboto;
+    std::shared_ptr<vft::Font> _font;
     std::shared_ptr<vft::TextBlock> _textBlock;
 
 public:
-    EditorScene(CameraType cameraType, vft::TessellationStrategy tessellationAlgorithm, bool measureTime = false);
+    EditorScene(CameraType cameraType,
+                vft::TessellationStrategy tessellationAlgorithm,
+                std::string font,
+                unsigned int fontSize,
+                bool measureTime = false);
     ~EditorScene();
 
 private:

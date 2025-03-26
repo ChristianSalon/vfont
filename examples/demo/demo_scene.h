@@ -38,7 +38,7 @@ public:
 private:
     std::shared_ptr<vft::Font> _jersey;
     std::shared_ptr<vft::Font> _crimsontext;
-    std::shared_ptr<vft::Font> _roboto;
+    std::shared_ptr<vft::Font> _font;
     std::shared_ptr<vft::Font> _robotomono;
     std::shared_ptr<vft::Font> _notosansjp;
     std::shared_ptr<vft::Font> _notoemoji;

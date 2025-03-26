@@ -16,11 +16,24 @@ int main(int argc, char **argv) {
         CameraType cameraType = CameraType::PERSPECTIVE;
         vft::TessellationStrategy tessellationAlgorithm = vft::TessellationStrategy::WINDING_NUMBER;
         bool measureTime = true;
+        std::string font = "assets/Roboto-Regular.ttf";
 
         for (int i = 1; i < argc; i++) {
             if (strcmp(argv[i], "-h") == 0) {
                 // Show help message
-                std::cout << "./demo [-h] [-c <perspective/orthographic>] [-a <cdt/ts/wn/sdf>] -t" << std::endl;
+                std::cout
+                    << "./benchmark [-h] [-c <perspective/orthographic>] [-a <cdt/ts/wn/sdf>] [-t] [-f path_to_font]"
+                    << std::endl;
+                std::cout << "-h: Show help message" << std::endl;
+                std::cout << "-c: Select the type of camera used" << std::endl;
+                std::cout << "-a: Select the rendering algorithm" << std::endl;
+                std::cout << "  cdt - Constrained delaunay triangulation on the cpu" << std::endl;
+                std::cout << "  ts - Outer triangles processed by tessellation shaders, inner triangulated on the cpu"
+                          << std::endl;
+                std::cout << "  wn - Winding number calculated in fragment shader" << std::endl;
+                std::cout << "  sdf - Signed distance field" << std::endl;
+                std::cout << "-t: Measure the gpu draw time" << std::endl;
+                std::cout << "-f: Path to .ttf font file" << std::endl;
                 return EXIT_SUCCESS;
             } else if (strcmp(argv[i], "-c") == 0) {
                 // Set camera type
@@ -53,13 +66,16 @@ int main(int argc, char **argv) {
             } else if (strcmp(argv[i], "-t") == 0) {
                 // Set if measure time to render frame
                 measureTime = true;
+            } else if (strcmp(argv[i], "-f") == 0) {
+                // Set font used for rendering
+                font = argv[++i];
             } else {
                 std::cerr << "Invalid argument at position " << i << std::endl;
                 return EXIT_FAILURE;
             }
         }
 
-        BenchmarkScene scene{cameraType, tessellationAlgorithm, measureTime};
+        BenchmarkScene scene{cameraType, tessellationAlgorithm, font, measureTime};
         scene.run();
     } catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;

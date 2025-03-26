@@ -5,95 +5,96 @@
 
 #include "benchmark_scene.h"
 
-const std::string BenchmarkScene::ROBOTO_PATH = "assets/Roboto-Regular.ttf";
-
 const std::u8string BenchmarkScene::TEXT = u8"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
-BenchmarkScene::BenchmarkScene(CameraType cameraType, vft::TessellationStrategy tessellationAlgorithm, bool measureTime)
+BenchmarkScene::BenchmarkScene(CameraType cameraType,
+                               vft::TessellationStrategy tessellationAlgorithm,
+                               std::string font,
+                               bool measureTime)
     : Scene{cameraType, tessellationAlgorithm, measureTime} {
     // this->_renderer->setCacheSize(0);
 
-    this->_roboto = std::make_shared<vft::Font>(ROBOTO_PATH);
+    this->_font = std::make_shared<vft::Font>(font);
 
     this->_block1 = vft::TextBlockBuilder()
-                        .setFont(this->_roboto)
+                        .setFont(this->_font)
                         .setFontSize(256)
                         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
                         .setPosition(glm::vec3(0.f, 0.f, 0.f))
                         .build();
 
     this->_block2 = vft::TextBlockBuilder()
-                        .setFont(this->_roboto)
+                        .setFont(this->_font)
                         .setFontSize(128)
                         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
                         .setPosition(glm::vec3(0.f, 256.f, 0.f))
                         .build();
 
     this->_block3 = vft::TextBlockBuilder()
-                        .setFont(this->_roboto)
+                        .setFont(this->_font)
                         .setFontSize(64)
                         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
                         .setPosition(glm::vec3(0.f, 384.f, 0.f))
                         .build();
 
     this->_block4 = vft::TextBlockBuilder()
-                        .setFont(this->_roboto)
+                        .setFont(this->_font)
                         .setFontSize(32)
                         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
                         .setPosition(glm::vec3(0.f, 448.f, 0.f))
                         .build();
 
     this->_block5 = vft::TextBlockBuilder()
-                        .setFont(this->_roboto)
+                        .setFont(this->_font)
                         .setFontSize(16)
                         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
                         .setPosition(glm::vec3(0.f, 480.f, 0.f))
                         .build();
 
     this->_block6 = vft::TextBlockBuilder()
-                        .setFont(this->_roboto)
+                        .setFont(this->_font)
                         .setFontSize(8)
                         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
                         .setPosition(glm::vec3(0.f, 496.f, 0.f))
                         .build();
 
     this->_block7 = vft::TextBlockBuilder()
-                        .setFont(this->_roboto)
+                        .setFont(this->_font)
                         .setFontSize(256)
                         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
                         .setPosition(glm::vec3(0.f, 504.f, 0.f))
                         .build();
 
     this->_block8 = vft::TextBlockBuilder()
-                        .setFont(this->_roboto)
+                        .setFont(this->_font)
                         .setFontSize(128)
                         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
                         .setPosition(glm::vec3(0.f, 760.f, 0.f))
                         .build();
 
     this->_block9 = vft::TextBlockBuilder()
-                        .setFont(this->_roboto)
+                        .setFont(this->_font)
                         .setFontSize(64)
                         .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
                         .setPosition(glm::vec3(0.f, 888.f, 0.f))
                         .build();
 
     this->_block10 = vft::TextBlockBuilder()
-                         .setFont(this->_roboto)
+                         .setFont(this->_font)
                          .setFontSize(32)
                          .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
                          .setPosition(glm::vec3(0.f, 952.f, 0.f))
                          .build();
 
     this->_block11 = vft::TextBlockBuilder()
-                         .setFont(this->_roboto)
+                         .setFont(this->_font)
                          .setFontSize(16)
                          .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
                          .setPosition(glm::vec3(0.f, 984.f, 0.f))
                          .build();
 
     this->_block12 = vft::TextBlockBuilder()
-                         .setFont(this->_roboto)
+                         .setFont(this->_font)
                          .setFontSize(8)
                          .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
                          .setPosition(glm::vec3(0.f, 1000.f, 0.f))
@@ -116,8 +117,8 @@ BenchmarkScene::BenchmarkScene(CameraType cameraType, vft::TessellationStrategy 
     auto startTime = std::chrono::high_resolution_clock::now();
 
     if (tessellationAlgorithm == vft::TessellationStrategy::SDF) {
-        vft::FontAtlas robotoAtlas{this->_roboto, vft::Unicode::utf8ToUtf32(TEXT)};
-        this->_renderer->addFontAtlas(robotoAtlas);
+        vft::FontAtlas atlas{this->_font, vft::Unicode::utf8ToUtf32(TEXT)};
+        this->_renderer->addFontAtlas(atlas);
     }
 
     for (int i = 0; i < 10; i++) {

@@ -24,11 +24,10 @@
 
 class BenchmarkScene : public Scene {
 public:
-    static const std::string ROBOTO_PATH;
     static const std::u8string TEXT;
 
 private:
-    std::shared_ptr<vft::Font> _roboto;
+    std::shared_ptr<vft::Font> _font;
 
     std::shared_ptr<vft::TextBlock> _block1;
     std::shared_ptr<vft::TextBlock> _block2;
@@ -45,6 +44,9 @@ private:
     std::shared_ptr<vft::TextBlock> _block12;
 
 public:
-    BenchmarkScene(CameraType cameraType, vft::TessellationStrategy tessellationAlgorithm, bool measureTime = true);
+    BenchmarkScene(CameraType cameraType,
+                   vft::TessellationStrategy tessellationAlgorithm,
+                   std::string font,
+                   bool measureTime = true);
     ~BenchmarkScene();
 };

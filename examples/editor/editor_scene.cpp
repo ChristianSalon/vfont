@@ -5,19 +5,22 @@
 
 #include "editor_scene.h"
 
-const std::string EditorScene::ROBOTO_PATH = "assets/Roboto-Regular.ttf";
-
-EditorScene::EditorScene(CameraType cameraType, vft::TessellationStrategy tessellationAlgorithm, bool measureTime)
+EditorScene::EditorScene(CameraType cameraType,
+                         vft::TessellationStrategy tessellationAlgorithm,
+                         std::string font,
+                         unsigned int fontSize,
+                         bool measureTime)
     : Scene{cameraType, tessellationAlgorithm, measureTime} {
-    this->_roboto = std::make_shared<vft::Font>(ROBOTO_PATH);
+    this->_font = std::make_shared<vft::Font>(font);
     if (tessellationAlgorithm == vft::TessellationStrategy::SDF) {
-        vft::FontAtlas robotoAtlas{this->_roboto};
-        this->_renderer->addFontAtlas(robotoAtlas);
+        vft::FontAtlas atlas{this->_font};
+        this->_renderer->addFontAtlas(atlas);
     }
 
     this->_textBlock = vft::TextBlockBuilder()
-                           .setFont(this->_roboto)
-                           .setFontSize(32)
+                           .setWidth(this->_window->getWidth())
+                           .setFont(this->_font)
+                           .setFontSize(fontSize)
                            .setLineSpacing(1.2)
                            .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
                            .setPosition(glm::vec3(0.f, 0.f, 0.f))
