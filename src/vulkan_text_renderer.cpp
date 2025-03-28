@@ -15,12 +15,14 @@ VulkanTextRenderer::VulkanTextRenderer(VkPhysicalDevice physicalDevice,
                                        VkQueue graphicsQueue,
                                        VkCommandPool commandPool,
                                        VkRenderPass renderPass,
+                                       VkSampleCountFlagBits msaaSampleCount,
                                        VkCommandBuffer commandBuffer)
     : _physicalDevice{physicalDevice},
       _logicalDevice{logicalDevice},
       _graphicsQueue{graphicsQueue},
       _renderPass{renderPass},
       _commandPool{commandPool},
+      _msaaSampleCount{msaaSampleCount},
       _commandBuffer{commandBuffer} {}
 
 /**

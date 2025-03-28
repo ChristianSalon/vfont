@@ -18,8 +18,8 @@ const std::u32string DemoScene::JAPANESE_TEXT = U"これはデモテキストで
 const std::u32string DemoScene::EMOJI_TEXT = {0x1F970, 0x1F480, 0x270C,  0x1F334, 0x1F422, 0x1F410,
                                               0x1F344, 0x26BD,  0x1F37B, 0x1F451, 0x1F4F8};
 
-DemoScene::DemoScene(CameraType cameraType, vft::TessellationStrategy tessellationAlgorithm, bool measureTime)
-    : Scene{cameraType, tessellationAlgorithm, measureTime} {
+DemoScene::DemoScene(CameraType cameraType, vft::TessellationStrategy tessellationAlgorithm, bool useMsaa, bool measureTime)
+    : Scene{cameraType, tessellationAlgorithm, useMsaa, measureTime} {
     this->_jersey = std::make_shared<vft::Font>(JERSEY_PATH);
     this->_crimsontext = std::make_shared<vft::Font>(CRIMSON_TEXT_PATH);
     this->_font = std::make_shared<vft::Font>(ROBOTO_PATH);

@@ -34,6 +34,8 @@ public:
  */
 class VulkanTextRenderer : public IVulkanTextRenderer {
 protected:
+    VkSampleCountFlagBits _msaaSampleCount{VK_SAMPLE_COUNT_1_BIT};
+
     VkPhysicalDevice _physicalDevice{nullptr}; /**< Vulkan physical device */
     VkDevice _logicalDevice{nullptr};          /**< Vulkan logical device */
     VkQueue _graphicsQueue{nullptr};           /**< Vulkan graphics queue */
@@ -56,6 +58,7 @@ public:
                        VkQueue graphicsQueue,
                        VkCommandPool commandPool,
                        VkRenderPass renderPass,
+                       VkSampleCountFlagBits msaaSampleCount = VK_SAMPLE_COUNT_1_BIT,
                        VkCommandBuffer commandBuffer = nullptr);
     virtual ~VulkanTextRenderer();
 

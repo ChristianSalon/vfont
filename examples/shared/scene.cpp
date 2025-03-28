@@ -7,13 +7,13 @@
 
 /**
  * @brief Scene constructor
- * 
+ *
  * @param cameraType Type of camera used for rendering
  */
-Scene::Scene(CameraType cameraType, vft::TessellationStrategy tessellationAlgorithm, bool measureTime) : _cameraType{ cameraType }, _measureTime { measureTime } {
-
+Scene::Scene(CameraType cameraType, vft::TessellationStrategy tessellationAlgorithm, bool useMsaa, bool measureTime)
+    : _cameraType{cameraType}, _useMsaa{useMsaa}, _measureTime{measureTime} {
     this->extensions = {
-    "VK_KHR_surface",
+        "VK_KHR_surface",
 
 #if defined(USE_WIN32)
         "VK_KHR_win32_surface"
@@ -25,13 +25,9 @@ Scene::Scene(CameraType cameraType, vft::TessellationStrategy tessellationAlgori
 
     };
 
-    this->deviceExtensions = {
-        "VK_KHR_swapchain"
-    };
+    this->deviceExtensions = {"VK_KHR_swapchain"};
 
-    this->validationLayers = {
-        "VK_LAYER_KHRONOS_validation"
-    };
+    this->validationLayers = {"VK_LAYER_KHRONOS_validation"};
 
     this->_instance = nullptr;
     this->_surface = nullptr;
@@ -49,21 +45,15 @@ Scene::Scene(CameraType cameraType, vft::TessellationStrategy tessellationAlgori
     this->_createWindow();
 
     // Initialize camera
-    if(this->_cameraType == CameraType::ORTHOGRAPHIC) {
-        this->_camera.reset(new OrthographicCamera{
-            glm::vec3(0.f, 0.f, -1000.f),
-            0.f, static_cast<float>(this->_window->getWidth()),
-            0.f, static_cast<float>(this->_window->getHeight()),
-            0.f, 2000.f
-        });
-    }
-    else {
+    if (this->_cameraType == CameraType::ORTHOGRAPHIC) {
+        this->_camera.reset(new OrthographicCamera{glm::vec3(0.f, 0.f, -1000.f), 0.f,
+                                                   static_cast<float>(this->_window->getWidth()), 0.f,
+                                                   static_cast<float>(this->_window->getHeight()), 0.f, 2000.f});
+    } else {
         this->_camera.reset(new PerspectiveCamera{
-            glm::vec3(0.f, 0.f, -500.f),
-            80.f,
-            static_cast<float>(this->_window->getWidth()) / static_cast<float>(this->_window->getHeight()),
-            0.f, 2000.f
-        });
+            glm::vec3(0.f, 0.f, -500.f), 80.f,
+            static_cast<float>(this->_window->getWidth()) / static_cast<float>(this->_window->getHeight()), 0.f,
+            2000.f});
     }
 
     // Initialize vulkan
@@ -74,44 +64,41 @@ Scene::Scene(CameraType cameraType, vft::TessellationStrategy tessellationAlgori
         vft::VulkanTextRenderer *renderer = nullptr;
 
         if (tessellationAlgorithm == vft::TessellationStrategy::TRIANGULATION) {
-            renderer = new vft::VulkanTriangulationTextRenderer(this->_physicalDevice, this->_logicalDevice, this->_graphicsQueue, this->_commandPool, this->_renderPass, this->_commandBuffer);
-        }
-        else if(tessellationAlgorithm == vft::TessellationStrategy::TESSELLATION_SHADERS) {
-            renderer = new vft::VulkanTessellationShadersTextRenderer(this->_physicalDevice, this->_logicalDevice,
-                                                                      this->_graphicsQueue, this->_commandPool,
-                                                                      this->_renderPass, this->_commandBuffer);
-        }
-        else if(tessellationAlgorithm == vft::TessellationStrategy::WINDING_NUMBER) {
-            renderer = new vft::VulkanWindingNumberTextRenderer(this->_physicalDevice, this->_logicalDevice,
-                                                                this->_graphicsQueue, this->_commandPool,
-                                                                this->_renderPass, this->_commandBuffer);
-        }
-        else {
+            renderer = new vft::VulkanTriangulationTextRenderer(
+                this->_physicalDevice, this->_logicalDevice, this->_graphicsQueue, this->_commandPool,
+                this->_renderPass, this->_msaaSampleCount, this->_commandBuffer);
+        } else if (tessellationAlgorithm == vft::TessellationStrategy::TESSELLATION_SHADERS) {
+            renderer = new vft::VulkanTessellationShadersTextRenderer(
+                this->_physicalDevice, this->_logicalDevice, this->_graphicsQueue, this->_commandPool,
+                this->_renderPass, this->_msaaSampleCount, this->_commandBuffer);
+        } else if (tessellationAlgorithm == vft::TessellationStrategy::WINDING_NUMBER) {
+            renderer = new vft::VulkanWindingNumberTextRenderer(
+                this->_physicalDevice, this->_logicalDevice, this->_graphicsQueue, this->_commandPool,
+                this->_renderPass, this->_msaaSampleCount, this->_commandBuffer);
+        } else {
             renderer = new vft::VulkanSdfTextRenderer(this->_physicalDevice, this->_logicalDevice, this->_graphicsQueue,
-                                                      this->_commandPool, this->_renderPass, this->_commandBuffer);
+                                                      this->_commandPool, this->_renderPass, this->_msaaSampleCount,
+                                                      this->_commandBuffer);
         }
 
         this->_renderer = std::make_shared<vft::VulkanTimedRenderer>(renderer);
-    }
-    else {
+    } else {
         if (tessellationAlgorithm == vft::TessellationStrategy::TRIANGULATION) {
             this->_renderer = std::make_shared<vft::VulkanTriangulationTextRenderer>(
                 this->_physicalDevice, this->_logicalDevice, this->_graphicsQueue, this->_commandPool,
-                this->_renderPass, this->_commandBuffer);
-        }
-        else if (tessellationAlgorithm == vft::TessellationStrategy::TESSELLATION_SHADERS) {
+                this->_renderPass, this->_msaaSampleCount, this->_commandBuffer);
+        } else if (tessellationAlgorithm == vft::TessellationStrategy::TESSELLATION_SHADERS) {
             this->_renderer = std::make_shared<vft::VulkanTessellationShadersTextRenderer>(
                 this->_physicalDevice, this->_logicalDevice, this->_graphicsQueue, this->_commandPool,
-                this->_renderPass, this->_commandBuffer);
-        }
-        else if (tessellationAlgorithm == vft::TessellationStrategy::WINDING_NUMBER) {
+                this->_renderPass, this->_msaaSampleCount, this->_commandBuffer);
+        } else if (tessellationAlgorithm == vft::TessellationStrategy::WINDING_NUMBER) {
             this->_renderer = std::make_shared<vft::VulkanWindingNumberTextRenderer>(
                 this->_physicalDevice, this->_logicalDevice, this->_graphicsQueue, this->_commandPool,
-                this->_renderPass, this->_commandBuffer);
+                this->_renderPass, this->_msaaSampleCount, this->_commandBuffer);
         } else {
-            this->_renderer = std::make_shared<vft::VulkanSdfTextRenderer>(this->_physicalDevice, this->_logicalDevice,
-                                                                           this->_graphicsQueue, this->_commandPool,
-                                                                           this->_renderPass, this->_commandBuffer);
+            this->_renderer = std::make_shared<vft::VulkanSdfTextRenderer>(
+                this->_physicalDevice, this->_logicalDevice, this->_graphicsQueue, this->_commandPool,
+                this->_renderPass, this->_msaaSampleCount, this->_commandBuffer);
         }
     }
 
@@ -145,24 +132,19 @@ void Scene::run() {
 
 /**
  * @brief This function is called when the window dimensions change
- * 
+ *
  * @param width New window width
  * @param height New window height
  */
 void Scene::updateWindowDimensions(int width, int height) {
-    if(this->_cameraType == CameraType::ORTHOGRAPHIC) {
-        reinterpret_cast<OrthographicCamera *>(this->_camera.get())->setProjection(
-            0.f, static_cast<float>(width),
-            0.f, static_cast<float>(height),
-            0.f, 2000.f
-        );
-    }
-    else {
-        reinterpret_cast<PerspectiveCamera *>(this->_camera.get())->setProjection(
-            50.f,
-            static_cast<float>(this->_window->getWidth()) / static_cast<float>(this->_window->getHeight()),
-            0.f, 2000.f
-        );
+    if (this->_cameraType == CameraType::ORTHOGRAPHIC) {
+        reinterpret_cast<OrthographicCamera *>(this->_camera.get())
+            ->setProjection(0.f, static_cast<float>(width), 0.f, static_cast<float>(height), 0.f, 2000.f);
+    } else {
+        reinterpret_cast<PerspectiveCamera *>(this->_camera.get())
+            ->setProjection(
+                50.f, static_cast<float>(this->_window->getWidth()) / static_cast<float>(this->_window->getHeight()),
+                0.1f, 2000.f);
     }
 
     this->_renderer->setViewportSize(this->_window->getWidth(), this->_window->getHeight());
@@ -170,7 +152,7 @@ void Scene::updateWindowDimensions(int width, int height) {
 
 /**
  * @brief Update the camera position based on window event
- * 
+ *
  * @param x Delta x
  * @param y Delta y
  */
@@ -188,7 +170,7 @@ void Scene::updateCameraRotation(float x, float y) {
 
 /**
  * @brief Update the camera rotation based on window event
- * 
+ *
  * @param x Delta x
  * @param y Delta y
  * @param z Delta z
@@ -209,6 +191,8 @@ void Scene::_initVulkan() {
     this->_createLogicalDevice();
     this->_createSwapChain();
     this->_createImageViews();
+    this->_createMsaaResources();
+    this->_createDepthResources();
     this->_createRenderPass();
     this->_createFramebuffers();
     this->_createCommandPool();
@@ -223,22 +207,15 @@ void Scene::_createWindow() {
     this->_window.reset(new MainWindow());
 
     this->_window->setResizeCallback(
-        [this](int width, int height) -> void {
-            this->updateWindowDimensions(width, height);
-        });
-    this->_window->setDragCallback(
-        [this](float x, float y, bool shiftPressed) -> void {
-            if(shiftPressed) {
-                this->updateCameraPosition(x, y, 0.f);
-            }
-            else {
-                this->updateCameraRotation(x, y);
-            }
-        });
-    this->_window->setScrollCallback(
-        [this](float z) -> void {
-            this->updateCameraPosition(0.f, 0.f, z);
-        });
+        [this](int width, int height) -> void { this->updateWindowDimensions(width, height); });
+    this->_window->setDragCallback([this](float x, float y, bool shiftPressed) -> void {
+        if (shiftPressed) {
+            this->updateCameraPosition(x, y, 0.f);
+        } else {
+            this->updateCameraRotation(x, y);
+        }
+    });
+    this->_window->setScrollCallback([this](float z) -> void { this->updateCameraPosition(0.f, 0.f, z); });
 
     this->_window->create();
 }
@@ -249,7 +226,7 @@ void Scene::_createWindow() {
 void Scene::_mainLoop() {
     this->_window->show();
 
-    while(this->_window->isActive()) {
+    while (this->_window->isActive()) {
         this->_drawFrame();
         this->_window->pollEvents();
     }
@@ -269,17 +246,17 @@ bool Scene::_areExtensionsSupported() {
     std::vector<VkExtensionProperties> availableExtensionsProperties(extensionCount);
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableExtensionsProperties.data());
 
-    for(const char *extension : extensions) {
+    for (const char *extension : extensions) {
         bool extensionFound = false;
 
-        for(const VkExtensionProperties &extensionProperties : availableExtensionsProperties) {
-            if(strcmp(extension, extensionProperties.extensionName) == 0) {
+        for (const VkExtensionProperties &extensionProperties : availableExtensionsProperties) {
+            if (strcmp(extension, extensionProperties.extensionName) == 0) {
                 extensionFound = true;
                 break;
             }
         }
 
-        if(!extensionFound) {
+        if (!extensionFound) {
             return false;
         }
     }
@@ -299,17 +276,17 @@ bool Scene::_areValidationLayersSupported() {
     std::vector<VkLayerProperties> supportedLayers(layerCount);
     vkEnumerateInstanceLayerProperties(&layerCount, supportedLayers.data());
 
-    for(const char *validationLayer : validationLayers) {
+    for (const char *validationLayer : validationLayers) {
         bool layerFound = false;
 
-        for(const VkLayerProperties &layerProperties : supportedLayers) {
-            if(strcmp(validationLayer, layerProperties.layerName) == 0) {
+        for (const VkLayerProperties &layerProperties : supportedLayers) {
+            if (strcmp(validationLayer, layerProperties.layerName) == 0) {
                 layerFound = true;
                 break;
             }
         }
 
-        if(!layerFound) {
+        if (!layerFound) {
             return false;
         }
     }
@@ -321,7 +298,7 @@ bool Scene::_areValidationLayersSupported() {
  * @brief Creates vulkan instance
  */
 void Scene::_createInstance() {
-    if(!this->_areExtensionsSupported()) {
+    if (!this->_areExtensionsSupported()) {
         throw std::runtime_error("Selected vulkan extensions are not supported");
     }
 
@@ -343,7 +320,7 @@ void Scene::_createInstance() {
     instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     instanceCreateInfo.ppEnabledExtensionNames = extensions.data();
 
-    if(vkCreateInstance(&instanceCreateInfo, nullptr, &this->_instance) != VK_SUCCESS) {
+    if (vkCreateInstance(&instanceCreateInfo, nullptr, &this->_instance) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan instance");
     }
 }
@@ -352,7 +329,6 @@ void Scene::_createInstance() {
  * @brief Creates vulkan surface
  */
 void Scene::_createSurface() {
-
 #if defined(USE_WIN32)
 
     VkWin32SurfaceCreateInfoKHR surfaceCreateInfo{};
@@ -360,7 +336,7 @@ void Scene::_createSurface() {
     surfaceCreateInfo.hwnd = this->_window->getHwmd();
     surfaceCreateInfo.hinstance = this->_window->getHInstance();
 
-    if(vkCreateWin32SurfaceKHR(this->_instance, &surfaceCreateInfo, nullptr, &this->_surface) != VK_SUCCESS) {
+    if (vkCreateWin32SurfaceKHR(this->_instance, &surfaceCreateInfo, nullptr, &this->_surface) != VK_SUCCESS) {
         throw std::runtime_error("Error creating WIN32 vulkan surface");
     }
 
@@ -371,7 +347,7 @@ void Scene::_createSurface() {
     surfaceCreateInfo.dpy = this->_window->getDisplay();
     surfaceCreateInfo.window = this->_window->getWindow();
 
-    if(vkCreateXlibSurfaceKHR(this->_instance, &surfaceCreateInfo, nullptr, &this->_surface) != VK_SUCCESS) {
+    if (vkCreateXlibSurfaceKHR(this->_instance, &surfaceCreateInfo, nullptr, &this->_surface) != VK_SUCCESS) {
         throw std::runtime_error("Error creating X11 vulkan surface");
     }
 
@@ -382,12 +358,11 @@ void Scene::_createSurface() {
     surfaceCreateInfo.display = this->_window->getDisplay();
     surfaceCreateInfo.surface = this->_window->getSurface();
 
-    if(vkCreateWaylandSurfaceKHR(this->_instance, &surfaceCreateInfo, nullptr, &this->_surface) != VK_SUCCESS) {
+    if (vkCreateWaylandSurfaceKHR(this->_instance, &surfaceCreateInfo, nullptr, &this->_surface) != VK_SUCCESS) {
         throw std::runtime_error("Error creating Wayland vulkan surface");
     }
 
 #endif
-
 }
 
 /**
@@ -402,19 +377,20 @@ bool Scene::_areDeviceExtensionsSupported(VkPhysicalDevice physicalDevice) {
     vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &deviceExtensionCount, nullptr);
 
     std::vector<VkExtensionProperties> availableDeviceExtensionsProperties(deviceExtensionCount);
-    vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &deviceExtensionCount, availableDeviceExtensionsProperties.data());
+    vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &deviceExtensionCount,
+                                         availableDeviceExtensionsProperties.data());
 
-    for(const char *requiredDeviceExtension : deviceExtensions) {
+    for (const char *requiredDeviceExtension : deviceExtensions) {
         bool deviceExtensionFound = false;
 
-        for(const VkExtensionProperties &availableDeviceExtensionProperties : availableDeviceExtensionsProperties) {
-            if(strcmp(requiredDeviceExtension, availableDeviceExtensionProperties.extensionName) == 0) {
+        for (const VkExtensionProperties &availableDeviceExtensionProperties : availableDeviceExtensionsProperties) {
+            if (strcmp(requiredDeviceExtension, availableDeviceExtensionProperties.extensionName) == 0) {
                 deviceExtensionFound = true;
                 break;
             }
         }
 
-        if(!deviceExtensionFound) {
+        if (!deviceExtensionFound) {
             return false;
         }
     }
@@ -438,18 +414,18 @@ Scene::QueueFamilyIndices Scene::_findQueueFamilies(VkPhysicalDevice physicalDev
 
     QueueFamilyIndices indices;
     int i = 0;
-    for(const VkQueueFamilyProperties &queueFamilyProperties : queueFamilies) {
-        if(queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+    for (const VkQueueFamilyProperties &queueFamilyProperties : queueFamilies) {
+        if (queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             indices.graphicsFamily = i;
         }
 
         VkBool32 presentSupport = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, this->_surface, &presentSupport);
-        if(presentSupport) {
+        if (presentSupport) {
             indices.presentFamily = i;
         }
 
-        if(indices.isComplete()) {
+        if (indices.isComplete()) {
             break;
         }
 
@@ -473,7 +449,7 @@ int Scene::_ratePhysicalDevice(VkPhysicalDevice physicalDevice) {
     vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
     int score = 0;
 
-    if(!this->_areDeviceExtensionsSupported(physicalDevice)) {
+    if (!this->_areDeviceExtensionsSupported(physicalDevice)) {
         return score;
     }
 
@@ -483,25 +459,23 @@ int Scene::_ratePhysicalDevice(VkPhysicalDevice physicalDevice) {
 
     SwapChainSupportDetails swapChainSupport = this->_querySwapChainSupport(physicalDevice);
     bool isSwapChainSupported = !swapChainSupport.surfaceFormats.empty() && !swapChainSupport.presentModes.empty();
-    if(!isSwapChainSupported) {
+    if (!isSwapChainSupported) {
         return score;
     }
 
     QueueFamilyIndices indices = this->_findQueueFamilies(physicalDevice);
-    if(!indices.isComplete()) {
+    if (!indices.isComplete()) {
         return score;
     }
 
-    if(physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+    if (physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
         score += 100;
-    }
-    else if(physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
+    } else if (physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
         score += 10;
-    }
-    else {
+    } else {
         score++;
     }
-    
+
     return score;
 }
 
@@ -512,7 +486,7 @@ void Scene::_selectPhysicalDevice() {
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(this->_instance, &deviceCount, nullptr);
 
-    if(deviceCount == 0) {
+    if (deviceCount == 0) {
         throw std::runtime_error("No GPU found which supports vulkan");
     }
 
@@ -520,16 +494,13 @@ void Scene::_selectPhysicalDevice() {
     vkEnumeratePhysicalDevices(this->_instance, &deviceCount, physicalDevices.data());
 
     std::multimap<int, VkPhysicalDevice> ratedPhysicalDevices;
-    for(const VkPhysicalDevice &physicalDevice : physicalDevices) {
-        ratedPhysicalDevices.insert(
-            std::make_pair(this->_ratePhysicalDevice(physicalDevice), physicalDevice)
-        );
+    for (const VkPhysicalDevice &physicalDevice : physicalDevices) {
+        ratedPhysicalDevices.insert(std::make_pair(this->_ratePhysicalDevice(physicalDevice), physicalDevice));
     }
 
-    if(ratedPhysicalDevices.rbegin()->first > 0) {
+    if (ratedPhysicalDevices.rbegin()->first > 0) {
         this->_physicalDevice = ratedPhysicalDevices.rbegin()->second;
-    }
-    else {
+    } else {
         throw std::runtime_error("Error selecting GPU");
     }
 }
@@ -541,10 +512,10 @@ void Scene::_createLogicalDevice() {
     QueueFamilyIndices indices = this->_findQueueFamilies(this->_physicalDevice);
 
     std::vector<VkDeviceQueueCreateInfo> deviceQueueCreateInfos;
-    std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+    std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
     float queuePriority = 1.0f;
-    for(uint32_t queueFamily : uniqueQueueFamilies) {
+    for (uint32_t queueFamily : uniqueQueueFamilies) {
         VkDeviceQueueCreateInfo deviceQueueCreateInfo{};
         deviceQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         deviceQueueCreateInfo.queueFamilyIndex = queueFamily;
@@ -566,7 +537,7 @@ void Scene::_createLogicalDevice() {
     deviceCreateInfo.enabledLayerCount = 0;
     deviceCreateInfo.ppEnabledLayerNames = nullptr;
 
-    if(vkCreateDevice(this->_physicalDevice, &deviceCreateInfo, nullptr, &this->_logicalDevice) != VK_SUCCESS) {
+    if (vkCreateDevice(this->_physicalDevice, &deviceCreateInfo, nullptr, &this->_logicalDevice) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan logical device");
     }
 
@@ -586,34 +557,32 @@ Scene::SwapChainSupportDetails Scene::_querySwapChainSupport(VkPhysicalDevice ph
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, this->_surface, &details.surfaceCapabilities);
 
     // Select composite alpha mode
-    if(details.surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR) {
+    if (details.surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR) {
         details.compositeAlphaMode = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    }
-    else if(details.surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR) {
+    } else if (details.surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR) {
         details.compositeAlphaMode = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
-    }
-    else if(details.surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR) {
+    } else if (details.surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR) {
         details.compositeAlphaMode = VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR;
-    }
-    else if(details.surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR) {
+    } else if (details.surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR) {
         details.compositeAlphaMode = VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR;
-    }
-    else {
+    } else {
         throw std::runtime_error("No supported composite alpha mode for vulkan");
     }
 
     uint32_t surfaceFormatCount;
     vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, this->_surface, &surfaceFormatCount, nullptr);
-    if(surfaceFormatCount != 0) {
+    if (surfaceFormatCount != 0) {
         details.surfaceFormats.resize(surfaceFormatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, this->_surface, &surfaceFormatCount, details.surfaceFormats.data());
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, this->_surface, &surfaceFormatCount,
+                                             details.surfaceFormats.data());
     }
 
     uint32_t surfacePresentModeCount;
     vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, this->_surface, &surfacePresentModeCount, nullptr);
-    if(surfacePresentModeCount != 0) {
+    if (surfacePresentModeCount != 0) {
         details.presentModes.resize(surfacePresentModeCount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, this->_surface, &surfacePresentModeCount, details.presentModes.data());
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, this->_surface, &surfacePresentModeCount,
+                                                  details.presentModes.data());
     }
 
     return details;
@@ -626,9 +595,11 @@ Scene::SwapChainSupportDetails Scene::_querySwapChainSupport(VkPhysicalDevice ph
  *
  * @return Selected vulkan swap chain surface format
  */
-VkSurfaceFormatKHR Scene::_selectSwapChainSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableSurfaceFormats) {
-    for(const VkSurfaceFormatKHR &availableSurfaceFormat : availableSurfaceFormats) {
-        if(availableSurfaceFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableSurfaceFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+VkSurfaceFormatKHR Scene::_selectSwapChainSurfaceFormat(
+    const std::vector<VkSurfaceFormatKHR> &availableSurfaceFormats) {
+    for (const VkSurfaceFormatKHR &availableSurfaceFormat : availableSurfaceFormats) {
+        if (availableSurfaceFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
+            availableSurfaceFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
             return availableSurfaceFormat;
         }
     }
@@ -644,12 +615,6 @@ VkSurfaceFormatKHR Scene::_selectSwapChainSurfaceFormat(const std::vector<VkSurf
  * @return Selected vulkan present mode
  */
 VkPresentModeKHR Scene::_selectSwapChainPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) {
-    for(const VkPresentModeKHR &availablePresentMode : availablePresentModes) {
-        if(availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
-            return availablePresentMode;
-        }
-    }
-
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
@@ -661,17 +626,17 @@ VkPresentModeKHR Scene::_selectSwapChainPresentMode(const std::vector<VkPresentM
  * @return Vulkan 2D extent
  */
 VkExtent2D Scene::_selectSwapChainExtent(const VkSurfaceCapabilitiesKHR &surfaceCapabilities) {
-    if(surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
+    if (surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
         return surfaceCapabilities.currentExtent;
     }
 
-    VkExtent2D extent = {
-        static_cast<uint32_t>(this->_window->getWidth()),
-        static_cast<uint32_t>(this->_window->getHeight())
-    };
+    VkExtent2D extent = {static_cast<uint32_t>(this->_window->getWidth()),
+                         static_cast<uint32_t>(this->_window->getHeight())};
 
-    extent.width = std::clamp(extent.width, surfaceCapabilities.minImageExtent.width, surfaceCapabilities.maxImageExtent.width);
-    extent.height = std::clamp(extent.height, surfaceCapabilities.minImageExtent.height, surfaceCapabilities.maxImageExtent.height);
+    extent.width =
+        std::clamp(extent.width, surfaceCapabilities.minImageExtent.width, surfaceCapabilities.maxImageExtent.width);
+    extent.height =
+        std::clamp(extent.height, surfaceCapabilities.minImageExtent.height, surfaceCapabilities.maxImageExtent.height);
 
     return extent;
 }
@@ -680,11 +645,19 @@ VkExtent2D Scene::_selectSwapChainExtent(const VkSurfaceCapabilitiesKHR &surface
  * @brief Destroys vulkan swap chain, image views and frame buffers
  */
 void Scene::_cleanupSwapChain() {
-    for(VkFramebuffer swapChainFramebuffer : this->_framebuffers) {
+    vkDestroyImageView(this->_logicalDevice, this->_depthImageView, nullptr);
+    vkDestroyImage(this->_logicalDevice, this->_depthImage, nullptr);
+    vkFreeMemory(this->_logicalDevice, this->_depthImageMemory, nullptr);
+
+    vkDestroyImageView(this->_logicalDevice, this->_msaaImageView, nullptr);
+    vkDestroyImage(this->_logicalDevice, this->_msaaImage, nullptr);
+    vkFreeMemory(this->_logicalDevice, this->_msaaImageMemory, nullptr);
+
+    for (VkFramebuffer swapChainFramebuffer : this->_framebuffers) {
         vkDestroyFramebuffer(this->_logicalDevice, swapChainFramebuffer, nullptr);
     }
 
-    for(const VkImageView &swapChainImageView : this->_swapChainImageViews) {
+    for (const VkImageView &swapChainImageView : this->_swapChainImageViews) {
         vkDestroyImageView(this->_logicalDevice, swapChainImageView, nullptr);
     }
 
@@ -700,6 +673,8 @@ void Scene::_recreateSwapChain() {
 
     this->_createSwapChain();
     this->_createImageViews();
+    this->_createMsaaResources();
+    this->_createDepthResources();
     this->_createFramebuffers();
 }
 
@@ -713,10 +688,8 @@ void Scene::_createSwapChain() {
     VkExtent2D extent = this->_selectSwapChainExtent(swapChainSupport.surfaceCapabilities);
 
     uint32_t imageCount = swapChainSupport.surfaceCapabilities.minImageCount + 1;
-    if(
-        swapChainSupport.surfaceCapabilities.maxImageCount > 0 &&
-        imageCount > swapChainSupport.surfaceCapabilities.maxImageCount
-    ) {
+    if (swapChainSupport.surfaceCapabilities.maxImageCount > 0 &&
+        imageCount > swapChainSupport.surfaceCapabilities.maxImageCount) {
         imageCount = swapChainSupport.surfaceCapabilities.maxImageCount;
     }
 
@@ -731,13 +704,12 @@ void Scene::_createSwapChain() {
     swapChainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
     QueueFamilyIndices indices = this->_findQueueFamilies(this->_physicalDevice);
-    uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
-    if(indices.graphicsFamily != indices.presentFamily) {
+    uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+    if (indices.graphicsFamily != indices.presentFamily) {
         swapChainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
         swapChainCreateInfo.queueFamilyIndexCount = 2;
         swapChainCreateInfo.pQueueFamilyIndices = queueFamilyIndices;
-    }
-    else {
+    } else {
         swapChainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
         swapChainCreateInfo.queueFamilyIndexCount = 0;
         swapChainCreateInfo.pQueueFamilyIndices = nullptr;
@@ -749,7 +721,7 @@ void Scene::_createSwapChain() {
     swapChainCreateInfo.clipped = true;
     swapChainCreateInfo.oldSwapchain = nullptr;
 
-    if(vkCreateSwapchainKHR(this->_logicalDevice, &swapChainCreateInfo, nullptr, &this->_swapChain) != VK_SUCCESS) {
+    if (vkCreateSwapchainKHR(this->_logicalDevice, &swapChainCreateInfo, nullptr, &this->_swapChain) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan swap chain");
     }
 
@@ -761,6 +733,19 @@ void Scene::_createSwapChain() {
     vkGetSwapchainImagesKHR(this->_logicalDevice, this->_swapChain, &imageCount, this->_swapChainImages.data());
 }
 
+uint32_t Scene::_selectMemoryType(uint32_t memoryType, VkMemoryPropertyFlags properties) {
+    VkPhysicalDeviceMemoryProperties memoryProperties;
+    vkGetPhysicalDeviceMemoryProperties(this->_physicalDevice, &memoryProperties);
+
+    for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++) {
+        if ((memoryType & (1 << i)) && (memoryProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+            return i;
+        }
+    }
+
+    throw std::runtime_error("Error selecting memory for vulkan buffer");
+}
+
 /**
  * @brief Creates vulkan image views
  */
@@ -768,7 +753,7 @@ void Scene::_createImageViews() {
     this->_swapChainImageViews.resize(this->_swapChainImages.size());
 
     int i = 0;
-    for(const VkImage &swapChainImage : this->_swapChainImages) {
+    for (const VkImage &swapChainImage : this->_swapChainImages) {
         VkImageViewCreateInfo imageViewCreateInfo{};
         imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         imageViewCreateInfo.image = swapChainImage;
@@ -784,12 +769,147 @@ void Scene::_createImageViews() {
         imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
         imageViewCreateInfo.subresourceRange.layerCount = 1;
 
-        if(vkCreateImageView(this->_logicalDevice, &imageViewCreateInfo, nullptr, &this->_swapChainImageViews[i]) != VK_SUCCESS) {
+        if (vkCreateImageView(this->_logicalDevice, &imageViewCreateInfo, nullptr, &this->_swapChainImageViews[i]) !=
+            VK_SUCCESS) {
             throw std::runtime_error("Error creating vulkan image views");
         }
 
         i++;
     }
+}
+
+void Scene::_createImage(uint32_t width,
+                         uint32_t height,
+                         VkSampleCountFlagBits sampleCount,
+                         VkFormat format,
+                         VkImageTiling tiling,
+                         VkImageUsageFlags usage,
+                         VkMemoryPropertyFlags properties,
+                         VkImage &image,
+                         VkDeviceMemory &imageMemory) {
+    VkImageCreateInfo imageCreateInfo{};
+    imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageCreateInfo.extent.width = width;
+    imageCreateInfo.extent.height = height;
+    imageCreateInfo.extent.depth = 1;
+    imageCreateInfo.mipLevels = 1;
+    imageCreateInfo.arrayLayers = 1;
+    imageCreateInfo.format = format;
+    imageCreateInfo.tiling = tiling;
+    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageCreateInfo.usage = usage;
+    imageCreateInfo.samples = sampleCount;
+    imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateImage(this->_logicalDevice, &imageCreateInfo, nullptr, &image) != VK_SUCCESS) {
+        throw std::runtime_error("Error creating vulkan image");
+    }
+
+    VkMemoryRequirements memRequirements;
+    vkGetImageMemoryRequirements(this->_logicalDevice, image, &memRequirements);
+
+    VkMemoryAllocateInfo allocateInfo{};
+    allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocateInfo.allocationSize = memRequirements.size;
+    allocateInfo.memoryTypeIndex = this->_selectMemoryType(memRequirements.memoryTypeBits, properties);
+
+    if (vkAllocateMemory(this->_logicalDevice, &allocateInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+        throw std::runtime_error("Error allocating vulkan image memory");
+    }
+
+    vkBindImageMemory(this->_logicalDevice, image, imageMemory, 0);
+}
+
+VkImageView Scene::_createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) {
+    VkImageViewCreateInfo imageViewCreateInfo{};
+    imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    imageViewCreateInfo.image = image;
+    imageViewCreateInfo.format = format;
+    imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    imageViewCreateInfo.subresourceRange.aspectMask = aspectFlags;
+    imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+    imageViewCreateInfo.subresourceRange.levelCount = 1;
+    imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+    imageViewCreateInfo.subresourceRange.layerCount = 1;
+
+    VkImageView imageView;
+    if (vkCreateImageView(this->_logicalDevice, &imageViewCreateInfo, nullptr, &imageView) != VK_SUCCESS) {
+        throw std::runtime_error("Error creating vulkan image view");
+    }
+
+    return imageView;
+}
+
+VkFormat Scene::_selectSupportedFormat(const std::vector<VkFormat> &candidates,
+                                       VkImageTiling tiling,
+                                       VkFormatFeatureFlags features) {
+    for (VkFormat format : candidates) {
+        VkFormatProperties properties;
+        vkGetPhysicalDeviceFormatProperties(this->_physicalDevice, format, &properties);
+
+        if (tiling == VK_IMAGE_TILING_LINEAR && (properties.linearTilingFeatures & features) == features) {
+            return format;
+        } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (properties.optimalTilingFeatures & features) == features) {
+            return format;
+        }
+    }
+
+    throw std::runtime_error("Error selecting supported vulkan format");
+}
+
+VkFormat Scene::_selectDepthFormat() {
+    return this->_selectSupportedFormat(
+        {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT}, VK_IMAGE_TILING_OPTIMAL,
+        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+}
+
+void Scene::_createDepthResources() {
+    VkFormat depthFormat = this->_selectDepthFormat();
+
+    this->_createImage(this->_swapChainExtent.width, this->_swapChainExtent.height, this->_msaaSampleCount, depthFormat,
+                       VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, this->_depthImage, this->_depthImageMemory);
+    this->_depthImageView = this->_createImageView(this->_depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+}
+
+void Scene::_selectMsaaSampleCount() {
+    if (!this->_useMsaa) {
+        this->_msaaSampleCount = VK_SAMPLE_COUNT_1_BIT;
+        return;
+    }
+
+    VkPhysicalDeviceProperties physicalDeviceProperties;
+    vkGetPhysicalDeviceProperties(this->_physicalDevice, &physicalDeviceProperties);
+
+    VkSampleCountFlags sampleCounts = physicalDeviceProperties.limits.framebufferColorSampleCounts &
+                                      physicalDeviceProperties.limits.framebufferDepthSampleCounts;
+    if (sampleCounts & VK_SAMPLE_COUNT_64_BIT) {
+        this->_msaaSampleCount = VK_SAMPLE_COUNT_64_BIT;
+    } else if (sampleCounts & VK_SAMPLE_COUNT_32_BIT) {
+        this->_msaaSampleCount = VK_SAMPLE_COUNT_32_BIT;
+    } else if (sampleCounts & VK_SAMPLE_COUNT_16_BIT) {
+        this->_msaaSampleCount = VK_SAMPLE_COUNT_16_BIT;
+    } else if (sampleCounts & VK_SAMPLE_COUNT_8_BIT) {
+        this->_msaaSampleCount = VK_SAMPLE_COUNT_8_BIT;
+    } else if (sampleCounts & VK_SAMPLE_COUNT_4_BIT) {
+        this->_msaaSampleCount = VK_SAMPLE_COUNT_4_BIT;
+    } else if (sampleCounts & VK_SAMPLE_COUNT_2_BIT) {
+        this->_msaaSampleCount = VK_SAMPLE_COUNT_2_BIT;
+    } else {
+        this->_msaaSampleCount = VK_SAMPLE_COUNT_1_BIT;
+    }
+}
+
+void Scene::_createMsaaResources() {
+    this->_selectMsaaSampleCount();
+
+    this->_createImage(this->_swapChainExtent.width, this->_swapChainExtent.height, this->_msaaSampleCount,
+                       this->_swapChainImageFormat, VK_IMAGE_TILING_OPTIMAL,
+                       VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, this->_msaaImage, this->_msaaImageMemory);
+    this->_msaaImageView =
+        this->_createImageView(this->_msaaImage, this->_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 /**
@@ -798,41 +918,78 @@ void Scene::_createImageViews() {
 void Scene::_createRenderPass() {
     VkAttachmentDescription colorAttachmentDescription{};
     colorAttachmentDescription.format = this->_swapChainImageFormat;
-    colorAttachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachmentDescription.samples = this->_msaaSampleCount;
     colorAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    colorAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     colorAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colorAttachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     colorAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    colorAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentDescription depthAttachmentDescription{};
+    depthAttachmentDescription.format = this->_selectDepthFormat();
+    depthAttachmentDescription.samples = this->_msaaSampleCount;
+    depthAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    depthAttachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depthAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentDescription colorAttachmentResolveDescription{};
+    colorAttachmentResolveDescription.format = this->_swapChainImageFormat;
+    colorAttachmentResolveDescription.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachmentResolveDescription.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachmentResolveDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachmentResolveDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachmentResolveDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachmentResolveDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachmentResolveDescription.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
     VkAttachmentReference colorAttachmentReference{};
     colorAttachmentReference.attachment = 0;
     colorAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+    VkAttachmentReference depthAttachmentReference{};
+    depthAttachmentReference.attachment = 1;
+    depthAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference colorAttachmentResolveReference{};
+    colorAttachmentResolveReference.attachment = 2;
+    colorAttachmentResolveReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
     VkSubpassDescription subpassDescription{};
     subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpassDescription.colorAttachmentCount = 1;
     subpassDescription.pColorAttachments = &colorAttachmentReference;
+    subpassDescription.pDepthStencilAttachment = &depthAttachmentReference;
+    subpassDescription.pResolveAttachments = &colorAttachmentResolveReference;
 
     VkSubpassDependency subpassDependency{};
     subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
     subpassDependency.dstSubpass = 0;
-    subpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpassDependency.srcStageMask =
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    subpassDependency.dstStageMask =
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     subpassDependency.srcAccessMask = 0;
-    subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    subpassDependency.dstAccessMask =
+        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    subpassDependency.dependencyFlags = 0;
+
+    std::array<VkAttachmentDescription, 3> attachments = {colorAttachmentDescription, depthAttachmentDescription,
+                                                          colorAttachmentResolveDescription};
 
     VkRenderPassCreateInfo renderPassCreateInfo{};
     renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassCreateInfo.attachmentCount = 1;
-    renderPassCreateInfo.pAttachments = &colorAttachmentDescription;
+    renderPassCreateInfo.attachmentCount = attachments.size();
+    renderPassCreateInfo.pAttachments = attachments.data();
     renderPassCreateInfo.subpassCount = 1;
     renderPassCreateInfo.pSubpasses = &subpassDescription;
     renderPassCreateInfo.dependencyCount = 1;
     renderPassCreateInfo.pDependencies = &subpassDependency;
 
-    if(vkCreateRenderPass(this->_logicalDevice, &renderPassCreateInfo, nullptr, &this->_renderPass) != VK_SUCCESS) {
+    if (vkCreateRenderPass(this->_logicalDevice, &renderPassCreateInfo, nullptr, &this->_renderPass) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan render pass");
     }
 }
@@ -843,19 +1000,24 @@ void Scene::_createRenderPass() {
 void Scene::_createFramebuffers() {
     this->_framebuffers.resize(this->_swapChainImageViews.size());
 
-    for(size_t i = 0; i < this->_framebuffers.size(); i++) {
-        VkImageView attachments[] = { this->_swapChainImageViews[i] };
+    for (size_t i = 0; i < this->_framebuffers.size(); i++) {
+        std::array<VkImageView, 3> attachments = {
+            this->_msaaImageView,
+            this->_depthImageView,
+            this->_swapChainImageViews[i],
+        };
 
         VkFramebufferCreateInfo framebufferCreateInfo{};
         framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferCreateInfo.renderPass = this->_renderPass;
-        framebufferCreateInfo.attachmentCount = 1;
-        framebufferCreateInfo.pAttachments = attachments;
+        framebufferCreateInfo.attachmentCount = attachments.size();
+        framebufferCreateInfo.pAttachments = attachments.data();
         framebufferCreateInfo.width = this->_swapChainExtent.width;
         framebufferCreateInfo.height = this->_swapChainExtent.height;
         framebufferCreateInfo.layers = 1;
 
-        if(vkCreateFramebuffer(this->_logicalDevice, &framebufferCreateInfo, nullptr, &this->_framebuffers[i]) != VK_SUCCESS) {
+        if (vkCreateFramebuffer(this->_logicalDevice, &framebufferCreateInfo, nullptr, &this->_framebuffers[i]) !=
+            VK_SUCCESS) {
             throw std::runtime_error("Error creating vulkan frame buffer");
         }
     }
@@ -872,7 +1034,7 @@ void Scene::_createCommandPool() {
     commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     commandPoolCreateInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
-    if(vkCreateCommandPool(this->_logicalDevice, &commandPoolCreateInfo, nullptr, &this->_commandPool) != VK_SUCCESS) {
+    if (vkCreateCommandPool(this->_logicalDevice, &commandPoolCreateInfo, nullptr, &this->_commandPool) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan command pool");
     }
 }
@@ -887,7 +1049,8 @@ void Scene::_createCommandBuffers() {
     commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     commandBufferAllocateInfo.commandBufferCount = 1;
 
-    if(vkAllocateCommandBuffers(this->_logicalDevice, &commandBufferAllocateInfo, &this->_commandBuffer) != VK_SUCCESS) {
+    if (vkAllocateCommandBuffers(this->_logicalDevice, &commandBufferAllocateInfo, &this->_commandBuffer) !=
+        VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan command buffer");
     }
 }
@@ -902,27 +1065,29 @@ void Scene::_recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIn
     VkCommandBufferBeginInfo commandBufferBeginInfo{};
     commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-    if(vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo) != VK_SUCCESS) {
+    if (vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo) != VK_SUCCESS) {
         throw std::runtime_error("Error while recording vulkan command buffer");
     }
 
-    if(this->_measureTime) {
-        reinterpret_cast<vft::VulkanTimedRenderer*>(this->_renderer.get())->resetQueryPool();
+    if (this->_measureTime) {
+        reinterpret_cast<vft::VulkanTimedRenderer *>(this->_renderer.get())->resetQueryPool();
     }
 
-    VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
+    std::array<VkClearValue, 2> clearValues{};
+    clearValues[0].color = {{0.f, 0.f, 0.f, 1.f}};
+    clearValues[1].depthStencil = {1.f, 0};
 
     VkRenderPassBeginInfo renderPassBeginInfo{};
     renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassBeginInfo.renderPass = this->_renderPass;
     renderPassBeginInfo.framebuffer = this->_framebuffers[imageIndex];
-    renderPassBeginInfo.renderArea.offset = { 0, 0 };
+    renderPassBeginInfo.renderArea.offset = {0, 0};
     renderPassBeginInfo.renderArea.extent = this->_swapChainExtent;
-    renderPassBeginInfo.clearValueCount = 1;
-    renderPassBeginInfo.pClearValues = &clearColor;
+    renderPassBeginInfo.clearValueCount = clearValues.size();
+    renderPassBeginInfo.pClearValues = clearValues.data();
 
     vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-    
+
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
@@ -932,17 +1097,17 @@ void Scene::_recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIn
     viewport.maxDepth = 1.0f;
 
     VkRect2D scissor{};
-    scissor.offset = { 0, 0 };
+    scissor.offset = {0, 0};
     scissor.extent = this->_swapChainExtent;
 
     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-    
+
     this->_renderer->draw();
 
     vkCmdEndRenderPass(commandBuffer);
 
-    if(vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+    if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
         throw std::runtime_error("Error recording vulkan command buffer");
     }
 }
@@ -958,11 +1123,11 @@ void Scene::_createSynchronizationObjects() {
     fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    if(
-        vkCreateSemaphore(this->_logicalDevice, &semaphoreCreateInfo, nullptr, &this->_imageAvailableSemaphore) != VK_SUCCESS ||
-        vkCreateSemaphore(this->_logicalDevice, &semaphoreCreateInfo, nullptr, &this->_renderFinishedSemaphore) != VK_SUCCESS ||
-        vkCreateFence(this->_logicalDevice, &fenceCreateInfo, nullptr, &this->_inFlightFence) != VK_SUCCESS
-    ) {
+    if (vkCreateSemaphore(this->_logicalDevice, &semaphoreCreateInfo, nullptr, &this->_imageAvailableSemaphore) !=
+            VK_SUCCESS ||
+        vkCreateSemaphore(this->_logicalDevice, &semaphoreCreateInfo, nullptr, &this->_renderFinishedSemaphore) !=
+            VK_SUCCESS ||
+        vkCreateFence(this->_logicalDevice, &fenceCreateInfo, nullptr, &this->_inFlightFence) != VK_SUCCESS) {
         throw std::runtime_error("Error creating vulkan synchronization objects");
     }
 }
@@ -972,45 +1137,44 @@ void Scene::_createSynchronizationObjects() {
  */
 void Scene::_drawFrame() {
     vkWaitForFences(this->_logicalDevice, 1, &this->_inFlightFence, true, UINT64_MAX);
+    vkResetFences(this->_logicalDevice, 1, &this->_inFlightFence);
 
     // Set uniform buffers used for rendering text
-    vft::UniformBufferObject ubo{ this->_camera->getViewMatrix(), this->_camera->getProjectionMatrix() };
+    vft::UniformBufferObject ubo{this->_camera->getViewMatrix(), this->_camera->getProjectionMatrix()};
     this->_renderer->setUniformBuffers(ubo);
 
     uint32_t imageIndex;
-    VkResult result = vkAcquireNextImageKHR(this->_logicalDevice, this->_swapChain, UINT64_MAX, this->_imageAvailableSemaphore, nullptr, &imageIndex);
-    if(result == VK_ERROR_OUT_OF_DATE_KHR) {
-        _recreateSwapChain();
+    VkResult result = vkAcquireNextImageKHR(this->_logicalDevice, this->_swapChain, UINT64_MAX,
+                                            this->_imageAvailableSemaphore, nullptr, &imageIndex);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        this->_recreateSwapChain();
         return;
-    }
-    else if(result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         throw std::runtime_error("Error acquiring vulkan swap chain image");
     }
-
-    vkResetFences(this->_logicalDevice, 1, &this->_inFlightFence);
 
     vkResetCommandBuffer(this->_commandBuffer, 0);
     this->_recordCommandBuffer(this->_commandBuffer, imageIndex);
 
-    VkSemaphore signalSemaphores[] = { this->_renderFinishedSemaphore };
-    VkSemaphore waitSemaphores[] = { this->_imageAvailableSemaphore };
-    VkPipelineStageFlags waitStagees[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    VkSemaphore signalSemaphores[] = {this->_renderFinishedSemaphore};
+    VkSemaphore waitSemaphores[] = {this->_imageAvailableSemaphore};
+    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
-    submitInfo.pWaitDstStageMask = waitStagees;
+    submitInfo.pWaitDstStageMask = waitStages;
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &this->_commandBuffer;
 
-    if(vkQueueSubmit(this->_graphicsQueue, 1, &submitInfo, this->_inFlightFence) != VK_SUCCESS) {
+    if (vkQueueSubmit(this->_graphicsQueue, 1, &submitInfo, this->_inFlightFence) != VK_SUCCESS) {
         throw std::runtime_error("Error submiting draw command buffer");
     }
 
-    VkSwapchainKHR swapChains[] = { this->_swapChain };
+    VkSwapchainKHR swapChains[] = {this->_swapChain};
 
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -1021,17 +1185,16 @@ void Scene::_drawFrame() {
     presentInfo.pImageIndices = &imageIndex;
 
     result = vkQueuePresentKHR(this->_presentQueue, &presentInfo);
-    if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || this->_window->wasResized()) {
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || this->_window->wasResized()) {
         this->_window->resetResized();
         this->_recreateSwapChain();
         return;
-    }
-    else if(result != VK_SUCCESS) {
+    } else if (result != VK_SUCCESS) {
         throw std::runtime_error("Error presenting vulkan swap chain image");
     }
 
-    if(this->_measureTime) {
-        float time = reinterpret_cast<vft::VulkanTimedRenderer*>(this->_renderer.get())->readTimestamps() / 10e+3;
+    if (this->_measureTime) {
+        float time = reinterpret_cast<vft::VulkanTimedRenderer *>(this->_renderer.get())->readTimestamps() / 10e+3;
         std::cout << "Draw time: " << time << " microseconds" << std::endl;
     }
 }

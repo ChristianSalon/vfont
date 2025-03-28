@@ -29,7 +29,8 @@ public:
                 vft::TessellationStrategy tessellationAlgorithm,
                 std::string font,
                 unsigned int fontSize,
-                bool measureTime = false);
+                bool useMsaa,
+                bool measureTime);
     ~EditorScene();
 
 private:

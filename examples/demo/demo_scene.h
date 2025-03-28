@@ -52,6 +52,6 @@ private:
     std::shared_ptr<vft::TextBlock> _block7;
 
 public:
-    DemoScene(CameraType cameraType, vft::TessellationStrategy tessellationAlgorithm, bool measureTime = false);
+    DemoScene(CameraType cameraType, vft::TessellationStrategy tessellationAlgorithm, bool useMsaa, bool measureTime);
     ~DemoScene();
 };

@@ -65,6 +65,7 @@ public:
                                     VkQueue graphicsQueue,
                                     VkCommandPool commandPool,
                                     VkRenderPass renderPass,
+                                    VkSampleCountFlagBits msaaSampleCount = VK_SAMPLE_COUNT_1_BIT,
                                     VkCommandBuffer commandBuffer = nullptr);
     virtual ~VulkanWindingNumberTextRenderer();
 

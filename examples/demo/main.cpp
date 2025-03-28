@@ -16,11 +16,12 @@ int main(int argc, char **argv) {
         CameraType cameraType = CameraType::PERSPECTIVE;
         vft::TessellationStrategy tessellationAlgorithm = vft::TessellationStrategy::WINDING_NUMBER;
         bool measureTime = false;
+        bool useMsaa = false;
 
         for (int i = 1; i < argc; i++) {
             if (strcmp(argv[i], "-h") == 0) {
                 // Show help message
-                std::cout << "./demo [-h] [-c <perspective/orthographic>] [-a <cdt/ts/wn/sdf>] [-t]" << std::endl;
+                std::cout << "./demo [-h] [-c <perspective/orthographic>] [-a <cdt/ts/wn/sdf>] [-t] [-m]" << std::endl;
                 std::cout << "-h: Show help message" << std::endl;
                 std::cout << "-c: Select the type of camera used" << std::endl;
                 std::cout << "-a: Select the rendering algorithm" << std::endl;
@@ -30,6 +31,7 @@ int main(int argc, char **argv) {
                 std::cout << "  wn - Winding number calculated in fragment shader" << std::endl;
                 std::cout << "  sdf - Signed distance field" << std::endl;
                 std::cout << "-t: Measure the gpu draw time" << std::endl;
+                std::cout << "-m: Use multisampling antialiasing" << std::endl;
                 return EXIT_SUCCESS;
             } else if (strcmp(argv[i], "-c") == 0) {
                 // Set camera type
@@ -62,13 +64,16 @@ int main(int argc, char **argv) {
             } else if (strcmp(argv[i], "-t") == 0) {
                 // Set if measure time to render frame
                 measureTime = true;
+            } else if (strcmp(argv[i], "-m") == 0) {
+                // Set multisampling
+                useMsaa = true;
             } else {
                 std::cerr << "Invalid argument at position " << i << std::endl;
                 return EXIT_FAILURE;
             }
         }
 
-        DemoScene scene{cameraType, tessellationAlgorithm, measureTime};
+        DemoScene scene{cameraType, tessellationAlgorithm, useMsaa, measureTime};
         scene.run();
     } catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;

@@ -10,8 +10,9 @@ const std::u8string BenchmarkScene::TEXT = u8"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh
 BenchmarkScene::BenchmarkScene(CameraType cameraType,
                                vft::TessellationStrategy tessellationAlgorithm,
                                std::string font,
+                               bool useMsaa,
                                bool measureTime)
-    : Scene{cameraType, tessellationAlgorithm, measureTime} {
+    : Scene{cameraType, tessellationAlgorithm, useMsaa, measureTime} {
     // this->_renderer->setCacheSize(0);
 
     this->_font = std::make_shared<vft::Font>(font);

@@ -9,8 +9,9 @@ EditorScene::EditorScene(CameraType cameraType,
                          vft::TessellationStrategy tessellationAlgorithm,
                          std::string font,
                          unsigned int fontSize,
+                         bool useMsaa,
                          bool measureTime)
-    : Scene{cameraType, tessellationAlgorithm, measureTime} {
+    : Scene{cameraType, tessellationAlgorithm, useMsaa, measureTime} {
     this->_font = std::make_shared<vft::Font>(font);
     if (tessellationAlgorithm == vft::TessellationStrategy::SDF) {
         vft::FontAtlas atlas{this->_font};

@@ -47,6 +47,7 @@ public:
     BenchmarkScene(CameraType cameraType,
                    vft::TessellationStrategy tessellationAlgorithm,
                    std::string font,
-                   bool measureTime = true);
+                   bool useMsaa,
+                   bool measureTime);
     ~BenchmarkScene();
 };

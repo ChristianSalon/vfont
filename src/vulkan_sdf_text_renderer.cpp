@@ -15,8 +15,10 @@ VulkanSdfTextRenderer::VulkanSdfTextRenderer(VkPhysicalDevice physicalDevice,
                                              VkQueue graphicsQueue,
                                              VkCommandPool commandPool,
                                              VkRenderPass renderPass,
+                                             VkSampleCountFlagBits msaaSampleCount,
                                              VkCommandBuffer commandBuffer)
-    : VulkanTextRenderer{physicalDevice, logicalDevice, graphicsQueue, commandPool, renderPass, commandBuffer} {
+    : VulkanTextRenderer{physicalDevice, logicalDevice,   graphicsQueue, commandPool,
+                         renderPass,     msaaSampleCount, commandBuffer} {
     this->_initialize();
 
     this->_createFontAtlasDescriptorSetLayout();
@@ -73,7 +75,7 @@ void VulkanSdfTextRenderer::draw() {
     // Draw bounding boxes
     for (unsigned int i = 0; i < this->_textBlocks.size(); i++) {
         for (const Character &character : this->_textBlocks[i]->getCharacters()) {
-            GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), 0};;
+            GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), 0};
 
             if (this->_offsets.at(key).boundingBoxCount > 0) {
                 if (character.getFont()->getFontFamily() != lastFontFamily) {
@@ -487,7 +489,7 @@ void VulkanSdfTextRenderer::_createPipeline() {
     VkPipelineMultisampleStateCreateInfo multisampleStateCreateInfo{};
     multisampleStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampleStateCreateInfo.sampleShadingEnable = VK_FALSE;
-    multisampleStateCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    multisampleStateCreateInfo.rasterizationSamples = this->_msaaSampleCount;
 
     VkPipelineColorBlendAttachmentState colorBlendAttachmentState{};
     colorBlendAttachmentState.colorWriteMask =
@@ -505,6 +507,14 @@ void VulkanSdfTextRenderer::_createPipeline() {
     colorBlendStateCreateInfo.logicOpEnable = VK_FALSE;
     colorBlendStateCreateInfo.pAttachments = &colorBlendAttachmentState;
     colorBlendStateCreateInfo.attachmentCount = 1;
+
+    VkPipelineDepthStencilStateCreateInfo depthStencilCreateInfo{};
+    depthStencilCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencilCreateInfo.depthTestEnable = VK_TRUE;
+    depthStencilCreateInfo.depthWriteEnable = VK_TRUE;
+    depthStencilCreateInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+    depthStencilCreateInfo.depthBoundsTestEnable = VK_FALSE;
+    depthStencilCreateInfo.stencilTestEnable = VK_FALSE;
 
     VkPushConstantRange pushConstantRange{};
     pushConstantRange.size = sizeof(CharacterPushConstants);
@@ -537,6 +547,7 @@ void VulkanSdfTextRenderer::_createPipeline() {
     graphicsPipelineCreateInfo.pDepthStencilState = nullptr;
     graphicsPipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
     graphicsPipelineCreateInfo.pDynamicState = &dynamicStateCreateInfo;
+    graphicsPipelineCreateInfo.pDepthStencilState = &depthStencilCreateInfo;
     graphicsPipelineCreateInfo.layout = this->_pipelineLayout;
     graphicsPipelineCreateInfo.renderPass = this->_renderPass;
     graphicsPipelineCreateInfo.subpass = 0;

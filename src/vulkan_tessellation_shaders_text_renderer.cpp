@@ -15,8 +15,10 @@ VulkanTessellationShadersTextRenderer::VulkanTessellationShadersTextRenderer(VkP
                                                                              VkQueue graphicsQueue,
                                                                              VkCommandPool commandPool,
                                                                              VkRenderPass renderPass,
+                                                                             VkSampleCountFlagBits msaaSampleCount,
                                                                              VkCommandBuffer commandBuffer)
-    : VulkanTextRenderer{physicalDevice, logicalDevice, graphicsQueue, commandPool, renderPass, commandBuffer} {
+    : VulkanTextRenderer{physicalDevice, logicalDevice,   graphicsQueue, commandPool,
+                         renderPass,     msaaSampleCount, commandBuffer} {
     this->_initialize();
 
     this->_createLineSegmentsPipeline();
@@ -224,7 +226,7 @@ void VulkanTessellationShadersTextRenderer::_createLineSegmentsPipeline() {
     VkPipelineMultisampleStateCreateInfo multisampleStateCreateInfo{};
     multisampleStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampleStateCreateInfo.sampleShadingEnable = VK_FALSE;
-    multisampleStateCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    multisampleStateCreateInfo.rasterizationSamples = this->_msaaSampleCount;
 
     VkPipelineColorBlendAttachmentState colorBlendAttachmentState{};
     colorBlendAttachmentState.colorWriteMask =
@@ -242,6 +244,14 @@ void VulkanTessellationShadersTextRenderer::_createLineSegmentsPipeline() {
     colorBlendStateCreateInfo.logicOpEnable = VK_FALSE;
     colorBlendStateCreateInfo.attachmentCount = 1;
     colorBlendStateCreateInfo.pAttachments = &colorBlendAttachmentState;
+
+    VkPipelineDepthStencilStateCreateInfo depthStencilCreateInfo{};
+    depthStencilCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencilCreateInfo.depthTestEnable = VK_TRUE;
+    depthStencilCreateInfo.depthWriteEnable = VK_TRUE;
+    depthStencilCreateInfo.depthCompareOp = VK_COMPARE_OP_LESS;
+    depthStencilCreateInfo.depthBoundsTestEnable = VK_FALSE;
+    depthStencilCreateInfo.stencilTestEnable = VK_FALSE;
 
     VkPushConstantRange pushConstantRange{};
     pushConstantRange.size = sizeof(vft::CharacterPushConstants);
@@ -274,6 +284,7 @@ void VulkanTessellationShadersTextRenderer::_createLineSegmentsPipeline() {
     graphicsPipelineCreateInfo.pDepthStencilState = nullptr;
     graphicsPipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
     graphicsPipelineCreateInfo.pDynamicState = &dynamicStateCreateInfo;
+    graphicsPipelineCreateInfo.pDepthStencilState = &depthStencilCreateInfo;
     graphicsPipelineCreateInfo.layout = this->_lineSegmentsPipelineLayout;
     graphicsPipelineCreateInfo.renderPass = this->_renderPass;
     graphicsPipelineCreateInfo.subpass = 0;
@@ -401,7 +412,7 @@ void VulkanTessellationShadersTextRenderer::_createCurveSegmentsPipeline() {
     VkPipelineMultisampleStateCreateInfo multisampleStateCreateInfo{};
     multisampleStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampleStateCreateInfo.sampleShadingEnable = VK_FALSE;
-    multisampleStateCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    multisampleStateCreateInfo.rasterizationSamples = this->_msaaSampleCount;
 
     VkPipelineColorBlendAttachmentState colorBlendAttachmentState{};
     colorBlendAttachmentState.colorWriteMask =
@@ -419,6 +430,14 @@ void VulkanTessellationShadersTextRenderer::_createCurveSegmentsPipeline() {
     colorBlendStateCreateInfo.logicOpEnable = VK_FALSE;
     colorBlendStateCreateInfo.attachmentCount = 1;
     colorBlendStateCreateInfo.pAttachments = &colorBlendAttachmentState;
+
+    VkPipelineDepthStencilStateCreateInfo depthStencilCreateInfo{};
+    depthStencilCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencilCreateInfo.depthTestEnable = VK_TRUE;
+    depthStencilCreateInfo.depthWriteEnable = VK_TRUE;
+    depthStencilCreateInfo.depthCompareOp = VK_COMPARE_OP_LESS;
+    depthStencilCreateInfo.depthBoundsTestEnable = VK_FALSE;
+    depthStencilCreateInfo.stencilTestEnable = VK_FALSE;
 
     std::array<VkPushConstantRange, 2> pushConstantRanges;
 
@@ -457,6 +476,7 @@ void VulkanTessellationShadersTextRenderer::_createCurveSegmentsPipeline() {
     graphicsPipelineCreateInfo.pDepthStencilState = nullptr;
     graphicsPipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
     graphicsPipelineCreateInfo.pDynamicState = &dynamicStateCreateInfo;
+    graphicsPipelineCreateInfo.pDepthStencilState = &depthStencilCreateInfo;
     graphicsPipelineCreateInfo.layout = this->_curveSegmentsPipelineLayout;
     graphicsPipelineCreateInfo.renderPass = this->_renderPass;
     graphicsPipelineCreateInfo.subpass = 0;
