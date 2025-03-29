@@ -26,20 +26,7 @@ Scene::Scene(CameraType cameraType, vft::TessellationStrategy tessellationAlgori
     };
 
     this->deviceExtensions = {"VK_KHR_swapchain"};
-
     this->validationLayers = {"VK_LAYER_KHRONOS_validation"};
-
-    this->_instance = nullptr;
-    this->_surface = nullptr;
-    this->_physicalDevice = nullptr;
-    this->_logicalDevice = nullptr;
-    this->_graphicsQueue = nullptr;
-    this->_presentQueue = nullptr;
-    this->_swapChain = nullptr;
-    this->_swapChainImageFormat = VK_FORMAT_UNDEFINED;
-    this->_swapChainExtent = {};
-    this->_renderPass = nullptr;
-    this->_commandPool = nullptr;
 
     // Initialize window
     this->_createWindow();
@@ -136,7 +123,7 @@ void Scene::run() {
  * @param width New window width
  * @param height New window height
  */
-void Scene::updateWindowDimensions(int width, int height) {
+void Scene::_updateWindowDimensions(int width, int height) {
     if (this->_cameraType == CameraType::ORTHOGRAPHIC) {
         reinterpret_cast<OrthographicCamera *>(this->_camera.get())
             ->setProjection(0.f, static_cast<float>(width), 0.f, static_cast<float>(height), 0.f, 2000.f);
@@ -148,37 +135,6 @@ void Scene::updateWindowDimensions(int width, int height) {
     }
 
     this->_renderer->setViewportSize(this->_window->getWidth(), this->_window->getHeight());
-}
-
-/**
- * @brief Update the camera position based on window event
- *
- * @param x Delta x
- * @param y Delta y
- */
-void Scene::updateCameraRotation(float x, float y) {
-    static const float rotateFactor = 0.4;
-
-    glm::vec3 rotation;
-    rotation.x = (y / this->_window->getHeight()) * 360.f;
-    rotation.y = (x / this->_window->getWidth()) * 360.f;
-    rotation.z = 0;
-    rotation *= rotateFactor;
-
-    this->_camera->rotate(rotation);
-}
-
-/**
- * @brief Update the camera rotation based on window event
- *
- * @param x Delta x
- * @param y Delta y
- * @param z Delta z
- */
-void Scene::updateCameraPosition(float x, float y, float z) {
-    static const float translateFactor = 0.4;
-
-    this->_camera->translate(glm::vec3(x, y, z) * translateFactor);
 }
 
 /**
@@ -207,15 +163,14 @@ void Scene::_createWindow() {
     this->_window.reset(new MainWindow());
 
     this->_window->setResizeCallback(
-        [this](int width, int height) -> void { this->updateWindowDimensions(width, height); });
-    this->_window->setDragCallback([this](float x, float y, bool shiftPressed) -> void {
-        if (shiftPressed) {
-            this->updateCameraPosition(x, y, 0.f);
-        } else {
-            this->updateCameraRotation(x, y);
-        }
+        [this](int width, int height) -> void { this->_updateWindowDimensions(width, height); });
+    this->_window->setLeftDragCallback([this](float x, float y) -> void {
+        this->_camera->translate(glm::vec3{-x, -y, 0.f});
     });
-    this->_window->setScrollCallback([this](float z) -> void { this->updateCameraPosition(0.f, 0.f, z); });
+    this->_window->setRightDragCallback([this](float x, float y) -> void {
+        this->_camera->rotate(glm::vec3{-y, x, 0.f});
+    });
+    this->_window->setScrollCallback([this](float z) -> void { this->_camera->zoom(z); });
 
     this->_window->create();
 }

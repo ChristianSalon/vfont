@@ -3,10 +3,6 @@
  * @author Christian Saloň
  */
 
-#include <iostream>
-#include <vector>
-#include <stdexcept>
-
 #include "kb_input.h"
 
 /**
@@ -42,17 +38,23 @@ void KbInput::registerCharacter(KbInput::utf8_t character) {
         }
         case KbInput::Utf8Type::TWO_CODE_UNITS: {
             std::cout << (uint32_t)character.bytes_2[0] << (uint32_t)character.bytes_2[1] << ", ";
-            std::cout << static_cast<char>(character.bytes_2[0]) << static_cast<char>(character.bytes_2[1]) << std::endl;
+            std::cout << static_cast<char>(character.bytes_2[0]) << static_cast<char>(character.bytes_2[1])
+                      << std::endl;
             break;
         }
         case KbInput::Utf8Type::THREE_CODE_UNITS: {
-            std::cout << (uint32_t)character.bytes_3[0] << (uint32_t)character.bytes_3[1] << (uint32_t)character.bytes_3[2] << ", ";
-            std::cout << static_cast<char>(character.bytes_3[0]) << static_cast<char>(character.bytes_3[1]) << static_cast<char>(character.bytes_3[2]) << std::endl;
+            std::cout << (uint32_t)character.bytes_3[0] << (uint32_t)character.bytes_3[1]
+                      << (uint32_t)character.bytes_3[2] << ", ";
+            std::cout << static_cast<char>(character.bytes_3[0]) << static_cast<char>(character.bytes_3[1])
+                      << static_cast<char>(character.bytes_3[2]) << std::endl;
             break;
         }
         case KbInput::Utf8Type::FOUR_CODE_UNITS: {
-            std::cout << (uint32_t)character.bytes_4[0] << (uint32_t)character.bytes_4[1] << (uint32_t)character.bytes_4[2] << (uint32_t)character.bytes_4[3] << ", ";
-            std::cout << static_cast<char>(character.bytes_4[0]) << static_cast<char>(character.bytes_4[1]) << static_cast<char>(character.bytes_4[2]) << static_cast<char>(character.bytes_4[3]) << std::endl;
+            std::cout << (uint32_t)character.bytes_4[0] << (uint32_t)character.bytes_4[1]
+                      << (uint32_t)character.bytes_4[2] << (uint32_t)character.bytes_4[3] << ", ";
+            std::cout << static_cast<char>(character.bytes_4[0]) << static_cast<char>(character.bytes_4[1])
+                      << static_cast<char>(character.bytes_4[2]) << static_cast<char>(character.bytes_4[3])
+                      << std::endl;
             break;
         }
     }
@@ -70,8 +72,7 @@ void KbInput::registerCharacter(KbInput::utf16_t character) {
     std::cout << "UTF-16: Processing character U+" << std::hex << codePoint << ", 0x";
     if (character.type == KbInput::Utf16Type::ONE_CODE_UNIT) {
         std::cout << character.bytes_2 << std::endl;
-    }
-    else {
+    } else {
         std::cout << character.bytes_4[0] << character.bytes_4[1] << std::endl;
     }
     std::cout << std::dec;
@@ -101,25 +102,22 @@ KbInput::utf16_t KbInput::utf8ToUtf16(KbInput::utf8_t character) {
 uint32_t KbInput::utf8ToCodePoint(KbInput::utf8_t character) {
     switch (character.type) {
         case KbInput::Utf8Type::ONE_CODE_UNIT: {
-            return character.bytes_1;                       // byte1 = 0b0xxxxxxx
+            return character.bytes_1;  // byte1 = 0b0xxxxxxx
         }
         case KbInput::Utf8Type::TWO_CODE_UNITS: {
-            return
-                ((character.bytes_2[0] & 0x1F) << 6) +      // byte1 = 0b110xxxxx
-                (character.bytes_2[1] & 0x3F);              // byte2 = 0b10xxxxxx
+            return ((character.bytes_2[0] & 0x1F) << 6) +  // byte1 = 0b110xxxxx
+                   (character.bytes_2[1] & 0x3F);          // byte2 = 0b10xxxxxx
         }
         case KbInput::Utf8Type::THREE_CODE_UNITS: {
-            return
-                ((character.bytes_3[0] & 0x0F) << 12) +     // byte1 = 0b1110xxxx
-                ((character.bytes_3[1] & 0x3F) << 6) +      // byte2 = 0b10xxxxxx
-                (character.bytes_3[2] & 0x3F);              // byte3 = 0b10xxxxxx
+            return ((character.bytes_3[0] & 0x0F) << 12) +  // byte1 = 0b1110xxxx
+                   ((character.bytes_3[1] & 0x3F) << 6) +   // byte2 = 0b10xxxxxx
+                   (character.bytes_3[2] & 0x3F);           // byte3 = 0b10xxxxxx
         }
         case KbInput::Utf8Type::FOUR_CODE_UNITS: {
-            return
-                ((character.bytes_4[0] & 0x07) << 18) +     // byte1 = 0b11110xxx
-                ((character.bytes_4[1] & 0x3F) << 12) +     // byte2 = 0b10xxxxxx
-                ((character.bytes_4[2] & 0x3F) << 6) +      // byte3 = 0b10xxxxxx
-                (character.bytes_4[3] & 0x3F);              // byte4 = 0b10xxxxxx
+            return ((character.bytes_4[0] & 0x07) << 18) +  // byte1 = 0b11110xxx
+                   ((character.bytes_4[1] & 0x3F) << 12) +  // byte2 = 0b10xxxxxx
+                   ((character.bytes_4[2] & 0x3F) << 6) +   // byte3 = 0b10xxxxxx
+                   (character.bytes_4[3] & 0x3F);           // byte4 = 0b10xxxxxx
         }
     }
 
@@ -128,9 +126,9 @@ uint32_t KbInput::utf8ToCodePoint(KbInput::utf8_t character) {
 
 /**
  * @brief Converts unicode code point to utf-8 encoded character
- * 
+ *
  * @param codePoint Unicode code point
- * 
+ *
  * @return Utf-8 encoded character
  */
 KbInput::utf8_t KbInput::codePointToUtf8(uint32_t codePoint) {
@@ -138,27 +136,23 @@ KbInput::utf8_t KbInput::codePointToUtf8(uint32_t codePoint) {
 
     if (codePoint >= 0x0000 && codePoint <= 0x007F) {
         utf8Character.type = KbInput::Utf8Type::ONE_CODE_UNIT;
-        utf8Character.bytes_1 = codePoint;                              // byte1 = 0b0xxxxxxx
-    }
-    else if (codePoint >= 0x0080 && codePoint <= 0x07FF) {
+        utf8Character.bytes_1 = codePoint;  // byte1 = 0b0xxxxxxx
+    } else if (codePoint >= 0x0080 && codePoint <= 0x07FF) {
         utf8Character.type = KbInput::Utf8Type::TWO_CODE_UNITS;
-        utf8Character.bytes_2[0] = (codePoint >> 6) + 0xC0;             // byte1 = 0b110xxxxx
-        utf8Character.bytes_2[1] = (codePoint & 0x3F) + 0x80;           // byte2 = 0b10xxxxxx
-    }
-    else if (codePoint >= 0x0800 && codePoint <= 0xFFFF) {
+        utf8Character.bytes_2[0] = (codePoint >> 6) + 0xC0;    // byte1 = 0b110xxxxx
+        utf8Character.bytes_2[1] = (codePoint & 0x3F) + 0x80;  // byte2 = 0b10xxxxxx
+    } else if (codePoint >= 0x0800 && codePoint <= 0xFFFF) {
         utf8Character.type = KbInput::Utf8Type::THREE_CODE_UNITS;
-        utf8Character.bytes_3[0] = (codePoint >> 12) + 0xE0;            // byte1 = 0b1110xxxx
-        utf8Character.bytes_3[1] = ((codePoint >> 6) & 0x3F) + 0x80;    // byte2 = 0b10xxxxxx
-        utf8Character.bytes_3[2] = (codePoint & 0x3F) + 0x80;           // byte3 = 0b10xxxxxx
-    }
-    else if (codePoint >= 0x10000 && codePoint <= 0x10FFFF) {
+        utf8Character.bytes_3[0] = (codePoint >> 12) + 0xE0;          // byte1 = 0b1110xxxx
+        utf8Character.bytes_3[1] = ((codePoint >> 6) & 0x3F) + 0x80;  // byte2 = 0b10xxxxxx
+        utf8Character.bytes_3[2] = (codePoint & 0x3F) + 0x80;         // byte3 = 0b10xxxxxx
+    } else if (codePoint >= 0x10000 && codePoint <= 0x10FFFF) {
         utf8Character.type = KbInput::Utf8Type::FOUR_CODE_UNITS;
-        utf8Character.bytes_4[0] = (codePoint >> 18) + 0xF0;            // byte1 = 0b11110xxx
-        utf8Character.bytes_4[1] = ((codePoint >> 12) & 0x3F) + 0x80;   // byte2 = 0b10xxxxxx
-        utf8Character.bytes_4[2] = ((codePoint >> 6) & 0x3F) + 0x80;    // byte3 = 0b10xxxxxx
-        utf8Character.bytes_4[3] = (codePoint & 0x3F) + 0x80;           // byte4 = 0b10xxxxxx
-    }
-    else {
+        utf8Character.bytes_4[0] = (codePoint >> 18) + 0xF0;           // byte1 = 0b11110xxx
+        utf8Character.bytes_4[1] = ((codePoint >> 12) & 0x3F) + 0x80;  // byte2 = 0b10xxxxxx
+        utf8Character.bytes_4[2] = ((codePoint >> 6) & 0x3F) + 0x80;   // byte3 = 0b10xxxxxx
+        utf8Character.bytes_4[3] = (codePoint & 0x3F) + 0x80;          // byte4 = 0b10xxxxxx
+    } else {
         throw std::runtime_error("Invalid unicode code point");
     }
 
@@ -189,8 +183,7 @@ KbInput::utf8_t KbInput::utf16ToUtf8(KbInput::utf16_t character) {
 uint32_t KbInput::utf16ToCodePoint(KbInput::utf16_t character) {
     if (character.type == KbInput::Utf16Type::ONE_CODE_UNIT) {
         return (uint32_t)character.bytes_2;
-    }
-    else {
+    } else {
         uint16_t codeUnit1 = character.bytes_4[0];  // word1 = 0b110110yyyyyyyyyy
         uint16_t codeUnit2 = character.bytes_4[1];  // word2 = 0b110111xxxxxxxxxx
         codeUnit1 -= 0xD800;
@@ -217,17 +210,15 @@ KbInput::utf16_t KbInput::codePointToUtf16(uint32_t codePoint) {
         // UTF-16 encoded code point is 1 code unit long
         character.type = KbInput::Utf16Type::ONE_CODE_UNIT;
         character.bytes_2 = codePoint;
-    }
-    else if (codePoint >= 0x010000 && codePoint <= 0x10FFFF) {
+    } else if (codePoint >= 0x010000 && codePoint <= 0x10FFFF) {
         // UTF-16 encoded code point is 2 code units long
         // U' = 0byyyyyyyyyyxxxxxxxxxx
         codePoint -= 0x10000;
 
         character.type = KbInput::Utf16Type::TWO_CODE_UNITS;
-        character.bytes_4[0] = (codePoint & 0xFFC00) + 0xD800;    // word1 = 0b110110yyyyyyyyyy
-        character.bytes_4[1] = (codePoint & 0x03FF) + 0xDC00;     // word2 = 0b110111xxxxxxxxxx
-    }
-    else {
+        character.bytes_4[0] = (codePoint & 0xFFC00) + 0xD800;  // word1 = 0b110110yyyyyyyyyy
+        character.bytes_4[1] = (codePoint & 0x03FF) + 0xDC00;   // word2 = 0b110111xxxxxxxxxx
+    } else {
         throw std::runtime_error("Invalid unicode code point");
     }
 

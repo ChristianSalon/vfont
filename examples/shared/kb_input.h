@@ -5,35 +5,32 @@
 
 #pragma once
 
-#include <iostream>
-#include <vector>
 #include <cstdint>
+#include <iostream>
+#include <stdexcept>
+#include <vector>
 
 /**
- * @class KbInput
- * 
- * @brief Provides data types, attributes and methods for proccessing keyboar input
-*/
+ * @brief Provides data types, attributes and methods for proccessing keyboard input
+ */
 class KbInput {
-
 public:
-
     /**
      * @brief Defines the size of an UTF-8 encoded character
      */
     enum class Utf8Type {
-        ONE_CODE_UNIT,      /**< 1 byte */
-        TWO_CODE_UNITS,     /**< 2 bytes */
-        THREE_CODE_UNITS,   /**< 3 bytes */
-        FOUR_CODE_UNITS     /**< 4 bytes */
+        ONE_CODE_UNIT,    /**< 1 byte */
+        TWO_CODE_UNITS,   /**< 2 bytes */
+        THREE_CODE_UNITS, /**< 3 bytes */
+        FOUR_CODE_UNITS   /**< 4 bytes */
     };
 
     /**
      * @brief Defines the size of an UTF-16 encoded character
      */
     enum class Utf16Type {
-        ONE_CODE_UNIT,  /**< 2 bytes */
-        TWO_CODE_UNITS  /**< 4 bytes */
+        ONE_CODE_UNIT, /**< 2 bytes */
+        TWO_CODE_UNITS /**< 4 bytes */
     };
 
     /**
@@ -45,8 +42,8 @@ public:
             uint8_t bytes_2[2];
             uint8_t bytes_3[3];
             uint8_t bytes_4[4];
-        };                      /**< Bytes of UTF-8 encoded character */
-        Utf8Type type;          /**< Size of character */
+        };             /**< Bytes of UTF-8 encoded character */
+        Utf8Type type; /**< Size of character */
     } utf8_t;
 
     /**
@@ -56,8 +53,8 @@ public:
         union {
             uint16_t bytes_2;
             uint16_t bytes_4[2];
-        };                      /**< Bytes of UTF-16 encoded character */
-        Utf16Type type;         /**< Size of character */
+        };              /**< Bytes of UTF-16 encoded character */
+        Utf16Type type; /**< Size of character */
     } utf16_t;
 
 #if defined(USE_WIN32)
@@ -67,11 +64,9 @@ public:
 #endif
 
 private:
-
     static std::vector<uint32_t> _input;
 
 public:
-
     static void registerCharacter(utf8_t character);
     static void registerCharacter(utf16_t character);
 
@@ -82,5 +77,4 @@ public:
     static utf8_t utf16ToUtf8(utf16_t character);
     static uint32_t utf16ToCodePoint(utf16_t character);
     static utf16_t codePointToUtf16(uint32_t codePoint);
-
 };

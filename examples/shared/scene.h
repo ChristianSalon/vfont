@@ -38,9 +38,7 @@
 #include "window.h"
 
 /**
- * @class Scene
- *
- * @brief Enables 3D rendering with Vulkan
+ * @brief Base class for scenes rendered with vulksn
  */
 class Scene {
 protected:
@@ -68,41 +66,42 @@ protected:
     std::vector<const char *> deviceExtensions; /**< Selected vulkan device extensions */
     std::vector<const char *> validationLayers; /**< Selected vulkan validation layers */
 
-    bool _measureTime;
-    std::shared_ptr<vft::IVulkanTextRenderer> _renderer; /**< Default text renderer */
-    std::shared_ptr<MainWindow> _window;                 /**< Application window */
-    std::unique_ptr<BaseCamera> _camera;                 /**< Camera object */
-    CameraType _cameraType;                              /**< Type of camera used for rendering */
+    bool _measureTime{false};                                     /**< Indicates whether to measure gpu draw time */
+    std::shared_ptr<vft::IVulkanTextRenderer> _renderer{nullptr}; /**< Default text renderer */
+    std::shared_ptr<MainWindow> _window{nullptr};                 /**< Application window */
+    std::unique_ptr<BaseCamera> _camera{nullptr};                 /**< Camera object */
+    CameraType _cameraType{CameraType::PERSPECTIVE};              /**< Type of camera used for rendering */
 
-    VkInstance _instance;                          /**< Vulkan instance */
-    VkSurfaceKHR _surface;                         /**< Vulkan surface */
-    VkPhysicalDevice _physicalDevice;              /**< Vulkan physical device */
-    VkDevice _logicalDevice;                       /**< Vulkan logical device */
-    VkQueue _graphicsQueue;                        /**< Vulkan graphics queue */
-    VkQueue _presentQueue;                         /**< Vulkan present queue */
-    VkSwapchainKHR _swapChain;                     /**< Vulkan swap chain */
-    std::vector<VkImage> _swapChainImages;         /**< Vulkan swap chain images */
-    VkFormat _swapChainImageFormat;                /**< Vulkan swap chain image format */
-    VkExtent2D _swapChainExtent;                   /**< Vulkan swap chain extent */
-    std::vector<VkImageView> _swapChainImageViews; /**< Vulkan swap chain image views */
-    VkRenderPass _renderPass;                      /**< Vulkan render pass */
-    std::vector<VkFramebuffer> _framebuffers;      /**< Vulkan frame buffers */
-    VkCommandPool _commandPool;                    /**< Vulkan command pool */
-    VkCommandBuffer _commandBuffer;                /**< Vulkan command buffers */
-    VkSemaphore _imageAvailableSemaphore; /**< Semaphore to signal that an image was acquired from the swap chain */
-    VkSemaphore
-        _renderFinishedSemaphore; /**< Semaphore to signal if vulkan finished rendering and can begin presenting */
-    VkFence _inFlightFence;       /**< Fence to ensure only one frame at a time is being rendered */
+    VkInstance _instance{nullptr};                       /**< Vulkan instance */
+    VkSurfaceKHR _surface{nullptr};                      /**< Vulkan surface */
+    VkPhysicalDevice _physicalDevice{nullptr};           /**< Vulkan physical device */
+    VkDevice _logicalDevice{nullptr};                    /**< Vulkan logical device */
+    VkQueue _graphicsQueue{nullptr};                     /**< Vulkan graphics queue */
+    VkQueue _presentQueue{nullptr};                      /**< Vulkan present queue */
+    VkSwapchainKHR _swapChain{nullptr};                  /**< Vulkan swap chain */
+    std::vector<VkImage> _swapChainImages{};             /**< Vulkan swap chain images */
+    VkFormat _swapChainImageFormat{VK_FORMAT_UNDEFINED}; /**< Vulkan swap chain image format */
+    VkExtent2D _swapChainExtent;                         /**< Vulkan swap chain extent */
+    std::vector<VkImageView> _swapChainImageViews{};     /**< Vulkan swap chain image views */
+    VkRenderPass _renderPass{nullptr};                   /**< Vulkan render pass */
+    std::vector<VkFramebuffer> _framebuffers{};          /**< Vulkan frame buffers */
+    VkCommandPool _commandPool{nullptr};                 /**< Vulkan command pool */
+    VkCommandBuffer _commandBuffer{nullptr};             /**< Vulkan command buffers */
+    VkSemaphore _imageAvailableSemaphore{
+        nullptr}; /**< Semaphore to signal that an image was acquired from the swap chain */
+    VkSemaphore _renderFinishedSemaphore{
+        nullptr};                    /**< Semaphore to signal if vulkan finished rendering and can begin presenting */
+    VkFence _inFlightFence{nullptr}; /**< Fence to ensure only one frame at a time is being rendered */
 
-    VkImage _depthImage;
-    VkImageView _depthImageView;
-    VkDeviceMemory _depthImageMemory;
+    VkImage _depthImage{nullptr};              /**< Depth buffer vulkan image */
+    VkImageView _depthImageView{nullptr};      /**< Depth buffer vulkan image view */
+    VkDeviceMemory _depthImageMemory{nullptr}; /**< Depth buffer vulkan image memory */
 
-    bool _useMsaa{false};
-    VkSampleCountFlagBits _msaaSampleCount{VK_SAMPLE_COUNT_1_BIT};
-    VkImage _msaaImage{nullptr};
-    VkImageView _msaaImageView{nullptr};
-    VkDeviceMemory _msaaImageMemory{nullptr};
+    bool _useMsaa{false};                                          /**< Indicates whether to use multisampling */
+    VkSampleCountFlagBits _msaaSampleCount{VK_SAMPLE_COUNT_1_BIT}; /**< Number of samples used in multisampling */
+    VkImage _msaaImage{nullptr};                                   /**< Multisampling vulkan image */
+    VkImageView _msaaImageView{nullptr};                           /**< Multisampling vulkan image view */
+    VkDeviceMemory _msaaImageMemory{nullptr};                      /**< Multisampling vulkan image memory */
 
 public:
     Scene(CameraType cameraType, vft::TessellationStrategy tessellationAlgorithm, bool useMsaa, bool measureTime);
@@ -110,14 +109,12 @@ public:
 
     void run();
 
-    void updateWindowDimensions(int width, int height);
-    void updateCameraPosition(float x, float y, float z);
-    void updateCameraRotation(float x, float y);
-
 protected:
     void _initVulkan();
     void _createWindow();
     void _mainLoop();
+
+    void _updateWindowDimensions(int width, int height);
 
     bool _areExtensionsSupported();
     bool _areValidationLayersSupported();

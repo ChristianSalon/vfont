@@ -5,9 +5,12 @@
 
 #pragma once
 
-#include <string>
-#include <functional>
 #include <cstdint>
+#include <functional>
+#include <stdexcept>
+#include <string>
+
+#include "kb_input.h"
 
 #if defined(USE_WIN32)
 
@@ -15,35 +18,40 @@
 
 #elif defined(USE_X11)
 
+#include <cstring>
+
 #include <X11/Xlib.h>
 
 #elif defined(USE_WAYLAND)
 
-#include "xdg-shell-client-protocol.h"
+#include <sys/mman.h>
+#include <unistd.h>
+#include <cstring>
+
+#include <xkbcommon/xkbcommon-compose.h>
+#include <xkbcommon/xkbcommon.h>
+
 #include "xdg-decoration-client-protocol.h"
+#include "xdg-shell-client-protocol.h"
 
 #endif
 
 /**
- * @class MainWindow
- * 
- * @brief Abstraction for handling platform specific window operations
+ * @brief Abstraction for handling platform specific window operations (WIN32, X11, Wayland)
  */
 class MainWindow {
-
 public:
-
-    static const int DEFAULT_WIDTH;
-    static const int DEFAULT_HEIGHT;
-    static const std::string DEFAULT_WINDOW_TITLE;
+    static constexpr int DEFAULT_WIDTH = 512;      /**< Default window width */
+    static constexpr int DEFAULT_HEIGHT = 512;     /**< Default window height */
+    static const std::string DEFAULT_WINDOW_TITLE; /**< Default window title */
 
 private:
-
-    bool _isActive; /**< Indicates that the window is oppened */
-    bool _resized;  /**< Indicates that the window was resized */
-    int _width;     /**< Width of window */
-    int _height;    /**< Height of window */
-    bool _dragging; /**< Indicates whether the cursor is dragging */
+    bool _isActive;                    /**< Indicates that the window is oppened */
+    bool _resized;                     /**< Indicates that the window was resized */
+    int _width;                        /**< Width of window */
+    int _height;                       /**< Height of window */
+    bool _leftMouseButtonDown{false};  /**< Indicates whether the left button of mouse is pressed */
+    bool _rightMouseButtonDown{false}; /**< Indicates whether the right button of mouse is pressed */
 
     /**
      * Resize callback function
@@ -53,15 +61,21 @@ private:
     std::function<void(int, int)> _resizeCallback;
 
     /**
-     * Resize callback function
+     * Left mouse key drag callback function
      * First parameter: Delta x
      * Second parameter: Delta y
-     * Third parameter: Indicates whether the SHIFT key is pressed
      */
-    std::function<void(float, float, bool)> _dragCallback;
+    std::function<void(float, float)> _leftDragCallback;
 
     /**
-     * Resize callback function
+     * Left mouse key drag callback function
+     * First parameter: Delta x
+     * Second parameter: Delta y
+     */
+    std::function<void(float, float)> _rightDragCallback;
+
+    /**
+     * Scroll callback function
      * First parameter: Delta z
      */
     std::function<void(float)> _scrollCallback;
@@ -73,7 +87,6 @@ private:
     std::function<void(uint32_t)> _keypressCallback;
 
 public:
-
     MainWindow();
     ~MainWindow();
 
@@ -83,7 +96,8 @@ public:
     void wait();
 
     void setResizeCallback(std::function<void(int, int)> resizeCallback);
-    void setDragCallback(std::function<void(float, float, bool)> dragCallback);
+    void setLeftDragCallback(std::function<void(float, float)> dragCallback);
+    void setRightDragCallback(std::function<void(float, float)> dragCallback);
     void setScrollCallback(std::function<void(float)> scrollCallback);
     void setKeypressCallback(std::function<void(uint32_t)> keypressCallback);
 
@@ -97,7 +111,6 @@ public:
     int getHeight();
 
 private:
-
     void _setWidth(int width);
     void _setHeight(int heigth);
 
@@ -118,12 +131,10 @@ private:
     XIC _inputContext;
 
     Atom _wmDeleteMessage;
-    
+
 #elif defined(USE_WAYLAND)
 
     bool _isMinimized;
-    bool _isLeftMouseButtonPressed;
-    bool _isShiftPressed;
 
     wl_display *_display;
     wl_registry *_registry;
@@ -144,7 +155,7 @@ private:
     struct xkb_keymap *_xkbKeymap;
     struct xkb_state *_xkbState;
     struct xkb_compose_state *_xkbComposeState;
-     
+
     static struct wl_registry_listener _registryListener;
     static struct wl_seat_listener _kbSeatListener;
     static struct wl_keyboard_listener _wlKeyboardListener;
@@ -156,7 +167,6 @@ private:
 #endif
 
 public:
-
 #if defined(USE_WIN32)
 
     HWND getHwmd();
@@ -164,17 +174,16 @@ public:
 
 #elif defined(USE_X11)
 
-    Display* getDisplay();
+    Display *getDisplay();
     int getScreen();
     Window getWindow();
 
 #elif defined(USE_WAYLAND)
 
-    wl_display* getDisplay();
-    wl_surface* getSurface();
-    wl_registry* getRegistry();
-    wl_compositor* getCompositor();
+    wl_display *getDisplay();
+    wl_surface *getSurface();
+    wl_registry *getRegistry();
+    wl_compositor *getCompositor();
 
 #endif
-
 };
