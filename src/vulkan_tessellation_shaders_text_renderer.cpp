@@ -9,6 +9,14 @@ namespace vft {
 
 /**
  * @brief Initialize vulkan text renderer
+ * 
+ * @param physicalDevice Vulkan physical device
+ * @param logicalDevice Vulkan logical device
+ * @param graphicsQueue Vulkan graphics queue
+ * @param commandPool Vulkan command pool
+ * @param renderPass Vulkan render pass
+ * @param msaaSampleCount Number of samples used for multisampling
+ * @param commandBuffer Vulkan command buffer
  */
 VulkanTessellationShadersTextRenderer::VulkanTessellationShadersTextRenderer(VkPhysicalDevice physicalDevice,
                                                                              VkDevice logicalDevice,
