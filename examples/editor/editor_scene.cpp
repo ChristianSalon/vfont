@@ -28,6 +28,10 @@ EditorScene::EditorScene(CameraType cameraType,
                            .build();
     this->_renderer->add(this->_textBlock);
 
+    this->_window->setResizeCallback([this](int width, int height) -> void {
+        this->_updateWindowDimensions(width, height);
+        this->_textBlock->setWidth(width);
+    });
     this->_window->setKeypressCallback([&](uint32_t codePoint) { this->_updateText(codePoint); });
 }
 

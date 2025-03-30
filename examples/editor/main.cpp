@@ -14,7 +14,7 @@
 int main(int argc, char **argv) {
     try {
         CameraType cameraType = CameraType::ORTHOGRAPHIC;
-        vft::TessellationStrategy tessellationAlgorithm = vft::TessellationStrategy::TRIANGULATION;
+        vft::TessellationStrategy tessellationAlgorithm = vft::TessellationStrategy::WINDING_NUMBER;
         std::string font = "assets/Roboto-Regular.ttf";
         unsigned int fontSize = 32;
         bool measureTime = false;
