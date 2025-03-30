@@ -8,6 +8,9 @@ layout(location = 0) out vec2 fragUv;
 layout(push_constant) uniform constants {
 	mat4 model;
     vec4 color;
+    bool useSoftEdges;
+    float softEdgeMin;
+    float softEdgeMax;
 } PushConstants;
 
 layout(set = 0, binding = 0) uniform UniformBufferObject {

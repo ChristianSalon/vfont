@@ -8,7 +8,46 @@
 namespace vft {
 
 /**
- * @brief Initialize vulkan text renderer
+ * @brief Initialize vulkan sdf text renderer, perform alpha blending for antialiased text
+ *
+ * @param softEdgesMin Minimum distance threshold used for aplha blending
+ * @param softEdgesMax Maximum distance threshold used for aplha blending
+ * @param physicalDevice Vulkan physical device
+ * @param logicalDevice Vulkan logical device
+ * @param graphicsQueue Vulkan graphics queue
+ * @param commandPool Vulkan command pool
+ * @param renderPass Vulkan render pass
+ * @param msaaSampleCount Number of samples used for multisampling
+ * @param commandBuffer Vulkan command buffer
+ */
+VulkanSdfTextRenderer::VulkanSdfTextRenderer(float softEdgesMin,
+                                             float softEdgesMax,
+                                             VkPhysicalDevice physicalDevice,
+                                             VkDevice logicalDevice,
+                                             VkQueue graphicsQueue,
+                                             VkCommandPool commandPool,
+                                             VkRenderPass renderPass,
+                                             VkSampleCountFlagBits msaaSampleCount,
+                                             VkCommandBuffer commandBuffer)
+    : VulkanTextRenderer{physicalDevice, logicalDevice,   graphicsQueue, commandPool,
+                         renderPass,     msaaSampleCount, commandBuffer},
+      SdfTextRenderer{softEdgesMin, softEdgesMax} {
+    this->_initialize();
+
+    this->_createFontAtlasDescriptorSetLayout();
+    this->_createPipeline();
+}
+
+/**
+ * @brief Initialize vulkan sdf text renderer, perform alpha testing resulting in harsh edges
+ *
+ * @param physicalDevice Vulkan physical device
+ * @param logicalDevice Vulkan logical device
+ * @param graphicsQueue Vulkan graphics queue
+ * @param commandPool Vulkan command pool
+ * @param renderPass Vulkan render pass
+ * @param msaaSampleCount Number of samples used for multisampling
+ * @param commandBuffer Vulkan command buffer
  */
 VulkanSdfTextRenderer::VulkanSdfTextRenderer(VkPhysicalDevice physicalDevice,
                                              VkDevice logicalDevice,
@@ -90,7 +129,8 @@ void VulkanSdfTextRenderer::draw() {
                 }
 
                 // Push constants
-                CharacterPushConstants pushConstants{character.getModelMatrix(), this->_textBlocks.at(i)->getColor()};
+                CharacterPushConstants pushConstants{character.getModelMatrix(), this->_textBlocks.at(i)->getColor(),
+                                                     this->_softEdgeMin, this->_softEdgeMax};
                 vkCmdPushConstants(this->_commandBuffer, this->_pipelineLayout,
                                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                                    sizeof(CharacterPushConstants), &pushConstants);

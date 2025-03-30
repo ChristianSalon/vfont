@@ -57,7 +57,13 @@ protected:
     std::vector<Vertex> _vertices{};             /**< Vertex buffer */
     std::vector<uint32_t> _boundingBoxIndices{}; /**< Index buffer containing boundig box indices */
 
+    /** Indicates whether to use alpha blending instead of alpha testing for antialiased edges */
+    bool _useSoftEdges{false};
+    float _softEdgeMin{0}; /**< Minimum distance threshold used for aplha blending */
+    float _softEdgeMax{0}; /**< Maximum distance threshold used for aplha blending */
+
 public:
+    SdfTextRenderer(float softEdgeMin, float softEdgeMax);
     SdfTextRenderer();
     virtual ~SdfTextRenderer() = default;
 

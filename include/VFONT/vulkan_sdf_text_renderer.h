@@ -48,6 +48,25 @@ public:
             : image{image}, memory{memory}, imageView{imageView}, sampler{sampler}, descriptorSet{descriptorSet} {}
     };
 
+    /**
+     * @brief Push constants used by vulkan for rendering characters using sdfs
+     */
+    class CharacterPushConstants {
+    public:
+        glm::mat4 model{1}; /**< Model matrix of character */
+        glm::vec4 color{1}; /**< Color of character */
+
+        /** Indicates whether to use alpha blending instead of alpha testing for antialiased edges */
+        bool useSoftEdges{false};
+        float softEdgeMin{0}; /**< Minimum distance threshold used for aplha blending */
+        float softEdgeMax{0}; /**< Maximum distance threshold used for aplha blending */
+
+        CharacterPushConstants(glm::mat4 model, glm::vec4 color, float softEdgeMin, float softEdgeMax)
+            : model{model}, color{color}, useSoftEdges{true}, softEdgeMin{softEdgeMin}, softEdgeMax{softEdgeMax} {};
+        CharacterPushConstants(glm::mat4 model, glm::vec4 color) : model{model}, color{color} {};
+        CharacterPushConstants() : model{glm::mat4{1}}, color{glm::vec4{1}} {};
+    };
+
 protected:
     /**
      * Hash map containing font textures of selected font atlases containng info about glyphs (key: Font family, value:
@@ -67,6 +86,15 @@ protected:
     std::vector<VkDescriptorSet> _fontAtlasDescriptorSets{};      /**< Vulkan descriptor sets for font atlases */
 
 public:
+    VulkanSdfTextRenderer(float softEdgesMin,
+                          float softEdgesMax,
+                          VkPhysicalDevice physicalDevice,
+                          VkDevice logicalDevice,
+                          VkQueue graphicsQueue,
+                          VkCommandPool commandPool,
+                          VkRenderPass renderPass,
+                          VkSampleCountFlagBits msaaSampleCount = VK_SAMPLE_COUNT_1_BIT,
+                          VkCommandBuffer commandBuffer = nullptr);
     VulkanSdfTextRenderer(VkPhysicalDevice physicalDevice,
                           VkDevice logicalDevice,
                           VkQueue graphicsQueue,

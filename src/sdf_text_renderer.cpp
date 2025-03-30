@@ -8,7 +8,18 @@
 namespace vft {
 
 /**
- * @brief Initialize sdf text renderer
+ * @brief Initialize sdf text renderer, uses antialiasing
+ *
+ * @param softEdgeMin Minimum distance threshold used for aplha blending
+ * @param softEdgeMax Maximum distance threshold used for aplha blending
+ */
+SdfTextRenderer::SdfTextRenderer(float softEdgeMin, float softEdgeMax)
+    : _useSoftEdges{true}, _softEdgeMin{softEdgeMin}, _softEdgeMax{softEdgeMax} {
+    this->_tessellator = std::make_unique<SdfTessellator>();
+}
+
+/**
+ * @brief Initialize sdf text renderer, does not use antialiasing
  */
 SdfTextRenderer::SdfTextRenderer() {
     this->_tessellator = std::make_unique<SdfTessellator>();
@@ -90,7 +101,7 @@ void SdfTextRenderer::update() {
 
 /**
  * @brief Add font atlas used for rendering glyphs
- * 
+ *
  * @param atlas Font atlas to add
  */
 void SdfTextRenderer::addFontAtlas(const FontAtlas &atlas) {
