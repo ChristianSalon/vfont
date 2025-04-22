@@ -57,12 +57,16 @@ public:
         glm::vec4 color{1}; /**< Color of character */
 
         /** Indicates whether to use alpha blending instead of alpha testing for antialiased edges */
-        bool useSoftEdges{false};
+        int useSoftEdges{0};
         float softEdgeMin{0}; /**< Minimum distance threshold used for aplha blending */
         float softEdgeMax{0}; /**< Maximum distance threshold used for aplha blending */
 
-        CharacterPushConstants(glm::mat4 model, glm::vec4 color, float softEdgeMin, float softEdgeMax)
-            : model{model}, color{color}, useSoftEdges{true}, softEdgeMin{softEdgeMin}, softEdgeMax{softEdgeMax} {};
+        CharacterPushConstants(glm::mat4 model, glm::vec4 color, int useSoftEdges, float softEdgeMin, float softEdgeMax)
+            : model{model},
+              color{color},
+              useSoftEdges{useSoftEdges},
+              softEdgeMin{softEdgeMin},
+              softEdgeMax{softEdgeMax} {};
         CharacterPushConstants(glm::mat4 model, glm::vec4 color) : model{model}, color{color} {};
         CharacterPushConstants() : model{glm::mat4{1}}, color{glm::vec4{1}} {};
     };

@@ -19,28 +19,8 @@ FontAtlas::FontAtlas(std::shared_ptr<Font> font, std::vector<uint32_t> glyphIds)
     unsigned int oldPixelSize = font->getPixelSize();
     font->setPixelSize(64);
 
-    // Get the size of texture needed to store all glyphs
-    // Texture is a square where length is a power of two
-    unsigned area = glyphIds.size() * 64 * 64;
-    unsigned int size = 128;
-    while (area * 1.5 > size * size) {
-        size *= 2;
-    }
-
-    // Reset to old pixel size
-    font->setPixelSize(oldPixelSize);
-
-    // Set texture width and height
-    this->_width = size;
-    this->_height = size;
-
-    // Initialize texture to zeros
-    this->_texture.assign(this->_width * this->_height, 0);
-
-    glm::uvec2 pen{0, 0};  // Current position in texture
-    unsigned int currentRowHeight = 0;
-
-    // Load all glyphs
+    // Load bitmap for all glyphs
+    std::unordered_map<BitmapInfo, std::vector<uint8_t>, BitmapInfoHash> bitmaps;
     for (uint32_t glyphId : glyphIds) {
         // Generate sdf bitmap for glyph
         if (FT_Load_Glyph(font->getFace(), glyphId, FT_LOAD_RENDER)) {
@@ -53,36 +33,73 @@ FontAtlas::FontAtlas(std::shared_ptr<Font> font, std::vector<uint32_t> glyphIds)
         const FT_Bitmap &bitmap = slot->bitmap;
 
         if (bitmap.width == 0 || bitmap.rows == 0) {
-            this->_glyphs.insert({glyphId, GlyphInfo{glm::vec2{0, 0}, glm::vec2{0, 0}}});
+            bitmaps.insert({BitmapInfo{glyphId, 0, 0}, {}});
             continue;
         }
 
+        // Write data into glyph bitmap
+        std::vector<uint8_t> texture;
+        for (unsigned int i = 0; i < bitmap.width * bitmap.rows; i++) {
+            texture.push_back(bitmap.buffer[i]);
+        }
+
+        bitmaps.insert({BitmapInfo{glyphId, bitmap.width, bitmap.rows}, texture});
+    }
+
+    // Reset to old pixel size
+    font->setPixelSize(oldPixelSize);
+
+    // Calculate the total area of all glyph bitmaps
+    unsigned int area = 0;
+    for (const auto &bitmap : bitmaps) {
+        area += bitmap.first.width * bitmap.first.height;
+    }
+
+    // Get the size of texture needed to store all glyphs
+    // Texture is a square where length is a power of two
+    unsigned int size = 128;
+    while (area * 1.5 > size * size) {
+        size *= 2;
+    }
+
+    // Set texture width and height
+    this->_width = size;
+    this->_height = size;
+
+    // Initialize texture to zeros
+    this->_texture.assign(this->_width * this->_height, 0);
+
+    glm::uvec2 pen{0, 0};  // Current position in texture
+    unsigned int currentRowHeight = 0;
+
+    // Store glyph bitmaps into texture
+    for (const auto &bitmap : bitmaps) {
         // Check if glyph will fit on current row in texture
-        if (pen.x + bitmap.width > this->_width) {
+        if (pen.x + bitmap.first.width > this->_width) {
             pen.x = 0;
             pen.y += currentRowHeight;
             currentRowHeight = 0;
         }
 
         // Write bitmap data into atlas texture
-        for (unsigned int y = 0; y < bitmap.rows; y++) {
-            for (unsigned int x = 0; x < bitmap.width; x++) {
-                uint8_t pixel = bitmap.buffer[y * bitmap.width + x];
+        for (unsigned int y = 0; y < bitmap.first.height; y++) {
+            for (unsigned int x = 0; x < bitmap.first.width; x++) {
+                uint8_t pixel = bitmap.second[y * bitmap.first.width + x];
                 this->_texture[(pen.y + y) * this->_width + (pen.x + x)] = pixel;
             }
         }
 
         // Calculate uvs
         glm::vec2 uvTopLeft{pen.x / static_cast<float>(this->_width), pen.y / static_cast<float>(this->_height)};
-        glm::vec2 uvBottomRight{(pen.x + bitmap.width) / static_cast<float>(this->_width),
-                                (pen.y + bitmap.rows) / static_cast<float>(this->_height)};
+        glm::vec2 uvBottomRight{(pen.x + bitmap.first.width) / static_cast<float>(this->_width),
+                                (pen.y + bitmap.first.height) / static_cast<float>(this->_height)};
 
         // Insert glyph data
-        this->_glyphs.insert({glyphId, GlyphInfo{uvTopLeft, uvBottomRight}});
+        this->_glyphs.insert({bitmap.first.glyphId, GlyphInfo{uvTopLeft, uvBottomRight}});
 
         // Update texture pen position
-        pen.x += bitmap.width;
-        currentRowHeight = std::max(currentRowHeight, bitmap.rows);
+        pen.x += bitmap.first.width;
+        currentRowHeight = std::max(currentRowHeight, bitmap.first.height);
     }
 }
 

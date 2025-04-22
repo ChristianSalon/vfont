@@ -14,7 +14,7 @@
 int main(int argc, char **argv) {
     try {
         CameraType cameraType = CameraType::PERSPECTIVE;
-        vft::TessellationStrategy tessellationAlgorithm = vft::TessellationStrategy::WINDING_NUMBER;
+        vft::TessellationStrategy tessellationAlgorithm = vft::TessellationStrategy::SDF;
         bool measureTime = false;
         bool useMsaa = false;
 

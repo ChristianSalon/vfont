@@ -130,7 +130,7 @@ void VulkanSdfTextRenderer::draw() {
 
                 // Push constants
                 CharacterPushConstants pushConstants{character.getModelMatrix(), this->_textBlocks.at(i)->getColor(),
-                                                     this->_softEdgeMin, this->_softEdgeMax};
+                                                     this->_useSoftEdges, this->_softEdgeMin, this->_softEdgeMax};
                 vkCmdPushConstants(this->_commandBuffer, this->_pipelineLayout,
                                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                                    sizeof(CharacterPushConstants), &pushConstants);

@@ -7,7 +7,7 @@ layout(location = 0) out vec4 outColor;
 layout(push_constant) uniform constants {
 	mat4 model;
     vec4 color;
-    bool useSoftEdges;
+    int useSoftEdges;
     float softEdgeMin;
     float softEdgeMax;
 } PushConstants;
@@ -18,13 +18,13 @@ void main() {
     float distance = texture(fontAtlas, fragUv).r;
 
     float alpha;
-    if(PushConstants.useSoftEdges) {
-        // Alpha blending
-        alpha = smoothstep(PushConstants.softEdgeMin, PushConstants.softEdgeMax, distance);
-    }
-    else {
+    if(PushConstants.useSoftEdges == 0) {
         // Alpha testing
         alpha = distance > 0.5 ? 1.f : 0.f;
+    }
+    else {
+        // Alpha blending
+        alpha = smoothstep(PushConstants.softEdgeMin, PushConstants.softEdgeMax, distance);
     }
 
     outColor = PushConstants.color * vec4(1.f, 1.f, 1.f, alpha);

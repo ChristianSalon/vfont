@@ -44,6 +44,23 @@ public:
         glm::vec2 uvBottomRight; /**< UV of bottom right corner of glyph */
     };
 
+    struct BitmapInfo {
+        uint32_t glyphId;
+        unsigned int width;
+        unsigned int height;
+
+        bool operator==(const BitmapInfo &other) const {
+            return this->glyphId == other.glyphId && this->width == other.width && this->height == other.height;
+        }
+    };
+
+    struct BitmapInfoHash {
+        std::size_t operator()(const BitmapInfo &b) const {
+            return std::hash<uint32_t>()(b.glyphId) ^ (std::hash<unsigned int>()(b.width) << 1) ^
+                   (std::hash<unsigned int>()(b.height) << 2);
+        }
+    };
+
 protected:
     std::string _fontFamily{};  /**< Font family of font atlas */
     unsigned int _width{1024};  /**< Width of font atlas */
