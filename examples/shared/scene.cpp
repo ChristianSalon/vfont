@@ -270,8 +270,8 @@ void Scene::_createInstance() {
     instanceCreateInfo.pApplicationInfo = &applicationInfo;
     instanceCreateInfo.enabledExtensionCount = 1;
     instanceCreateInfo.ppEnabledExtensionNames = nullptr;
-    instanceCreateInfo.enabledLayerCount = 0;
-    instanceCreateInfo.ppEnabledLayerNames = nullptr;
+    instanceCreateInfo.enabledLayerCount = this->validationLayers.size();
+    instanceCreateInfo.ppEnabledLayerNames = this->validationLayers.data();
     instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     instanceCreateInfo.ppEnabledExtensionNames = extensions.data();
 
@@ -839,13 +839,7 @@ void Scene::_selectMsaaSampleCount() {
 
     VkSampleCountFlags sampleCounts = physicalDeviceProperties.limits.framebufferColorSampleCounts &
                                       physicalDeviceProperties.limits.framebufferDepthSampleCounts;
-    if (sampleCounts & VK_SAMPLE_COUNT_64_BIT) {
-        this->_msaaSampleCount = VK_SAMPLE_COUNT_64_BIT;
-    } else if (sampleCounts & VK_SAMPLE_COUNT_32_BIT) {
-        this->_msaaSampleCount = VK_SAMPLE_COUNT_32_BIT;
-    } else if (sampleCounts & VK_SAMPLE_COUNT_16_BIT) {
-        this->_msaaSampleCount = VK_SAMPLE_COUNT_16_BIT;
-    } else if (sampleCounts & VK_SAMPLE_COUNT_8_BIT) {
+    if (sampleCounts & VK_SAMPLE_COUNT_8_BIT) {
         this->_msaaSampleCount = VK_SAMPLE_COUNT_8_BIT;
     } else if (sampleCounts & VK_SAMPLE_COUNT_4_BIT) {
         this->_msaaSampleCount = VK_SAMPLE_COUNT_4_BIT;
@@ -1029,7 +1023,7 @@ void Scene::_recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIn
     }
 
     std::array<VkClearValue, 2> clearValues{};
-    clearValues[0].color = {{0.f, 0.f, 0.f, 1.f}};
+    clearValues[0].color = {{0.9f, 0.9f, 0.9f, 1.f}};
     clearValues[1].depthStencil = {1.f, 0};
 
     VkRenderPassBeginInfo renderPassBeginInfo{};

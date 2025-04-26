@@ -180,7 +180,7 @@ void VulkanTriangulationTextRenderer::_createPipeline() {
 
     VkPipelineMultisampleStateCreateInfo multisampleStateCreateInfo{};
     multisampleStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisampleStateCreateInfo.sampleShadingEnable = VK_TRUE;
+    multisampleStateCreateInfo.sampleShadingEnable = VK_FALSE;
     multisampleStateCreateInfo.rasterizationSamples = this->_msaaSampleCount;
 
     VkPipelineColorBlendAttachmentState colorBlendAttachmentState{};

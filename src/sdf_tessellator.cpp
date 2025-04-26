@@ -20,6 +20,9 @@ SdfTessellator::SdfTessellator() {}
  * @param fontSize Font size of glyph
  */
 Glyph SdfTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<vft::Font> font, unsigned int fontSize) {
+    // SDFs in font atlas have size 64
+    font->setPixelSize(64);
+
     // Get glyph from .ttf file
     if (FT_Load_Glyph(font->getFace(), glyphId, FT_LOAD_RENDER)) {
         throw std::runtime_error("SdfTessellator::composeGlyph(): Error loading glyph");
@@ -30,7 +33,7 @@ Glyph SdfTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<vft::Font> 
     FT_GlyphSlot slot = font->getFace()->glyph;
     const FT_Bitmap &bitmap = slot->bitmap;
 
-    // Set glyph metrics (in font units)
+    // Set glyph metrics (save in font units)
     glm::vec2 scale = font->getScalingVector(font->getPixelSize());
     this->_currentGlyph = Glyph{};
     this->_currentGlyph.setWidth(bitmap.width / scale.x);
@@ -38,7 +41,7 @@ Glyph SdfTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<vft::Font> 
     this->_currentGlyph.setBearingX(slot->bitmap_left / scale.x);
     this->_currentGlyph.setBearingY(slot->bitmap_top / scale.y);
     this->_currentGlyph.setAdvanceX(slot->advance.x / scale.x);
-    this->_currentGlyph.setAdvanceY(slot->advance.y/ scale.y);
+    this->_currentGlyph.setAdvanceY(slot->advance.y / scale.y);
 
     std::vector<glm::vec2> vertices;
     std::vector<uint32_t> boundingBoxIndices;

@@ -22,7 +22,9 @@ GlyphKey::GlyphKey(std::string fontName, uint32_t glyphId, unsigned int fontSize
  *
  * @param maxSize Maximum size of cache
  */
-GlyphCache::GlyphCache(unsigned long maxSize) : _maxSize{maxSize} {}
+GlyphCache::GlyphCache(unsigned long maxSize) {
+    this->setMaxSize(maxSize);
+}
 
 /**
  * @brief GlyphCache constructor
@@ -36,10 +38,6 @@ GlyphCache::GlyphCache() : _maxSize{ULONG_MAX} {}
  * @param glyph Glyph to be added
  */
 void GlyphCache::setGlyph(GlyphKey key, Glyph glyph) {
-    if (this->_maxSize <= 0) {
-        return;
-    }
-
     if (this->exists(key)) {
         // Update key to be most recently used (front of list)
         this->_updateToMRU(key);
@@ -114,7 +112,7 @@ void GlyphCache::clearAll() {
  * @param maxSize New maximum size
  */
 void GlyphCache::setMaxSize(unsigned long maxSize) {
-    this->_maxSize = maxSize;
+    this->_maxSize = std::max(maxSize, static_cast<unsigned long>(1));
 
     while (this->_cache.size() > this->_maxSize) {
         this->_eraseLRU();

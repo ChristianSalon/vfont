@@ -18,7 +18,10 @@ const std::u32string DemoScene::JAPANESE_TEXT = U"これはデモテキストで
 const std::u32string DemoScene::EMOJI_TEXT = {0x1F970, 0x1F480, 0x270C,  0x1F334, 0x1F422, 0x1F410,
                                               0x1F344, 0x26BD,  0x1F37B, 0x1F451, 0x1F4F8};
 
-DemoScene::DemoScene(CameraType cameraType, vft::TessellationStrategy tessellationAlgorithm, bool useMsaa, bool measureTime)
+DemoScene::DemoScene(CameraType cameraType,
+                     vft::TessellationStrategy tessellationAlgorithm,
+                     bool useMsaa,
+                     bool measureTime)
     : Scene{cameraType, tessellationAlgorithm, useMsaa, measureTime} {
     this->_jersey = std::make_shared<vft::Font>(JERSEY_PATH);
     this->_crimsontext = std::make_shared<vft::Font>(CRIMSON_TEXT_PATH);
@@ -28,13 +31,13 @@ DemoScene::DemoScene(CameraType cameraType, vft::TessellationStrategy tessellati
     this->_notoemoji = std::make_shared<vft::Font>(NOTO_EMOJI_PATH);
 
     if (tessellationAlgorithm == vft::TessellationStrategy::SDF) {
-        vft::FontAtlas jerseyAtlas{this->_jersey, vft::Unicode::utf8ToUtf32(ENGLISH_TEXT)};
-        vft::FontAtlas crimsonTextAtlas{this->_crimsontext, vft::Unicode::utf8ToUtf32(ENGLISH_TEXT)};
+        vft::FontAtlas jerseyAtlas{this->_jersey, 64, vft::Unicode::utf8ToUtf32(ENGLISH_TEXT)};
+        vft::FontAtlas crimsonTextAtlas{this->_crimsontext, 64, vft::Unicode::utf8ToUtf32(ENGLISH_TEXT)};
         vft::FontAtlas robotoAtlas{
-            this->_font, vft::Unicode::utf8ToUtf32(ENGLISH_TEXT).append(vft::Unicode::utf16ToUtf32(SLOVAK_TEXT))};
-        vft::FontAtlas robotoMonoAtlas{this->_robotomono, vft::Unicode::utf8ToUtf32(ENGLISH_TEXT)};
-        vft::FontAtlas notoSansJpAtlas{this->_notosansjp, JAPANESE_TEXT};
-        vft::FontAtlas notoEmojiAtlas{this->_notoemoji, EMOJI_TEXT};
+            this->_font, 64, vft::Unicode::utf8ToUtf32(ENGLISH_TEXT).append(vft::Unicode::utf16ToUtf32(SLOVAK_TEXT))};
+        vft::FontAtlas robotoMonoAtlas{this->_robotomono, 64, vft::Unicode::utf8ToUtf32(ENGLISH_TEXT)};
+        vft::FontAtlas notoSansJpAtlas{this->_notosansjp, 64, JAPANESE_TEXT};
+        vft::FontAtlas notoEmojiAtlas{this->_notoemoji, 64, EMOJI_TEXT};
 
         this->_renderer->addFontAtlas(jerseyAtlas);
         this->_renderer->addFontAtlas(crimsonTextAtlas);
@@ -47,7 +50,7 @@ DemoScene::DemoScene(CameraType cameraType, vft::TessellationStrategy tessellati
     this->_block1 = vft::TextBlockBuilder()
                         .setFont(this->_font)
                         .setFontSize(64)
-                        .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
+                        .setColor(glm::vec4(0.f, 0.f, 0.f, 1.f))
                         .setPosition(glm::vec3(0.f, 0.f, 0.f))
                         .build();
 
@@ -82,14 +85,14 @@ DemoScene::DemoScene(CameraType cameraType, vft::TessellationStrategy tessellati
     this->_block6 = vft::TextBlockBuilder()
                         .setFont(this->_notosansjp)
                         .setFontSize(32)
-                        .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
+                        .setColor(glm::vec4(0.f, 0.f, 0.f, 1.f))
                         .setPosition(glm::vec3(0.f, 192.f, 0.f))
                         .build();
 
     this->_block7 = vft::TextBlockBuilder()
                         .setFont(this->_notoemoji)
                         .setFontSize(32)
-                        .setColor(glm::vec4(0.f, 1.f, 1.f, 1.f))
+                        .setColor(glm::vec4(0.2f, 0.8f, 0.8f, 1.f))
                         .setPosition(glm::vec3(0.f, 224.f, 0.f))
                         .build();
 

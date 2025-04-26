@@ -74,10 +74,10 @@ protected:
     std::unordered_map<uint32_t, GlyphInfo> _glyphs{{0, GlyphInfo{glm::vec2{0, 0}, glm::vec2{0, 0}}}};
 
 public:
-    FontAtlas(std::shared_ptr<Font> font, std::vector<uint32_t> glyphIds);
-    FontAtlas(std::shared_ptr<Font> font, std::vector<CharacterRange> characterRanges);
-    FontAtlas(std::shared_ptr<Font> font, std::u32string characters);
-    FontAtlas(std::shared_ptr<Font> font);
+    FontAtlas(std::shared_ptr<Font> font, unsigned int fontSize, std::vector<uint32_t> glyphIds);
+    FontAtlas(std::shared_ptr<Font> font, unsigned int fontSize, std::vector<CharacterRange> characterRanges);
+    FontAtlas(std::shared_ptr<Font> font, unsigned int fontSize, std::u32string characters);
+    FontAtlas(std::shared_ptr<Font> font, unsigned int fontSize);
     ~FontAtlas() = default;
 
     GlyphInfo getGlyph(uint32_t glyphId) const;

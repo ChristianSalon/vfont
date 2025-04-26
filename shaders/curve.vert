@@ -5,6 +5,8 @@ layout(location = 0) in vec2 inPosition;
 layout(push_constant) uniform constants {
 	mat4 model;
     vec4 color;
+    uint viewportWidth;
+    uint viewportHeight;
 } PushConstants;
 
 void main() {

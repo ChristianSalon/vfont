@@ -14,7 +14,7 @@ EditorScene::EditorScene(CameraType cameraType,
     : Scene{cameraType, tessellationAlgorithm, useMsaa, measureTime} {
     this->_font = std::make_shared<vft::Font>(font);
     if (tessellationAlgorithm == vft::TessellationStrategy::SDF) {
-        vft::FontAtlas atlas{this->_font};
+        vft::FontAtlas atlas{this->_font, 64};
         this->_renderer->addFontAtlas(atlas);
     }
 
@@ -23,7 +23,7 @@ EditorScene::EditorScene(CameraType cameraType,
                            .setFont(this->_font)
                            .setFontSize(fontSize)
                            .setLineSpacing(1.2)
-                           .setColor(glm::vec4(1.f, 1.f, 1.f, 1.f))
+                           .setColor(glm::vec4(0.f, 0.f, 0.f, 1.f))
                            .setPosition(glm::vec3(0.f, 0.f, 0.f))
                            .build();
     this->_renderer->add(this->_textBlock);

@@ -11,9 +11,11 @@ namespace vft {
  * @brief Construct texture containing sdfs of selected glyphs using the freetype sdf rasterizer
  *
  * @param font Font used to rasterize glyphs into sdfs
+ * @param fontSize Font size of rasterized glyphs
  * @param glyphIds Glyph indices to rasterize
  */
-FontAtlas::FontAtlas(std::shared_ptr<Font> font, std::vector<uint32_t> glyphIds) : _fontFamily{font->getFontFamily()} {
+FontAtlas::FontAtlas(std::shared_ptr<Font> font, unsigned int fontSize, std::vector<uint32_t> glyphIds)
+    : _fontFamily{font->getFontFamily()} {
     // Set size of each glyph bitmap to approximetly 64 x 64
     // Freetype does not produce exact size of bitmap
     unsigned int oldPixelSize = font->getPixelSize();
@@ -107,26 +109,30 @@ FontAtlas::FontAtlas(std::shared_ptr<Font> font, std::vector<uint32_t> glyphIds)
  * @brief Construct texture containing sdfs of selected unicode code points using the freetype sdf rasterizer
  *
  * @param font Font used to rasterize glyphs into sdfs
+ * @param fontSize Font size of rasterized glyphs
  * @param characterRanges Ranges of unicode code points to rasterize
  */
-FontAtlas::FontAtlas(std::shared_ptr<Font> font, std::vector<CharacterRange> characterRanges)
-    : FontAtlas{font, this->_getRangesGlyphIds(font, characterRanges)} {}
+FontAtlas::FontAtlas(std::shared_ptr<Font> font, unsigned int fontSize, std::vector<CharacterRange> characterRanges)
+    : FontAtlas{font, fontSize, this->_getRangesGlyphIds(font, characterRanges)} {}
 
 /**
  * @brief Construct texture containing sdfs of selected utf-32 encoded characters using the freetype sdf rasterizer
  *
  * @param font Font used to rasterize glyphs into sdfs
+ * @param fontSize Font size of rasterized glyphs
  * @param characters Utf-32 encoded characters to rasterize
  */
-FontAtlas::FontAtlas(std::shared_ptr<Font> font, std::u32string characters)
-    : FontAtlas{font, this->_getUtf32GlyphIds(font, characters)} {}
+FontAtlas::FontAtlas(std::shared_ptr<Font> font, unsigned int fontSize, std::u32string characters)
+    : FontAtlas{font, fontSize, this->_getUtf32GlyphIds(font, characters)} {}
 
 /**
  * @brief Construct texture containing sdfs of all glyphs in font file using the freetype sdf rasterizer
  *
  * @param font Font used to rasterize glyphs into sdfs
+ * @param fontSize Font size of rasterized glyphs
  */
-FontAtlas::FontAtlas(std::shared_ptr<Font> font) : FontAtlas{font, this->_getAllGlyphIds(font)} {}
+FontAtlas::FontAtlas(std::shared_ptr<Font> font, unsigned int fontSize)
+    : FontAtlas{font, fontSize, this->_getAllGlyphIds(font)} {}
 
 /**
  * @brief Get glyph info (UVs) of selected glyph

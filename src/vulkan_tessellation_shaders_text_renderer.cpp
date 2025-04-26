@@ -9,7 +9,7 @@ namespace vft {
 
 /**
  * @brief Initialize vulkan text renderer
- * 
+ *
  * @param physicalDevice Vulkan physical device
  * @param logicalDevice Vulkan logical device
  * @param graphicsQueue Vulkan graphics queue
@@ -82,9 +82,10 @@ void VulkanTessellationShadersTextRenderer::draw() {
             GlyphKey key{character.getFont()->getFontFamily(), character.getGlyphId(), 0};
 
             if (this->_offsets.at(key).lineSegmentsCount > 0) {
-                CharacterPushConstants pushConstants{character.getModelMatrix(), this->_textBlocks[i]->getColor()};
+                CharacterPushConstants pushConstants{character.getModelMatrix(), this->_textBlocks[i]->getColor(),
+                                                     this->_viewportWidth, this->_viewportHeight};
                 vkCmdPushConstants(this->_commandBuffer, this->_lineSegmentsPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
-                                   0, sizeof(vft::CharacterPushConstants), &pushConstants);
+                                   0, sizeof(CharacterPushConstants), &pushConstants);
 
                 vkCmdDrawIndexed(this->_commandBuffer, this->_offsets.at(key).lineSegmentsCount, 1,
                                  this->_offsets.at(key).lineSegmentsOffset, 0, 0);
@@ -105,15 +106,12 @@ void VulkanTessellationShadersTextRenderer::draw() {
             const Glyph &glyph = this->_cache->getGlyph(key);
 
             if (this->_offsets.at(key).curveSegmentsCount > 0) {
-                CharacterPushConstants pushConstants{character.getModelMatrix(), this->_textBlocks[i]->getColor()};
+                CharacterPushConstants pushConstants{character.getModelMatrix(), this->_textBlocks[i]->getColor(),
+                                                     this->_viewportWidth, this->_viewportHeight};
                 vkCmdPushConstants(this->_commandBuffer, this->_curveSegmentsPipelineLayout,
-                                   VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                                   sizeof(vft::CharacterPushConstants), &pushConstants);
-
-                ViewportPushConstants viewportPushConstants{this->_viewportWidth, this->_viewportHeight};
-                vkCmdPushConstants(this->_commandBuffer, this->_curveSegmentsPipelineLayout,
-                                   VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(vft::CharacterPushConstants),
-                                   sizeof(ViewportPushConstants), &viewportPushConstants);
+                                   VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
+                                       VK_SHADER_STAGE_FRAGMENT_BIT,
+                                   0, sizeof(CharacterPushConstants), &pushConstants);
 
                 vkCmdDrawIndexed(this->_commandBuffer, this->_offsets.at(key).curveSegmentsCount, 1,
                                  this->_offsets.at(key).curveSegmentsOffset, 0, 0);
@@ -262,7 +260,7 @@ void VulkanTessellationShadersTextRenderer::_createLineSegmentsPipeline() {
     depthStencilCreateInfo.stencilTestEnable = VK_FALSE;
 
     VkPushConstantRange pushConstantRange{};
-    pushConstantRange.size = sizeof(vft::CharacterPushConstants);
+    pushConstantRange.size = sizeof(CharacterPushConstants);
     pushConstantRange.offset = 0;
     pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
@@ -447,22 +445,18 @@ void VulkanTessellationShadersTextRenderer::_createCurveSegmentsPipeline() {
     depthStencilCreateInfo.depthBoundsTestEnable = VK_FALSE;
     depthStencilCreateInfo.stencilTestEnable = VK_FALSE;
 
-    std::array<VkPushConstantRange, 2> pushConstantRanges;
-
-    pushConstantRanges[0].size = sizeof(vft::CharacterPushConstants);
-    pushConstantRanges[0].offset = 0;
-    pushConstantRanges[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    pushConstantRanges[1].size = sizeof(ViewportPushConstants);
-    pushConstantRanges[1].offset = sizeof(vft::CharacterPushConstants);
-    pushConstantRanges[1].stageFlags = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+    VkPushConstantRange pushConstantRange{};
+    pushConstantRange.size = sizeof(CharacterPushConstants);
+    pushConstantRange.offset = 0;
+    pushConstantRange.stageFlags =
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
     pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutCreateInfo.setLayoutCount = 1;
     pipelineLayoutCreateInfo.pSetLayouts = &this->_uboDescriptorSetLayout;
-    pipelineLayoutCreateInfo.pPushConstantRanges = pushConstantRanges.data();
-    pipelineLayoutCreateInfo.pushConstantRangeCount = pushConstantRanges.size();
+    pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
+    pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 
     if (vkCreatePipelineLayout(this->_logicalDevice, &pipelineLayoutCreateInfo, nullptr,
                                &this->_curveSegmentsPipelineLayout) != VK_SUCCESS) {

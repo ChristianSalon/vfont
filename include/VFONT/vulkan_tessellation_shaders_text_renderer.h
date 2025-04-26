@@ -27,9 +27,11 @@ namespace vft {
 class VulkanTessellationShadersTextRenderer : public VulkanTextRenderer, public TessellationShadersTextRenderer {
 public:
     /**
-     * @brief Push constants for the viewport size
+     * @brief Vulkan push constants
      */
-    struct ViewportPushConstants {
+    struct CharacterPushConstants {
+        glm::mat4 model;         /**< Model matrix of character */
+        glm::vec4 color;         /**< Color of character */
         uint32_t viewportWidth;  /**< Viewport width */
         uint32_t viewportHeight; /**< Viewport height */
     };

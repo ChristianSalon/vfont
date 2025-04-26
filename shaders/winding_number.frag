@@ -13,7 +13,7 @@ layout(push_constant) uniform constants {
     uint curveSegmentsCount;
 } PushConstants;
 
-layout(set = 1, binding = 0) buffer Segments {
+layout(set = 1, binding = 0) readonly buffer Segments {
     vec2 segments[];
 };
 
@@ -100,8 +100,8 @@ float rayIntersectsLineSegment(vec2 position, vec2 start, vec2 end) {
     return 0.f;
 }
 
-float getQuadraticDerivativeWinding(double t, double a, double b) {
-    double d = 2 * a * t + b;
+float getQuadraticDerivativeWinding(float t, float a, float b) {
+    float d = 2 * a * t + b;
 
     if(d > 0) {
         // Curve is pointing up
@@ -115,11 +115,11 @@ float getQuadraticDerivativeWinding(double t, double a, double b) {
     return 0;
 }
 
-float getWindingForQuadraticRoot(double t, vec2 position, vec2 start, vec2 control, vec2 end, double a, double b) {
+float getWindingForQuadraticRoot(float t, vec2 position, vec2 start, vec2 control, vec2 end, float a, float b) {
     float winding = 0;
     
     // X coordinate of intersection
-    double xIntersection = (1 - t) * (1 - t) * start.x + 2 * (1 - t) * t * control.x + t * t * end.x;
+    float xIntersection = (1 - t) * (1 - t) * start.x + 2 * (1 - t) * t * control.x + t * t * end.x;
 
     // Check if intersection is on curve start or end points
     // If true return winding 0.5 or -0.5
@@ -154,9 +154,9 @@ float rayIntersectsCurveSegment(vec2 position, vec2 start, vec2 control, vec2 en
     }
 
     // Quadratic formula coefficients
-    double a = start.y - 2 * control.y + end.y;
-    double b = 2 * (control.y - start.y);
-    double c = start.y - position.y;
+    float a = start.y - 2 * control.y + end.y;
+    float b = 2 * (control.y - start.y);
+    float c = start.y - position.y;
 
     // Curve is actually a line
     if(a == 0) {
@@ -164,9 +164,9 @@ float rayIntersectsCurveSegment(vec2 position, vec2 start, vec2 control, vec2 en
     }
 
     // Quadratic formula roots
-    double sqrtD = sqrt(b * b - 4 * a * c);
-    double t0 = (-b + sqrtD) / (2 * a);
-    double t1 = (-b - sqrtD) / (2 * a);
+    float sqrtD = sqrt(b * b - 4 * a * c);
+    float t0 = (-b + sqrtD) / (2 * a);
+    float t1 = (-b - sqrtD) / (2 * a);
 
     // Compute winding for roots
     winding += getWindingForQuadraticRoot(t0, position, start, control, end, a, b);
