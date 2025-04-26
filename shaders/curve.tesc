@@ -45,9 +45,9 @@ void main() {
 	vec2 endScreen = (endNDC.xy + 1.f) / 2.f * viewport;
 
 	float maxCurveLength = distance(startScreen, controlScreen) + distance(controlScreen, endScreen);
-	float curvature = 2 * abs(cross(controlNDC - startNDC, endNDC - startNDC).z) / (distance(startNDC, controlNDC) * distance(controlNDC, endNDC) * distance(endNDC, startNDC));
+	float curvature = 2 * abs(cross(vec3(controlScreen - startScreen, 1.f), vec3(endScreen - startScreen, 1.f)).z) / (distance(startScreen, controlScreen) * distance(controlScreen, endScreen) * distance(endScreen, startScreen));
 
-	float tessellationLevel = max(2.f, maxCurveLength / curvature);
+	float tessellationLevel = clamp(maxCurveLength - (1.f / curvature), 4.f, maxCurveLength);
 
 	// The curve is on the part of the contour that defines a filled outline
 	if(isTriangleCCW(start.xy, control.xy, end.xy)) {
