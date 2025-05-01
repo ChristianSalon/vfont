@@ -16,18 +16,21 @@ TessellationShadersTessellator::TessellationShadersTessellator() {
     this->_moveToFunc = [](const FT_Vector *to, void *user) {
         TessellationShadersTessellator *pThis = reinterpret_cast<TessellationShadersTessellator *>(user);
 
+        // Assign orientation of contour to second polygon
+        pThis->_secondPolygon[0].orientation = pThis->area >= 0 ? Outline::Orientation::CCW : Outline::Orientation::CW;
+
         if (pThis->contourCount >= 2) {
             // Perform union of contours
             PolygonOperator polygonOperator{};
             polygonOperator.join(pThis->_currentGlyph.mesh.getVertices(), pThis->_firstPolygon, pThis->_secondPolygon);
             pThis->_currentGlyph.mesh.setVertices(polygonOperator.getVertices());
             pThis->_firstPolygon = polygonOperator.getPolygon();
-            pThis->_secondPolygon = {CircularDLL<Edge>{}};
+            pThis->_secondPolygon = {Outline{}};
 
             pThis->vertexIndex = pThis->_currentGlyph.mesh.getVertexCount();
         } else if (pThis->contourCount == 1) {
             pThis->_firstPolygon = pThis->_secondPolygon;
-            pThis->_secondPolygon = {CircularDLL<Edge>{}};
+            pThis->_secondPolygon = {Outline{}};
         }
 
         // Process contour starting vertex
@@ -43,6 +46,7 @@ TessellationShadersTessellator::TessellationShadersTessellator() {
         pThis->lastVertex = vertex;
         pThis->lastVertexIndex = vertexIndex;
         pThis->contourCount++;
+        pThis->area = 0;
 
         return 0;
     };
@@ -58,11 +62,15 @@ TessellationShadersTessellator::TessellationShadersTessellator() {
             pThis->vertexIndex++;
         }
 
-        // Create line segment
-        pThis->_currentGlyph.addLineSegment(Edge{pThis->lastVertexIndex, endVertexIndex});
-
-        // Add edge to polygon
-        pThis->_secondPolygon[0].insertLast(Edge{pThis->lastVertexIndex, endVertexIndex});
+        Edge edge{pThis->lastVertexIndex, endVertexIndex};
+        if (edge.first != edge.second) {
+            // Create line segment
+            pThis->_currentGlyph.addLineSegment(edge);
+            // Add edge to polygon
+            pThis->_secondPolygon[0].edges.insertLast(edge);
+            // Update signed area of polygon
+            pThis->area += pThis->lastVertex.x * endVertex.y - endVertex.x * pThis->lastVertex.y;
+        }
 
         // Update glyph data
         pThis->lastVertex = endVertex;
@@ -99,11 +107,22 @@ TessellationShadersTessellator::TessellationShadersTessellator() {
 
         if (pThis->_isOnLeftSide(startPoint, endPoint, controlPoint)) {
             // Add only edge from start point to end point
-            pThis->_secondPolygon[0].insertLast(Edge{startPointVertexIndex, endPointVertexIndex});
+            if (startPointVertexIndex != endPointVertexIndex) {
+                pThis->_secondPolygon[0].edges.insertLast(Edge{startPointVertexIndex, endPointVertexIndex});
+                pThis->area += startPoint.x * endPoint.y - endPoint.x * startPoint.y;
+            }
         } else {
-            // Add edge from start to control point and from control to end point
-            pThis->_secondPolygon[0].insertLast(Edge{startPointVertexIndex, controlPointVertexIndex});
-            pThis->_secondPolygon[0].insertLast(Edge{controlPointVertexIndex, endPointVertexIndex});
+            // Add edge from start to control point
+            if (startPointVertexIndex != controlPointVertexIndex) {
+                pThis->_secondPolygon[0].edges.insertLast(Edge{startPointVertexIndex, controlPointVertexIndex});
+                pThis->area += startPoint.x * controlPoint.y - controlPoint.x * startPoint.y;
+            }
+
+            // Add edge from control to end point
+            if (controlPointVertexIndex != endPointVertexIndex) {
+                pThis->_secondPolygon[0].edges.insertLast(Edge{controlPointVertexIndex, endPointVertexIndex});
+                pThis->area += controlPoint.x * endPoint.y - endPoint.x * controlPoint.y;
+            }
         }
 
         // Update glyph data
@@ -125,8 +144,8 @@ Glyph TessellationShadersTessellator::composeGlyph(uint32_t glyphId,
                                                    std::shared_ptr<vft::Font> font,
                                                    unsigned int fontSize) {
     // Initialize polygons
-    this->_firstPolygon = {CircularDLL<Edge>{}};
-    this->_secondPolygon = {CircularDLL<Edge>{}};
+    this->_firstPolygon = {Outline{}};
+    this->_secondPolygon = {Outline{}};
 
     GlyphKey key{font->getFontFamily(), glyphId, 0};
     Glyph glyph = TessellationShadersTessellator::_composeGlyph(glyphId, font);
@@ -136,17 +155,20 @@ Glyph TessellationShadersTessellator::composeGlyph(uint32_t glyphId,
     std::vector<uint32_t> triangles;
 
     if (this->contourCount >= 1) {
+        // Assign orientation of contour to second polygon
+        this->_secondPolygon[0].orientation = this->area >= 0 ? Outline::Orientation::CCW : Outline::Orientation::CW;
+
         // Perform union of contours
         PolygonOperator polygonOperator{};
         polygonOperator.join(this->_currentGlyph.mesh.getVertices(), this->_firstPolygon, this->_secondPolygon);
         vertices = polygonOperator.getVertices();
-        std::vector<CircularDLL<Edge>> polygon = polygonOperator.getPolygon();
+        std::vector<Outline> polygon = polygonOperator.getPolygon();
 
         // Create edges for triangulation
-        for (CircularDLL<Edge> &contour : polygon) {
-            for (unsigned int i = 0; i < contour.size(); i++) {
-                uint32_t startVertexIndex = contour.getAt(i)->value.first;
-                uint32_t endVertexIndex = contour.getAt(i)->value.second;
+        for (Outline &outline : polygon) {
+            for (unsigned int i = 0; i < outline.edges.size(); i++) {
+                uint32_t startVertexIndex = outline.edges.getAt(i)->value.first;
+                uint32_t endVertexIndex = outline.edges.getAt(i)->value.second;
 
                 edges.push_back(Edge{startVertexIndex, endVertexIndex});
             }

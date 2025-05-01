@@ -130,9 +130,11 @@ float getWindingForQuadraticRoot(float t, vec2 position, vec2 start, vec2 contro
         return getQuadraticDerivativeWinding(1, a, b) / 2;
     }
 
-    // Check if root is in range (0, 1)
-    if(t > 0 && t < 1) {
-
+    // Check if root is in range <0, 1>
+    // even though start and end points should be handled above
+    // because floating point errors occurre its better to check anyway
+    // to eliminate certain artefacts
+    if(t >= 0 && t <= 1) {
         // Check if intersection is on the right from ray
         if(xIntersection >= position.x) {
             winding += getQuadraticDerivativeWinding(t, a, b);

@@ -17,6 +17,7 @@
 #include "glyph_cache.h"
 #include "glyph_compositor.h"
 #include "glyph_mesh.h"
+#include "outline.h"
 #include "polygon_operator.h"
 #include "tessellator.h"
 
@@ -34,8 +35,10 @@ public:
     static constexpr unsigned int GLYPH_MESH_CURVE_BUFFER_INDEX = 1;
 
 protected:
-    std::vector<CircularDLL<Edge>> _firstPolygon{};  /**< Polygon containing processed glyph contours */
-    std::vector<CircularDLL<Edge>> _secondPolygon{}; /**< Polygon containing current contour */
+    std::vector<Outline> _firstPolygon{};  /**< Polygon containing processed glyph contours */
+    std::vector<Outline> _secondPolygon{}; /**< Polygon containing current contour */
+
+    double area{0}; /**< Signed area of current contour */
 
 public:
     TessellationShadersTessellator();

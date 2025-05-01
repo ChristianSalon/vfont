@@ -3,8 +3,6 @@
  * @author Christian Saloň
  */
 
-#include <iostream>
-
 #include "polygon_operator.h"
 
 namespace vft {
@@ -17,8 +15,8 @@ namespace vft {
  * @param second Second polygon
  */
 void PolygonOperator::join(const std::vector<glm::vec2> &vertices,
-                           const std::vector<CircularDLL<Edge>> &first,
-                           const std::vector<CircularDLL<Edge>> &second) {
+                           const std::vector<Outline> &first,
+                           const std::vector<Outline> &second) {
     this->_initializeContours(vertices, first, second);
     this->_resolveOverlappingEdges();
     this->_resolveIntersectingEdges();
@@ -38,8 +36,8 @@ void PolygonOperator::join(const std::vector<glm::vec2> &vertices,
  * @param second Second polygon
  */
 void PolygonOperator::_initializeContours(const std::vector<glm::vec2> &vertices,
-                                          const std::vector<CircularDLL<Edge>> &first,
-                                          const std::vector<CircularDLL<Edge>> &second) {
+                                          const std::vector<Outline> &first,
+                                          const std::vector<Outline> &second) {
     // Reset polygons
     this->_first.clear();
     this->_second.clear();
@@ -47,36 +45,41 @@ void PolygonOperator::_initializeContours(const std::vector<glm::vec2> &vertices
 
     // Initialize first polygon
     this->_vertices = vertices;
-    for (CircularDLL<Edge> contour : first) {
-        for (CircularDLL<Edge> contourWithNoIntersections : this->_resolveSelfIntersections(contour)) {
+    for (Outline outline : first) {
+        for (Outline contourWithNoIntersections : this->_resolveSelfIntersections(outline)) {
             this->_first.push_back(Contour{false, contourWithNoIntersections});
         }
     }
 
     // Initialize second polygon
-    for (CircularDLL<Edge> contour : second) {
-        for (CircularDLL<Edge> contourWithNoIntersections : this->_resolveSelfIntersections(contour)) {
+    for (Outline outline : second) {
+        for (Outline contourWithNoIntersections : this->_resolveSelfIntersections(outline)) {
             this->_second.push_back(Contour{false, contourWithNoIntersections});
         }
     }
 }
 
 /**
- * @brief Resolve self intersections of one contour
+ * @brief Resolve self intersections of one outline
  *
- * @param contour Contour
+ * @param outline Given outline
  *
- * @return Contours with no self intersections
+ * @return Outlines with no self intersections
  */
-std::vector<CircularDLL<Edge>> PolygonOperator::_resolveSelfIntersections(CircularDLL<Edge> contour) {
+std::vector<Outline> PolygonOperator::_resolveSelfIntersections(Outline outline) {
     std::list<uint32_t> intersections;
 
     // Handle overlapping edges
-    for (unsigned int i = 0; i < contour.size(); i++) {
-        Edge firstEdge{contour.getAt(i)->value.first, contour.getAt(i)->value.second};
+    for (unsigned int i = 0; i < outline.edges.size(); i++) {
+        Edge firstEdge{outline.edges.getAt(i)->value.first, outline.edges.getAt(i)->value.second};
 
-        for (unsigned int j = i + 2; j < contour.size(); j++) {
-            Edge secondEdge{contour.getAt(j)->value.first, contour.getAt(j)->value.second};
+        for (unsigned int j = i + 2; j < outline.edges.size(); j++) {
+            Edge secondEdge{outline.edges.getAt(j)->value.first, outline.edges.getAt(j)->value.second};
+
+            // Skip duplicate edges
+            if (firstEdge.first == secondEdge.first && firstEdge.second == secondEdge.second) {
+                continue;
+            }
 
             if (glm::distance(this->_vertices.at(firstEdge.first), this->_vertices.at(secondEdge.second)) <=
                     this->_epsilon &&
@@ -86,8 +89,8 @@ std::vector<CircularDLL<Edge>> PolygonOperator::_resolveSelfIntersections(Circul
                 // First edge is A -> B, second is B -> A
 
                 // Delete both edges
-                contour.deleteAt(j);
-                contour.deleteAt(i);
+                outline.edges.deleteAt(j);
+                outline.edges.deleteAt(i);
 
                 // Insert both vertices as intersections
                 this->_addIntersectionIfNeeded(intersections, firstEdge.first);
@@ -96,18 +99,18 @@ std::vector<CircularDLL<Edge>> PolygonOperator::_resolveSelfIntersections(Circul
                 // Make sure the next edge is the one after deleted edge
                 j--;
                 // Update first edge to make sure its the next edge after deleted edge
-                firstEdge = Edge{contour.getAt(i)->value.first, contour.getAt(i)->value.second};
+                firstEdge = Edge{outline.edges.getAt(i)->value.first, outline.edges.getAt(i)->value.second};
             } else if (this->_isEdgeOnEdge(secondEdge, firstEdge)) {
                 // Second edge fully lies on first edge
 
                 // Update edges so that overlapped part is deleted
-                contour.insertAt(Edge{secondEdge.first, firstEdge.second}, i + 1);
-                contour.getAt(i)->value.second = secondEdge.second;
+                outline.edges.insertAt(Edge{secondEdge.first, firstEdge.second}, i + 1);
+                outline.edges.getAt(i)->value.second = secondEdge.second;
 
                 // Because new edge was inserted, increment j
                 j++;
                 // Delete overlapping edge
-                contour.deleteAt(j);
+                outline.edges.deleteAt(j);
 
                 // Insert vertices of shorter edge as intersections
                 this->_addIntersectionIfNeeded(intersections, secondEdge.second);
@@ -116,16 +119,16 @@ std::vector<CircularDLL<Edge>> PolygonOperator::_resolveSelfIntersections(Circul
                 // Make sure the next edge is the one after deleted edge
                 j--;
                 // Update first edge, it should be the first segment of splitted edge
-                firstEdge = Edge{contour.getAt(i)->value.first, contour.getAt(i)->value.second};
+                firstEdge = Edge{outline.edges.getAt(i)->value.first, outline.edges.getAt(i)->value.second};
             } else if (this->_isEdgeOnEdge(firstEdge, secondEdge)) {
                 // First edge fully lies on second edge
 
                 // Update edges so that overlapped part is deleted
-                contour.insertAt(Edge{firstEdge.first, secondEdge.second}, j + 1);
-                contour.getAt(j)->value.second = firstEdge.second;
+                outline.edges.insertAt(Edge{firstEdge.first, secondEdge.second}, j + 1);
+                outline.edges.getAt(j)->value.second = firstEdge.second;
 
                 // Delete overlapping edge
-                contour.deleteAt(i);
+                outline.edges.deleteAt(i);
 
                 // Insert vertices of shorter edge as intersections
                 this->_addIntersectionIfNeeded(intersections, firstEdge.second);
@@ -138,40 +141,25 @@ std::vector<CircularDLL<Edge>> PolygonOperator::_resolveSelfIntersections(Circul
         }
     }
 
-    // Handle edges with shared vertices
-    for (unsigned int i = 0; i < contour.size(); i++) {
-        Edge firstEdge{contour.getAt(i)->value.first, contour.getAt(i)->value.second};
-
-        for (unsigned int j = i + 2; j < contour.size(); j++) {
-            Edge secondEdge{contour.getAt(j)->value.first, contour.getAt(j)->value.second};
-
-            if (glm::distance(this->_vertices.at(firstEdge.second), this->_vertices.at(secondEdge.second)) <=
-                this->_epsilon) {
-                // Edges share end vertex
-
-                // TODO: Insert shared vertex as intersection ?
-                // this->_addIntersectionIfNeeded(intersections, firstEdge.second);
-            }
-        }
-    }
-
     // Handle normal intersections
-    for (unsigned int i = 0; i < contour.size(); i++) {
-        Edge firstEdge{contour.getAt(i)->value.first, contour.getAt(i)->value.second};
+    for (unsigned int i = 0; i < outline.edges.size(); i++) {
+        Edge firstEdge{outline.edges.getAt(i)->value.first, outline.edges.getAt(i)->value.second};
 
-        for (unsigned int j = i + 2; j < contour.size(); j++) {
-            Edge secondEdge{contour.getAt(j)->value.first, contour.getAt(j)->value.second};
+        for (unsigned int j = i + 2; j < outline.edges.size(); j++) {
+            Edge secondEdge{outline.edges.getAt(j)->value.first, outline.edges.getAt(j)->value.second};
+
+            // Skip edges that share at least one vertex
+            if (firstEdge.first == secondEdge.first || firstEdge.first == secondEdge.second ||
+                firstEdge.second == secondEdge.first || firstEdge.second == secondEdge.second) {
+                continue;
+            }
 
             glm::vec2 intersection{0, 0};
             if (this->_intersect(firstEdge, secondEdge, intersection)) {
-                if (glm::distance(this->_vertices.at(firstEdge.first), this->_vertices.at(secondEdge.first)) >
-                        this->_epsilon &&
-                    glm::distance(this->_vertices.at(firstEdge.first), this->_vertices.at(secondEdge.second)) >
-                        this->_epsilon &&
-                    glm::distance(this->_vertices.at(firstEdge.second), this->_vertices.at(secondEdge.first)) >
-                        this->_epsilon &&
-                    glm::distance(this->_vertices.at(firstEdge.second), this->_vertices.at(secondEdge.second)) >
-                        this->_epsilon) {
+                if (glm::distance(intersection, this->_vertices.at(firstEdge.first)) > this->_epsilon &&
+                    glm::distance(intersection, this->_vertices.at(firstEdge.second)) > this->_epsilon &&
+                    glm::distance(intersection, this->_vertices.at(secondEdge.first)) > this->_epsilon &&
+                    glm::distance(intersection, this->_vertices.at(secondEdge.second)) > this->_epsilon) {
                     // Normal intersection
 
                     // Add intersection to vertices
@@ -179,36 +167,36 @@ std::vector<CircularDLL<Edge>> PolygonOperator::_resolveSelfIntersections(Circul
                     this->_vertices.push_back(intersection);
 
                     // Update first edge
-                    contour.insertAt(Edge{vertex, firstEdge.second}, i + 1);
-                    contour.getAt(i)->value.second = vertex;
+                    outline.edges.insertAt(Edge{vertex, firstEdge.second}, i + 1);
+                    outline.edges.getAt(i)->value.second = vertex;
 
                     // Because new edge was inserted, increment j
                     j++;
 
                     // Update second edge
-                    contour.insertAt(Edge{vertex, secondEdge.second}, j + 1);
-                    contour.getAt(j)->value.second = vertex;
+                    outline.edges.insertAt(Edge{vertex, secondEdge.second}, j + 1);
+                    outline.edges.getAt(j)->value.second = vertex;
 
                     // Insert intersection
                     this->_addIntersectionIfNeeded(intersections, vertex);
 
-                    firstEdge = Edge{contour.getAt(i)->value.first, contour.getAt(i)->value.second};
+                    firstEdge = Edge{outline.edges.getAt(i)->value.first, outline.edges.getAt(i)->value.second};
                 }
             }
         }
     }
 
-    this->_removeUnwantedIntersections(intersections, {Contour{false, contour}});
+    this->_removeUnwantedIntersections(intersections, {Contour{false, outline}});
 
     if (intersections.size() == 0) {
-        return {contour};
+        return {outline};
     }
 
     // Walk contours
     uint32_t startVertex = 0;  // Starting vertex of current contour
     uint32_t endVertex = 0;    // Last processed vertex of current contour
     unsigned int contourIndex = 0;
-    std::vector<CircularDLL<Edge>> output;
+    std::vector<Outline> output;
 
     // Process all intersections
     while (intersections.size() > 0) {
@@ -221,7 +209,7 @@ std::vector<CircularDLL<Edge>> PolygonOperator::_resolveSelfIntersections(Circul
 
             startVertex = intersectionVertex;
 
-            output.push_back(CircularDLL<Edge>{});
+            output.push_back(Outline{});
         } else {
             // Contour is not yet fully processed (closed)
             intersectionVertex = endVertex;
@@ -230,8 +218,8 @@ std::vector<CircularDLL<Edge>> PolygonOperator::_resolveSelfIntersections(Circul
 
         // Get all edges starting at selected intersection
         std::vector<CircularDLL<Edge>::Node *> edges;
-        CircularDLL<Edge>::Node *edge = contour.getFirst();
-        for (unsigned int i = 0; i < contour.size(); i++) {
+        CircularDLL<Edge>::Node *edge = outline.edges.getFirst();
+        for (unsigned int i = 0; i < outline.edges.size(); i++) {
             if (edge->value.first == intersectionVertex) {
                 edges.push_back(edge);
             }
@@ -243,36 +231,51 @@ std::vector<CircularDLL<Edge>> PolygonOperator::_resolveSelfIntersections(Circul
             throw std::runtime_error("PolygonOperator::_resolveSelfIntersections(): No edges starting at intersection");
         }
 
-        // Select the left-most edge
+        // Select the start edge
         unsigned int selectedEdgeIndex = 0;
         for (unsigned int i = 1; i < edges.size(); i++) {
-            if (this->_isOnLeftSide(this->_vertices.at(edges[selectedEdgeIndex]->value.first),
-                                    this->_vertices.at(edges[selectedEdgeIndex]->value.second),
-                                    this->_vertices.at(edges[i]->value.second))) {
-                selectedEdgeIndex = i;
+            bool isOnLeftSide = this->_isOnLeftSide(this->_vertices.at(edges[selectedEdgeIndex]->value.first),
+                                                    this->_vertices.at(edges[selectedEdgeIndex]->value.second),
+                                                    this->_vertices.at(edges[i]->value.second));
+
+            if (this->_getOrientationOfSubcontour(outline, edges[selectedEdgeIndex]) == Outline::Orientation::CCW ||
+                this->_getOrientationOfSubcontour(outline, edges[i]) == Outline::Orientation::CCW) {
+                // At least one subcontour defines a hole
+                if (!isOnLeftSide) {
+                    selectedEdgeIndex = i;
+                }
+            } else {
+                // Both subcontours define a filled area
+                if (isOnLeftSide) {
+                    selectedEdgeIndex = i;
+                }
             }
         }
 
-        // Process edges starting from selected left-most edge
+        // Process edges starting from selected edge
         CircularDLL<Edge>::Node *startEdge = edges[selectedEdgeIndex];
 
         // Process edges until intersection or starting vertex
-        while (std::find(intersections.begin(), intersections.end(), startEdge->value.second) ==
-                   intersections.end()  // End of current edge is a intersection
-               && (output[contourIndex].size() == 0 ||
-                   startEdge->value.second !=
-                       output[contourIndex].getFirst()->value.first)  // End of edge is contour start (closed contour)
+        while (
+            std::find(intersections.begin(), intersections.end(), startEdge->value.second) ==
+                intersections.end()  // End of current edge is a intersection
+            &&
+            (output[contourIndex].edges.size() == 0 ||
+             startEdge->value.second !=
+                 output[contourIndex].edges.getFirst()->value.first)  // End of edge is contour start (closed contour)
         ) {
             // Move to next edge
-            output[contourIndex].insertLast(startEdge->value);
+            output[contourIndex].edges.insertLast(startEdge->value);
             startEdge = startEdge->next;
         }
         // Add edge ending at intersection or start to output
-        output[contourIndex].insertLast(startEdge->value);
+        output[contourIndex].edges.insertLast(startEdge->value);
 
         endVertex = startEdge->value.second;
         if (endVertex == startVertex) {
-            // Contour is closed
+            // Contour is closed, set orientation of contour
+            output[contourIndex].orientation =
+                this->_getOrientationOfSubcontour(output[contourIndex], output[contourIndex].edges.getFirst());
             contourIndex++;
         }
     }
@@ -285,15 +288,15 @@ std::vector<CircularDLL<Edge>> PolygonOperator::_resolveSelfIntersections(Circul
  */
 void PolygonOperator::_resolveOverlappingEdges() {
     for (Contour &firstPolygonContour : this->_first) {
-        for (unsigned int i = 0; i < firstPolygonContour.list.size(); i++) {
-            Edge firstPolygonEdge{firstPolygonContour.list.getAt(i)->value.first,
-                                  firstPolygonContour.list.getAt(i)->value.second};
+        for (unsigned int i = 0; i < firstPolygonContour.outline.edges.size(); i++) {
+            Edge firstPolygonEdge{firstPolygonContour.outline.edges.getAt(i)->value.first,
+                                  firstPolygonContour.outline.edges.getAt(i)->value.second};
             bool wasFirstPolygonEdgeChanged = false;
 
             for (Contour &secondPolygonContour : this->_second) {
-                for (unsigned int j = 0; j < secondPolygonContour.list.size(); j++) {
-                    Edge secondPolygonEdge{secondPolygonContour.list.getAt(j)->value.first,
-                                           secondPolygonContour.list.getAt(j)->value.second};
+                for (unsigned int j = 0; j < secondPolygonContour.outline.edges.size(); j++) {
+                    Edge secondPolygonEdge{secondPolygonContour.outline.edges.getAt(j)->value.first,
+                                           secondPolygonContour.outline.edges.getAt(j)->value.second};
 
                     if (glm::distance(this->_vertices.at(firstPolygonEdge.first),
                                       this->_vertices.at(secondPolygonEdge.second)) <= this->_epsilon &&
@@ -303,8 +306,8 @@ void PolygonOperator::_resolveOverlappingEdges() {
                         // First edge is A -> B, second is B -> A
 
                         // Delete both edges
-                        firstPolygonContour.list.deleteAt(i);
-                        secondPolygonContour.list.deleteAt(j);
+                        firstPolygonContour.outline.edges.deleteAt(i);
+                        secondPolygonContour.outline.edges.deleteAt(j);
 
                         // Insert vertices of overlapped edges as intersections
                         this->_addIntersectionIfNeeded(this->_intersections, firstPolygonEdge.first);
@@ -317,12 +320,12 @@ void PolygonOperator::_resolveOverlappingEdges() {
                         // Second edge fully lies on first edge
 
                         // Update edges in first polygon so that overlapped part is deleted
-                        firstPolygonContour.list.insertAt(Edge{secondPolygonEdge.first, firstPolygonEdge.second},
-                                                          i + 1);
-                        firstPolygonContour.list.getAt(i)->value.second = secondPolygonEdge.second;
+                        firstPolygonContour.outline.edges.insertAt(
+                            Edge{secondPolygonEdge.first, firstPolygonEdge.second}, i + 1);
+                        firstPolygonContour.outline.edges.getAt(i)->value.second = secondPolygonEdge.second;
 
                         // Delete overlapping edge in second polygon
-                        secondPolygonContour.list.deleteAt(j);
+                        secondPolygonContour.outline.edges.deleteAt(j);
 
                         // Insert vertices of shorter edge as intersections
                         this->_addIntersectionIfNeeded(this->_intersections, secondPolygonEdge.second);
@@ -334,12 +337,12 @@ void PolygonOperator::_resolveOverlappingEdges() {
                         // First edge fully lies on second edge
 
                         // Update edges in second polygon so that overlapped part is deleted
-                        secondPolygonContour.list.insertAt(Edge{firstPolygonEdge.first, secondPolygonEdge.second},
-                                                           j + 1);
-                        secondPolygonContour.list.getAt(j)->value.second = firstPolygonEdge.second;
+                        secondPolygonContour.outline.edges.insertAt(
+                            Edge{firstPolygonEdge.first, secondPolygonEdge.second}, j + 1);
+                        secondPolygonContour.outline.edges.getAt(j)->value.second = firstPolygonEdge.second;
 
                         // Delete overlapping edge in second polygon
-                        firstPolygonContour.list.deleteAt(i);
+                        firstPolygonContour.outline.edges.deleteAt(i);
 
                         // Insert vertices of shorter edge as intersections
                         this->_addIntersectionIfNeeded(this->_intersections, firstPolygonEdge.second);
@@ -364,31 +367,51 @@ void PolygonOperator::_resolveOverlappingEdges() {
  */
 void PolygonOperator::_resolveIntersectingEdges() {
     for (Contour &firstPolygonContour : this->_first) {
-        for (unsigned int i = 0; i < firstPolygonContour.list.size(); i++) {
-            Edge firstPolygonEdge{firstPolygonContour.list.getAt(i)->value.first,
-                                  firstPolygonContour.list.getAt(i)->value.second};
+        for (unsigned int i = 0; i < firstPolygonContour.outline.edges.size(); i++) {
+            Edge firstPolygonEdge{firstPolygonContour.outline.edges.getAt(i)->value.first,
+                                  firstPolygonContour.outline.edges.getAt(i)->value.second};
             bool wasFirstPolygonEdgeChanged = false;
 
             for (Contour &secondPolygonContour : this->_second) {
-                for (unsigned int j = 0; j < secondPolygonContour.list.size(); j++) {
-                    Edge secondPolygonEdge{secondPolygonContour.list.getAt(j)->value.first,
-                                           secondPolygonContour.list.getAt(j)->value.second};
+                for (unsigned int j = 0; j < secondPolygonContour.outline.edges.size(); j++) {
+                    Edge secondPolygonEdge{secondPolygonContour.outline.edges.getAt(j)->value.first,
+                                           secondPolygonContour.outline.edges.getAt(j)->value.second};
+
+                    // Skip edges that share at least one vertex
+                    if (firstPolygonEdge.first == secondPolygonEdge.first ||
+                        firstPolygonEdge.first == secondPolygonEdge.second ||
+                        firstPolygonEdge.second == secondPolygonEdge.first ||
+                        firstPolygonEdge.second == secondPolygonEdge.second) {
+                        continue;
+                    }
 
                     // Check if edges intersect
                     glm::vec2 intersection{0, 0};
                     if (this->_intersect(firstPolygonEdge, secondPolygonEdge, intersection)) {
-                        if (glm::distance(this->_vertices.at(firstPolygonEdge.second),
-                                          this->_vertices.at(secondPolygonEdge.second)) <= this->_epsilon) {
-                            // Polygons have one vertex at same positions
+                        if (glm::distance(intersection, this->_vertices.at(firstPolygonEdge.first)) <= this->_epsilon) {
+                            // Polygons have intersection at start vertex of first edge
+
+                            // Insert shared vertex as intersection
+                            this->_addIntersectionIfNeeded(this->_intersections, firstPolygonEdge.first);
+                        } else if (glm::distance(intersection, this->_vertices.at(firstPolygonEdge.second)) <=
+                                   this->_epsilon) {
+                            // Polygons have intersection at end vertex of first edge
 
                             // Insert shared vertex as intersection
                             this->_addIntersectionIfNeeded(this->_intersections, firstPolygonEdge.second);
-                        } else if (glm::distance(this->_vertices.at(firstPolygonEdge.first),
-                                                 this->_vertices.at(secondPolygonEdge.first)) > this->_epsilon &&
-                                   glm::distance(this->_vertices.at(firstPolygonEdge.first),
-                                                 this->_vertices.at(secondPolygonEdge.second)) > this->_epsilon &&
-                                   glm::distance(this->_vertices.at(firstPolygonEdge.second),
-                                                 this->_vertices.at(secondPolygonEdge.first)) > this->_epsilon) {
+                        } else if (glm::distance(intersection, this->_vertices.at(secondPolygonEdge.first)) <=
+                                   this->_epsilon) {
+                            // Polygons have intersection at start vertex of second edge
+
+                            // Insert shared vertex as intersection
+                            this->_addIntersectionIfNeeded(this->_intersections, secondPolygonEdge.first);
+                        } else if (glm::distance(intersection, this->_vertices.at(secondPolygonEdge.second)) <=
+                                   this->_epsilon) {
+                            // Polygons have intersection at end vertex of second edge
+
+                            // Insert shared vertex as intersection
+                            this->_addIntersectionIfNeeded(this->_intersections, secondPolygonEdge.second);
+                        } else {
                             // Normal intersection
 
                             // Add intersection to vertices
@@ -396,12 +419,12 @@ void PolygonOperator::_resolveIntersectingEdges() {
                             this->_vertices.push_back(intersection);
 
                             // Update first polygon
-                            firstPolygonContour.list.getAt(i)->value.second = vertex;
-                            firstPolygonContour.list.insertAt(Edge{vertex, firstPolygonEdge.second}, i + 1);
+                            firstPolygonContour.outline.edges.getAt(i)->value.second = vertex;
+                            firstPolygonContour.outline.edges.insertAt(Edge{vertex, firstPolygonEdge.second}, i + 1);
 
                             // Update second polygon
-                            secondPolygonContour.list.getAt(j)->value.second = vertex;
-                            secondPolygonContour.list.insertAt(Edge{vertex, secondPolygonEdge.second}, j + 1);
+                            secondPolygonContour.outline.edges.getAt(j)->value.second = vertex;
+                            secondPolygonContour.outline.edges.insertAt(Edge{vertex, secondPolygonEdge.second}, j + 1);
 
                             // Insert intersection
                             this->_addIntersectionIfNeeded(this->_intersections, vertex);
@@ -487,7 +510,7 @@ void PolygonOperator::_walkContours() {
 
             startVertex = intersectionVertex;
 
-            this->_output.push_back(CircularDLL<Edge>{});
+            this->_output.push_back(Outline{});
         } else {
             // Contour is not yet fully processed (closed)
             intersectionVertex = endVertex;
@@ -500,13 +523,24 @@ void PolygonOperator::_walkContours() {
             throw std::runtime_error("PolygonOperator::_walkContours(): No edges starting at intersection");
         }
 
-        // Select the left-most edge
+        // Select the next edge
         unsigned int selectedEdgeIndex = 0;
         for (unsigned int i = 1; i < edges.size(); i++) {
-            if (this->_isOnLeftSide(this->_vertices.at(edges[selectedEdgeIndex]->value.first),
-                                    this->_vertices.at(edges[selectedEdgeIndex]->value.second),
-                                    this->_vertices.at(edges[i]->value.second))) {
-                selectedEdgeIndex = i;
+            bool isOnLeftSide = this->_isOnLeftSide(this->_vertices.at(edges[selectedEdgeIndex]->value.first),
+                                                    this->_vertices.at(edges[selectedEdgeIndex]->value.second),
+                                                    this->_vertices.at(edges[i]->value.second));
+
+            if (this->_getContourOfEdge(edges[selectedEdgeIndex]).outline.orientation == Outline::Orientation::CCW ||
+                this->_getContourOfEdge(edges[i]).outline.orientation == Outline::Orientation::CCW) {
+                // At least one contour defines a hole
+                if (!isOnLeftSide) {
+                    selectedEdgeIndex = i;
+                }
+            } else {
+                // Both contours define a filled area
+                if (isOnLeftSide) {
+                    selectedEdgeIndex = i;
+                }
             }
         }
 
@@ -516,22 +550,24 @@ void PolygonOperator::_walkContours() {
         // Process edges starting from selected left-most edge
         endVertex = this->_walkUntilIntersectionOrStart(edges[selectedEdgeIndex], contourIndex);
         if (endVertex == startVertex) {
-            // Contour is closed
+            // Contour is closed, set orientation of contour
+            this->_output[contourIndex].orientation = this->_getOrientationOfSubcontour(
+                this->_output[contourIndex], this->_output[contourIndex].edges.getFirst());
             contourIndex++;
         }
     }
 
     // Add unvisited contours from first polygon to ouput
     for (const Contour &contour : this->_first) {
-        if (!contour.visited && contour.list.size() > 0) {
-            this->_output.push_back(contour.list);
+        if (!contour.visited && contour.outline.edges.size() > 0) {
+            this->_output.push_back(contour.outline);
         }
     }
 
     // Add unvisited contours from second polygon to ouput
     for (const Contour &contour : this->_second) {
-        if (!contour.visited && contour.list.size() > 0) {
-            this->_output.push_back(contour.list);
+        if (!contour.visited && contour.outline.edges.size() > 0) {
+            this->_output.push_back(contour.outline);
         }
     }
 }
@@ -548,17 +584,17 @@ uint32_t PolygonOperator::_walkUntilIntersectionOrStart(CircularDLL<Edge>::Node 
     while (std::find(this->_intersections.begin(), this->_intersections.end(), start->value.second) ==
                this->_intersections.end()  // End of current edge is a intersection
            &&
-           (this->_output[contourIndex].size() == 0 ||
-            start->value.second !=
-                this->_output[contourIndex].getFirst()->value.first)  // End of edge is contour start (closed contour)
+           (this->_output[contourIndex].edges.size() == 0 ||
+            start->value.second != this->_output[contourIndex].edges.getFirst()->value.first)  // End of edge is contour
+                                                                                               // start (closed contour)
     ) {
         // Move to next edge
-        this->_output[contourIndex].insertLast(start->value);
+        this->_output[contourIndex].edges.insertLast(start->value);
         start = start->next;
     }
 
     // Add edge ending at intersection or start to output
-    this->_output[contourIndex].insertLast(start->value);
+    this->_output[contourIndex].edges.insertLast(start->value);
 
     return start->value.second;
 }
@@ -571,8 +607,8 @@ uint32_t PolygonOperator::_walkUntilIntersectionOrStart(CircularDLL<Edge>::Node 
 void PolygonOperator::_markContourAsVisited(CircularDLL<Edge>::Node *edge) {
     // Search in first polygon
     for (Contour &contour : this->_first) {
-        for (unsigned int i = 0; i < contour.list.size(); i++) {
-            if (edge == contour.list.getAt(i)) {
+        for (unsigned int i = 0; i < contour.outline.edges.size(); i++) {
+            if (edge == contour.outline.edges.getAt(i)) {
                 // Found contour including vertex
                 contour.visited = true;
                 return;
@@ -582,8 +618,8 @@ void PolygonOperator::_markContourAsVisited(CircularDLL<Edge>::Node *edge) {
 
     // Search in second polygon
     for (Contour &contour : this->_second) {
-        for (unsigned int i = 0; i < contour.list.size(); i++) {
-            if (edge == contour.list.getAt(i)) {
+        for (unsigned int i = 0; i < contour.outline.edges.size(); i++) {
+            if (edge == contour.outline.edges.getAt(i)) {
                 // Found contour including vertex
                 contour.visited = true;
                 return;
@@ -614,9 +650,9 @@ void PolygonOperator::_removeUnwantedIntersections(std::list<uint32_t> &intersec
                                                    const std::vector<Contour> &contours) {
     std::erase_if(intersections, [&](uint32_t intersection) {
         for (const Contour &contour : contours) {
-            for (unsigned int i = 0; i < contour.list.size(); i++) {
-                if (contour.list.getAt(i)->value.first == intersection ||
-                    contour.list.getAt(i)->value.second == intersection) {
+            for (unsigned int i = 0; i < contour.outline.edges.size(); i++) {
+                if (contour.outline.edges.getAt(i)->value.first == intersection ||
+                    contour.outline.edges.getAt(i)->value.second == intersection) {
                     return false;  // Valid intersection
                 }
             }
@@ -638,8 +674,8 @@ std::vector<CircularDLL<Edge>::Node *> PolygonOperator::_getEdgesStartingAt(uint
 
     // Search in first polygon
     for (Contour &contour : this->_first) {
-        CircularDLL<Edge>::Node *edge = contour.list.getFirst();
-        for (unsigned int i = 0; i < contour.list.size(); i++) {
+        CircularDLL<Edge>::Node *edge = contour.outline.edges.getFirst();
+        for (unsigned int i = 0; i < contour.outline.edges.size(); i++) {
             if (edge->value.first == vertex) {
                 edges.push_back(edge);
             }
@@ -650,8 +686,8 @@ std::vector<CircularDLL<Edge>::Node *> PolygonOperator::_getEdgesStartingAt(uint
 
     // Search in second polygon
     for (Contour &contour : this->_second) {
-        CircularDLL<Edge>::Node *edge = contour.list.getFirst();
-        for (unsigned int i = 0; i < contour.list.size(); i++) {
+        CircularDLL<Edge>::Node *edge = contour.outline.edges.getFirst();
+        for (unsigned int i = 0; i < contour.outline.edges.size(); i++) {
             if (edge->value.first == vertex) {
                 edges.push_back(edge);
             }
@@ -661,6 +697,84 @@ std::vector<CircularDLL<Edge>::Node *> PolygonOperator::_getEdgesStartingAt(uint
     }
 
     return edges;
+}
+
+/**
+ * @brief Get the contour containing specified edge
+ *
+ * @param edge Specified edge
+ *
+ * @return Contout containing edge
+ */
+const Contour &PolygonOperator::_getContourOfEdge(CircularDLL<Edge>::Node *edge) {
+    // Search in first polygon
+    for (const Contour &contour : this->_first) {
+        CircularDLL<Edge>::Node *contourEdge = contour.outline.edges.getFirst();
+        for (unsigned int i = 0; i < contour.outline.edges.size(); i++) {
+            if (edge == contourEdge) {
+                return contour;
+            }
+
+            contourEdge = contourEdge->next;
+        }
+    }
+
+    // Search in second polygon
+    for (const Contour &contour : this->_second) {
+        CircularDLL<Edge>::Node *contourEdge = contour.outline.edges.getFirst();
+        for (unsigned int i = 0; i < contour.outline.edges.size(); i++) {
+            if (edge == contourEdge) {
+                return contour;
+            }
+
+            contourEdge = contourEdge->next;
+        }
+    }
+
+    throw std::runtime_error("PolygonOperator::_getContourOfEdge(): Edge does not belong to any polygon");
+}
+
+/**
+ * @brief Get orientation for a part of a contour. The part starts and ends in the same vertex.
+ *
+ * @param outline Full contour
+ * @param start Starting edge of subcontour
+ *
+ * @return Orienatation of subcontour
+ */
+const Outline::Orientation &PolygonOperator::_getOrientationOfSubcontour(const Outline &outline,
+                                                                         CircularDLL<Edge>::Node *start) {
+    CircularDLL<Edge>::Node *current = start;
+    double area = 0;
+    bool isPartOfSubcontour = true;
+
+    do {
+        if (isPartOfSubcontour) {
+            area += this->_vertices[current->value.first].x * this->_vertices[current->value.second].y -
+                    this->_vertices[current->value.second].x * this->_vertices[current->value.first].y;
+        }
+
+        // Move to next edge
+        current = current->next;
+
+        // Get all edges starting at current vertex
+        std::vector<CircularDLL<Edge>::Node *> edges;
+        CircularDLL<Edge>::Node *edge = outline.edges.getFirst();
+        for (unsigned int i = 0; i < outline.edges.size(); i++) {
+            if (edge->value.first == current->value.first) {
+                edges.push_back(edge);
+            }
+
+            edge = edge->next;
+        }
+
+        // Skip edges that are not part of subcontour
+        if (edges.size() >= 2) {
+            isPartOfSubcontour = !isPartOfSubcontour;
+        }
+    } while (current->value.first != start->value.first);
+
+    return area >= 0 ? Outline::Orientation::CCW : Outline::Orientation::CW;
 }
 
 /**
@@ -749,7 +863,7 @@ void PolygonOperator::setEpsilon(double epsilon) {
  *
  * @return Output polygon
  */
-std::vector<CircularDLL<Edge>> PolygonOperator::getPolygon() {
+std::vector<Outline> PolygonOperator::getPolygon() {
     return this->_output;
 }
 

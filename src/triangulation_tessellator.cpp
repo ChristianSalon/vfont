@@ -16,18 +16,21 @@ TriangulationTessellator::TriangulationTessellator() {
     this->_moveToFunc = [](const FT_Vector *to, void *user) {
         TriangulationTessellator *pThis = reinterpret_cast<TriangulationTessellator *>(user);
 
+        // Assign orientation of contour to second polygon
+        pThis->_secondPolygon[0].orientation = pThis->area >= 0 ? Outline::Orientation::CCW : Outline::Orientation::CW;
+
         if (pThis->contourCount >= 2) {
             // Perform union of contours
             PolygonOperator polygonOperator{};
             polygonOperator.join(pThis->_currentGlyph.mesh.getVertices(), pThis->_firstPolygon, pThis->_secondPolygon);
             pThis->_currentGlyph.mesh.setVertices(polygonOperator.getVertices());
             pThis->_firstPolygon = polygonOperator.getPolygon();
-            pThis->_secondPolygon = {CircularDLL<Edge>{}};
+            pThis->_secondPolygon = {Outline{}};
 
             pThis->vertexIndex = pThis->_currentGlyph.mesh.getVertexCount();
         } else if (pThis->contourCount == 1) {
             pThis->_firstPolygon = pThis->_secondPolygon;
-            pThis->_secondPolygon = {CircularDLL<Edge>{}};
+            pThis->_secondPolygon = {Outline{}};
         }
 
         // Process contour starting vertex
@@ -43,6 +46,7 @@ TriangulationTessellator::TriangulationTessellator() {
         pThis->lastVertex = vertex;
         pThis->lastVertexIndex = vertexIndex;
         pThis->contourCount++;
+        pThis->area = 0;
 
         return 0;
     };
@@ -58,11 +62,15 @@ TriangulationTessellator::TriangulationTessellator() {
             pThis->vertexIndex++;
         }
 
-        // Create line segment
-        pThis->_currentGlyph.addLineSegment(Edge{pThis->lastVertexIndex, endVertexIndex});
-
-        // Add edge to polygon
-        pThis->_secondPolygon[0].insertLast(Edge{pThis->lastVertexIndex, endVertexIndex});
+        Edge edge{pThis->lastVertexIndex, endVertexIndex};
+        if (edge.first != edge.second) {
+            // Create line segment
+            pThis->_currentGlyph.addLineSegment(edge);
+            // Add edge to polygon
+            pThis->_secondPolygon[0].edges.insertLast(edge);
+            // Update signed area of polygon
+            pThis->area += pThis->lastVertex.x * endVertex.y - endVertex.x * pThis->lastVertex.y;
+        }
 
         // Update glyph data
         pThis->lastVertex = endVertex;
@@ -102,6 +110,7 @@ TriangulationTessellator::TriangulationTessellator() {
                                        pThis->_font->getScalingVector(pThis->_fontSize) * endPoint};
         std::set<float> newVertices = pThis->_subdivideQuadraticBezier(curve);
 
+        glm::vec2 lastVertex = pThis->lastVertex;
         uint32_t lastVertexIndex = pThis->lastVertexIndex;
         for (float t : newVertices) {
             if (t == 0) {
@@ -115,9 +124,15 @@ TriangulationTessellator::TriangulationTessellator() {
                 pThis->vertexIndex++;
             }
 
-            // Add edge to polygon
-            pThis->_secondPolygon[0].insertLast(Edge{lastVertexIndex, newVertexIndex});
+            Edge edge{lastVertexIndex, newVertexIndex};
+            if (edge.first != edge.second) {
+                // Add edge to polygon
+                pThis->_secondPolygon[0].edges.insertLast(edge);
+                // Update signed area of contour
+                pThis->area += lastVertex.x * newVertex.y - newVertex.x * lastVertex.y;
+            }
 
+            lastVertex = newVertex;
             lastVertexIndex = newVertexIndex;
         }
 
@@ -141,8 +156,8 @@ Glyph TriangulationTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<v
     this->_fontSize = fontSize;
 
     // Initialize polygons
-    this->_firstPolygon = {CircularDLL<Edge>{}};
-    this->_secondPolygon = {CircularDLL<Edge>{}};
+    this->_firstPolygon = {Outline{}};
+    this->_secondPolygon = {Outline{}};
 
     GlyphKey key{font->getFontFamily(), glyphId, fontSize};
     Glyph glyph = this->_composeGlyph(glyphId, font);
@@ -152,17 +167,20 @@ Glyph TriangulationTessellator::composeGlyph(uint32_t glyphId, std::shared_ptr<v
     std::vector<uint32_t> triangles;
 
     if (this->contourCount >= 1) {
+        // Assign orientation of contour to second polygon
+        this->_secondPolygon[0].orientation = this->area >= 0 ? Outline::Orientation::CCW : Outline::Orientation::CW;
+
         // Perform union of contours
         PolygonOperator polygonOperator{};
         polygonOperator.join(this->_currentGlyph.mesh.getVertices(), this->_firstPolygon, this->_secondPolygon);
         vertices = polygonOperator.getVertices();
-        std::vector<CircularDLL<Edge>> polygon = polygonOperator.getPolygon();
+        std::vector<Outline> polygon = polygonOperator.getPolygon();
 
         // Create edges for triangulation
-        for (CircularDLL<Edge> &contour : polygon) {
-            for (unsigned int i = 0; i < contour.size(); i++) {
-                uint32_t startVertexIndex = contour.getAt(i)->value.first;
-                uint32_t endVertexIndex = contour.getAt(i)->value.second;
+        for (Outline &outline : polygon) {
+            for (unsigned int i = 0; i < outline.edges.size(); i++) {
+                uint32_t startVertexIndex = outline.edges.getAt(i)->value.first;
+                uint32_t endVertexIndex = outline.edges.getAt(i)->value.second;
 
                 edges.push_back(Edge{startVertexIndex, endVertexIndex});
             }

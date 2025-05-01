@@ -42,6 +42,7 @@ set(VFONT_HEADERS
     include/VFONT/tessellation_shaders_tessellator.h
     include/VFONT/sdf_tessellator.h
     include/VFONT/circular_dll.h
+    include/VFONT/outline.h
     include/VFONT/polygon_operator.h
     include/VFONT/edge.h
     include/VFONT/curve.h
@@ -178,3 +179,15 @@ if(BUILD_EXAMPLES)
     message(STATUS "vfont: Building examples")
     add_subdirectory(examples)
 endif()
+
+# install header files
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+# install libraries
+install(TARGETS ${LIB_NAME}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)

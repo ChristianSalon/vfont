@@ -22,6 +22,7 @@
 #include "glyph_cache.h"
 #include "glyph_compositor.h"
 #include "glyph_mesh.h"
+#include "outline.h"
 #include "polygon_operator.h"
 #include "tessellator.h"
 
@@ -39,8 +40,10 @@ protected:
     std::shared_ptr<Font> _font{nullptr}; /**< Font of current glyph */
     unsigned int _fontSize{0};            /**< Font size of current glyph */
 
-    std::vector<CircularDLL<Edge>> _firstPolygon{};  /**< Polygon containing processed glyph contours */
-    std::vector<CircularDLL<Edge>> _secondPolygon{}; /**< Polygon containing current contour */
+    std::vector<Outline> _firstPolygon{};  /**< Polygon containing processed glyph contours */
+    std::vector<Outline> _secondPolygon{}; /**< Polygon containing current contour */
+
+    double area{0}; /**< Signed area of current contour */
 
 public:
     TriangulationTessellator();

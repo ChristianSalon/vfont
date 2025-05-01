@@ -52,8 +52,6 @@ void VulkanTimedRenderer::draw() {
  * @return Draw time
  */
 double VulkanTimedRenderer::readTimestamps() {
-    vkCmdResetQueryPool(this->_renderer->getCommandBuffer(), this->_queryPool, 0, 2);
-
     uint64_t timestamps[2];
     VkResult result =
         vkGetQueryPoolResults(this->_renderer->getLogicalDevice(), this->_queryPool, 0, 2, sizeof(timestamps),

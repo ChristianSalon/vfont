@@ -1,4 +1,7 @@
 ﻿/**
+ * Based on concepts and code from the Vulkan Tutorial made by Alexander Overvoorde available
+ * at: https://vulkan-tutorial.com/
+ *
  * @file scene.cpp
  * @author Christian Saloň
  */
