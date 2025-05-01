@@ -1,0 +1,26 @@
+var classvft_1_1TextSegment =
+[
+    [ "TextSegment", "classvft_1_1TextSegment.html#ae854d20a01920b1604a28ff0ba280ec9", null ],
+    [ "_shape", "classvft_1_1TextSegment.html#aeb5f2871ff099468360f097dd020682f", null ],
+    [ "add", "classvft_1_1TextSegment.html#a040bf0e5c091dae7403824c0cea2af05", null ],
+    [ "getCharacterCount", "classvft_1_1TextSegment.html#ae931c06533c2d68c30a6bd95f0b1f4b1", null ],
+    [ "getCharacters", "classvft_1_1TextSegment.html#a1bd1711ca648c65362a8c32e395fd823", null ],
+    [ "getCodePointCount", "classvft_1_1TextSegment.html#a2122a9eb7ee25f48bace576053fe4895", null ],
+    [ "getDirection", "classvft_1_1TextSegment.html#a64f2233592f3e5ab3215b0b614f388e4", null ],
+    [ "getFont", "classvft_1_1TextSegment.html#a28449b0e670cfbdf16c28587628753b9", null ],
+    [ "getFontSize", "classvft_1_1TextSegment.html#a3e6d6ba5e8efa296bd7366e2ec18df91", null ],
+    [ "getLanguage", "classvft_1_1TextSegment.html#a2237b8e9897dd56fc2e2479d1789a289", null ],
+    [ "getScript", "classvft_1_1TextSegment.html#a8d79d499cbbbc4fca48e996aafe0458a", null ],
+    [ "getText", "classvft_1_1TextSegment.html#ad069b0d371315b5d9d5bb48a58ae6e44", null ],
+    [ "getTransform", "classvft_1_1TextSegment.html#ad85a53be08fc910d556f5cf50016f4b0", null ],
+    [ "remove", "classvft_1_1TextSegment.html#a4e52582bd9dc0bac60105ec87d8ba664", null ],
+    [ "setTransform", "classvft_1_1TextSegment.html#ae51c6232e950619ae8adf89697c44528", null ],
+    [ "_characters", "classvft_1_1TextSegment.html#ac9ada887dbfef54f6daaf30ca1b51a52", null ],
+    [ "_direction", "classvft_1_1TextSegment.html#a1ca8ee89dba4f971953a40e17c90d6de", null ],
+    [ "_font", "classvft_1_1TextSegment.html#a1b5ddac857ca2aa16a368429100e3200", null ],
+    [ "_fontSize", "classvft_1_1TextSegment.html#ad89df5aa266dc7e13de3313350fc9d6b", null ],
+    [ "_language", "classvft_1_1TextSegment.html#a55d6953f9408a84345cae11e03c36e44", null ],
+    [ "_script", "classvft_1_1TextSegment.html#a3f8c3e25b0d74167b8f22362ee886b88", null ],
+    [ "_text", "classvft_1_1TextSegment.html#a339adca2cdab5d41a2b6d898a9158f6c", null ],
+    [ "_transform", "classvft_1_1TextSegment.html#a770de3b5de4f3711a5a68df923080ced", null ]
+];

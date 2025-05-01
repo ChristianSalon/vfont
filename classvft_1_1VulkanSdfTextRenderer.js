@@ -1,0 +1,27 @@
+var classvft_1_1VulkanSdfTextRenderer =
+[
+    [ "CharacterPushConstants", "classvft_1_1VulkanSdfTextRenderer_1_1CharacterPushConstants.html", "classvft_1_1VulkanSdfTextRenderer_1_1CharacterPushConstants" ],
+    [ "FontTexture", "classvft_1_1VulkanSdfTextRenderer_1_1FontTexture.html", "classvft_1_1VulkanSdfTextRenderer_1_1FontTexture" ],
+    [ "VulkanSdfTextRenderer", "classvft_1_1VulkanSdfTextRenderer.html#a22bcbaec8f491899983e251f06dd7e49", null ],
+    [ "VulkanSdfTextRenderer", "classvft_1_1VulkanSdfTextRenderer.html#abde4f8befb7c2ffd069a89697bc7b9bf", null ],
+    [ "~VulkanSdfTextRenderer", "classvft_1_1VulkanSdfTextRenderer.html#a9e15e51d9ebed595f108548d2f6370c7", null ],
+    [ "_copyBufferToImage", "classvft_1_1VulkanSdfTextRenderer.html#a36237d890767e1eeb7696d908d9ae474", null ],
+    [ "_createDescriptorPool", "classvft_1_1VulkanSdfTextRenderer.html#afce9cb75231d473af2dceae973c33074", null ],
+    [ "_createFontAtlasDescriptorSet", "classvft_1_1VulkanSdfTextRenderer.html#a05e7637c05a7fc330d300a02724b1d80", null ],
+    [ "_createFontAtlasDescriptorSetLayout", "classvft_1_1VulkanSdfTextRenderer.html#acd0b0652a93669fde329fca6fe8c02aa", null ],
+    [ "_createPipeline", "classvft_1_1VulkanSdfTextRenderer.html#a9098d4c92a43d53d903865baa85f581a", null ],
+    [ "_createVertexAndIndexBuffers", "classvft_1_1VulkanSdfTextRenderer.html#ac3062e5119514088a727193ec615be44", null ],
+    [ "_transitionImageLayout", "classvft_1_1VulkanSdfTextRenderer.html#a2b1d594a282932e43c76ead90c515e6c", null ],
+    [ "addFontAtlas", "classvft_1_1VulkanSdfTextRenderer.html#a56e925a5722fd8d516a86b5a34664834", null ],
+    [ "draw", "classvft_1_1VulkanSdfTextRenderer.html#ae6fe51db6473da5cd10b03f8914ca2d3", null ],
+    [ "update", "classvft_1_1VulkanSdfTextRenderer.html#acd616edabf844bfe57c07c75ff826351", null ],
+    [ "_boundingBoxIndexBuffer", "classvft_1_1VulkanSdfTextRenderer.html#ade93b6c53c760eaf63cd8c0da15f9769", null ],
+    [ "_boundingBoxIndexBufferMemory", "classvft_1_1VulkanSdfTextRenderer.html#a4712afd8da9d5318325420b54df9bfdd", null ],
+    [ "_fontAtlasDescriptorSetLayout", "classvft_1_1VulkanSdfTextRenderer.html#a3b9f1738587ebf8a71dba1cff00b6dd3", null ],
+    [ "_fontAtlasDescriptorSets", "classvft_1_1VulkanSdfTextRenderer.html#ad3f39b92f1962905b9662a5ccf5f3ffa", null ],
+    [ "_fontTextures", "classvft_1_1VulkanSdfTextRenderer.html#aa38cc997fc0729ec2b668b54226b4d93", null ],
+    [ "_pipeline", "classvft_1_1VulkanSdfTextRenderer.html#a3e2f6187f8bdc7e12f103f3ea78c91bb", null ],
+    [ "_pipelineLayout", "classvft_1_1VulkanSdfTextRenderer.html#ab0c956d48f73e2c9c16726b511790c58", null ],
+    [ "_vertexBuffer", "classvft_1_1VulkanSdfTextRenderer.html#ad84aa59d4ed765083ffe508f9c34cbed", null ],
+    [ "_vertexBufferMemory", "classvft_1_1VulkanSdfTextRenderer.html#adc1fdc8710e05b49619ed101c87cfe31", null ]
+];

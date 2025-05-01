@@ -1,0 +1,6 @@
+var searchData=
+[
+  ['font_0',['font',['../classvft_1_1Font.html#a7a5016dd9f2aaa366083f96987429177',1,'vft::Font::Font(std::string fontFile)'],['../classvft_1_1Font.html#a7aae20def7e8fcc6f584cd1e165a1ab8',1,'vft::Font::Font(uint8_t *buffer, long size)']]],
+  ['fontatlas_1',['fontatlas',['../classvft_1_1FontAtlas.html#a7e18a5f885315c0e490add86d02b3f0d',1,'vft::FontAtlas::FontAtlas(std::shared_ptr&lt; Font &gt; font, unsigned int fontSize, std::vector&lt; uint32_t &gt; glyphIds)'],['../classvft_1_1FontAtlas.html#ac224431c1be7fcd18f126bb03f1186be',1,'vft::FontAtlas::FontAtlas(std::shared_ptr&lt; Font &gt; font, unsigned int fontSize, std::vector&lt; CharacterRange &gt; characterRanges)'],['../classvft_1_1FontAtlas.html#af9071eedf5487b1d8f98660b33964310',1,'vft::FontAtlas::FontAtlas(std::shared_ptr&lt; Font &gt; font, unsigned int fontSize, std::u32string characters)'],['../classvft_1_1FontAtlas.html#a462354b11dc9ff50e9f297112751406e',1,'vft::FontAtlas::FontAtlas(std::shared_ptr&lt; Font &gt; font, unsigned int fontSize)']]],
+  ['fonttexture_2',['FontTexture',['../classvft_1_1VulkanSdfTextRenderer_1_1FontTexture.html#af7f98ad94dffcf6fd5f7ae60ca50bfdc',1,'vft::VulkanSdfTextRenderer::FontTexture']]]
+];
