@@ -170,7 +170,7 @@ void VulkanSdfTextRenderer::update() {
 }
 
 /**
- * @brief Add font atlas and create the required vulkan objects used to rneder text using sdf textures
+ * @brief Add font atlas and create the required vulkan objects used to render text using sdf textures
  *
  * @param atlas New font atlas
  */

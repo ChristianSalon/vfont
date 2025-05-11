@@ -47,14 +47,14 @@ TextBlockBuilder &TextBlockBuilder::setLineSpacing(double lineSpacing) {
 }
 
 /**
- * @brief Set width of text block
+ * @brief Set the maximum width of text block
  *
- * @param width Width
+ * @param maxWidth Maximum width
  *
  * @return Reference to text block that is being built
  */
-TextBlockBuilder &TextBlockBuilder::setWidth(int width) {
-    this->_block.setWidth(width);
+TextBlockBuilder &TextBlockBuilder::setMaxWidth(unsigned int maxWidth) {
+    this->_block.setMaxWidth(maxWidth);
 
     return *this;
 }

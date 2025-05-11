@@ -67,9 +67,9 @@ public:
     SdfTextRenderer();
     virtual ~SdfTextRenderer() = default;
 
-    void update() override;
+    virtual void update() override;
 
-    void addFontAtlas(const FontAtlas &atlas) override;
+    virtual void addFontAtlas(const FontAtlas &atlas) override;
 };
 
 }  // namespace vft

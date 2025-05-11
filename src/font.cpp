@@ -89,7 +89,7 @@ unsigned int Font::getPixelSize() const {
  * @return Font family name
  */
 std::string Font::getFontFamily() const {
-    return std::string(this->_face->family_name);
+    return std::string(this->_face->family_name) + "-" + std::string(this->_face->style_name);
 }
 
 /**

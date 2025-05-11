@@ -47,7 +47,7 @@ public:
     TessellationShadersTextRenderer();
     virtual ~TessellationShadersTextRenderer() = default;
 
-    void update() override;
+    virtual void update() override;
 };
 
 }  // namespace vft

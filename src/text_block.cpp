@@ -12,7 +12,7 @@ namespace vft {
  */
 TextBlock::TextBlock() : _font{nullptr} {
     this->setFontSize(0);
-    this->setWidth(-1);
+    this->setMaxWidth(0);
     this->setLineSpacing(1);
     this->setColor(glm::vec4(1, 1, 1, 1));
     this->setPosition(glm::vec3(0, 0, 0));
@@ -384,13 +384,13 @@ void TextBlock::setTransform(glm::mat4 transform) {
 }
 
 /**
- * @brief Set width of text block. -1 indicates unlimited width
+ * @brief Set the maximum width of text block. 0 indicates unlimited width
  *
- * @param width Width of text block
+ * @param maxWidth Maximum width of text block
  */
-void TextBlock::setWidth(int width) {
-    this->_width = width;
-    this->_lineDivider.setMaxLineSize(this->_width);
+void TextBlock::setMaxWidth(unsigned int maxWidth) {
+    this->_maxWidth = maxWidth;
+    this->_lineDivider.setMaxLineSize(this->_maxWidth);
     this->_updateCharacters();
 }
 
@@ -505,12 +505,38 @@ glm::vec3 TextBlock::getPosition() const {
 }
 
 /**
- * @brief Get width of text block
+ * @brief Get the maximum width of text block
  *
- * @return Width of text block
+ * @return Maxuimum width of text block
  */
-int TextBlock::getWidth() const {
-    return this->_width;
+unsigned int TextBlock::getMaxWidth() const {
+    return this->_maxWidth;
+}
+
+/**
+ * @brief Get the width of text in text block
+ *
+ * @return Width
+ */
+double TextBlock::getWidth() const {
+    double max = 0;
+
+    for (const auto &line : this->_lineDivider.getLines()) {
+        if (line.second.width > max) {
+            max = line.second.width;
+        }
+    }
+
+    return max;
+}
+
+/**
+ * @brief Get the height of text in text block
+ *
+ * @return Height
+ */
+double TextBlock::getHeight() const {
+    return this->_lineDivider.getLines().rbegin()->second.y;
 }
 
 /**
@@ -563,8 +589,8 @@ void TextBlock::_updateCharacterPositions(unsigned int start) {
 
     // Restore pen position
     glm::vec2 pen{0, firstLine.second.y};
-    if (this->_width > 0) {
-        pen += this->_textAlign->getLineOffset(firstLine.second.width, this->_width);
+    if (this->_maxWidth > 0) {
+        pen += this->_textAlign->getLineOffset(firstLine.second.width, this->_maxWidth);
     }
 
     // Apply calculated positions by shaper and LineData to characters
@@ -581,8 +607,8 @@ void TextBlock::_updateCharacterPositions(unsigned int start) {
             pen.y = line.second.y;
 
             // Check if text block has a width bigger than 0, that indicates to use wrapping and apply text align
-            if (this->_width > 0) {
-                pen += this->_textAlign->getLineOffset(line.second.width, this->_width);
+            if (this->_maxWidth > 0) {
+                pen += this->_textAlign->getLineOffset(line.second.width, this->_maxWidth);
             }
         }
 

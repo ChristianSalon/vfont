@@ -78,6 +78,12 @@ Always run examples from the directory where the executables are located. This i
 - `-t`: Measure the gpu draw time
 - `-m`: Use multisampling antialiasing
 
+### Controls
+
+- **Move:** Hold **Left Mouse Button** and move the mouse.
+- **Rotate:** Hold **Right Mouse Button** and move the mouse.
+- **Zoom:** Use the **Scroll Wheel**.
+
 ## Used Libraries
 
 - [Freetype](https://github.com/freetype/freetype)

@@ -49,7 +49,7 @@ public:
     TriangulationTextRenderer();
     virtual ~TriangulationTextRenderer() = default;
 
-    void update() override;
+    virtual void update() override;
 };
 
 }  // namespace vft

@@ -273,8 +273,8 @@ void Scene::_createInstance() {
     instanceCreateInfo.pApplicationInfo = &applicationInfo;
     instanceCreateInfo.enabledExtensionCount = 1;
     instanceCreateInfo.ppEnabledExtensionNames = nullptr;
-    instanceCreateInfo.enabledLayerCount = this->validationLayers.size();
-    instanceCreateInfo.ppEnabledLayerNames = this->validationLayers.data();
+    instanceCreateInfo.enabledLayerCount = 0;
+    instanceCreateInfo.ppEnabledLayerNames = nullptr;
     instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     instanceCreateInfo.ppEnabledExtensionNames = extensions.data();
 

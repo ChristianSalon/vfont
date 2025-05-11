@@ -40,7 +40,7 @@ protected:
     std::shared_ptr<Font> _font{nullptr}; /**< Current font */
     unsigned int _fontSize{0};            /**< Current Font size */
 
-    int _width{0};                                          /**< Width of text block. -1 indicates unlimited width */
+    unsigned int _maxWidth{0}; /**< Maximum width of text block. 0 indicates unlimited width */
     std::unique_ptr<TextAlignStrategy> _textAlign{nullptr}; /**< Text align of text block */
     double _lineSpacing{1};                                 /**< Line spacing in block */
     glm::vec4 _color{glm::vec4{1.f, 1.f, 1.f, 1.f}};        /**< Color of text in block */
@@ -93,7 +93,7 @@ public:
     void setColor(glm::vec4 color);
     void setPosition(glm::vec3 position);
     void setTransform(glm::mat4 transform);
-    void setWidth(int width);
+    void setMaxWidth(unsigned int maxWidth);
     void setTextAlign(std::unique_ptr<TextAlignStrategy> textAlign);
 
     std::vector<Character> getCharacters();
@@ -107,7 +107,9 @@ public:
     glm::vec4 getColor() const;
     glm::vec3 getPosition() const;
     glm::mat4 getTransform() const;
-    int getWidth() const;
+    unsigned int getMaxWidth() const;
+    double getWidth() const;
+    double getHeight() const;
 
 protected:
     void _updateCharacters();

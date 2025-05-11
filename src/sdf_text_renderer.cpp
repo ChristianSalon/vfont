@@ -63,9 +63,8 @@ void SdfTextRenderer::update() {
 
                 // Get uv coordinnates from font atlas
                 if (!this->_fontAtlases.contains(character.getFont()->getFontFamily())) {
-                    throw std::runtime_error(
-                        "VulkanSdfTextRenderer::_createVertexAndIndexBuffers(): Font atlas for font " +
-                        character.getFont()->getFontFamily() + " was not found");
+                    throw std::runtime_error("VulkanSdfTextRenderer::update(): Font atlas for font " +
+                                             character.getFont()->getFontFamily() + " was not found");
                 }
 
                 FontAtlas::GlyphInfo glyphInfo =

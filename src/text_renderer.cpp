@@ -22,6 +22,7 @@ TextRenderer::TextRenderer() {
 void TextRenderer::add(std::shared_ptr<TextBlock> text) {
     this->_textBlocks.push_back(text);
     text->onTextChange = [this]() { this->update(); };
+    this->update();
 }
 
 /**

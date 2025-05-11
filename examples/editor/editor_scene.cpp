@@ -19,7 +19,7 @@ EditorScene::EditorScene(CameraType cameraType,
     }
 
     this->_textBlock = vft::TextBlockBuilder()
-                           .setWidth(this->_window->getWidth())
+                           .setMaxWidth(this->_window->getWidth())
                            .setFont(this->_font)
                            .setFontSize(fontSize)
                            .setLineSpacing(1.2)
@@ -30,7 +30,7 @@ EditorScene::EditorScene(CameraType cameraType,
 
     this->_window->setResizeCallback([this](int width, int height) -> void {
         this->_updateWindowDimensions(width, height);
-        this->_textBlock->setWidth(width);
+        this->_textBlock->setMaxWidth(width);
     });
     this->_window->setKeypressCallback([&](uint32_t codePoint) { this->_updateText(codePoint); });
 }
