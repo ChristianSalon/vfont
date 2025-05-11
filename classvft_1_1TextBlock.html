@@ -166,9 +166,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ae704305cc695883dd225a68eab693144" id="r_ae704305cc695883dd225a68eab693144"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classvft_1_1TextBlock.html#ae704305cc695883dd225a68eab693144">setTransform</a> (glm::mat4 transform)</td></tr>
 <tr class="memdesc:ae704305cc695883dd225a68eab693144"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set transform of text block.  <br /></td></tr>
 <tr class="separator:ae704305cc695883dd225a68eab693144"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afc87eb4f02f98a579aac1ccfb4b8f15c" id="r_afc87eb4f02f98a579aac1ccfb4b8f15c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classvft_1_1TextBlock.html#afc87eb4f02f98a579aac1ccfb4b8f15c">setWidth</a> (int width)</td></tr>
-<tr class="memdesc:afc87eb4f02f98a579aac1ccfb4b8f15c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set width of text block. -1 indicates unlimited width.  <br /></td></tr>
-<tr class="separator:afc87eb4f02f98a579aac1ccfb4b8f15c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3fff679360cdbbf7a9cab7fec253ba24" id="r_a3fff679360cdbbf7a9cab7fec253ba24"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classvft_1_1TextBlock.html#a3fff679360cdbbf7a9cab7fec253ba24">setMaxWidth</a> (unsigned int maxWidth)</td></tr>
+<tr class="memdesc:a3fff679360cdbbf7a9cab7fec253ba24"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the maximum width of text block. 0 indicates unlimited width.  <br /></td></tr>
+<tr class="separator:a3fff679360cdbbf7a9cab7fec253ba24"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6d3cdd7822f90ca8a88708821c30e199" id="r_a6d3cdd7822f90ca8a88708821c30e199"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classvft_1_1TextBlock.html#a6d3cdd7822f90ca8a88708821c30e199">setTextAlign</a> (std::unique_ptr&lt; <a class="el" href="classvft_1_1TextAlignStrategy.html">TextAlignStrategy</a> &gt; textAlign)</td></tr>
 <tr class="memdesc:a6d3cdd7822f90ca8a88708821c30e199"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set text align of text block.  <br /></td></tr>
 <tr class="separator:a6d3cdd7822f90ca8a88708821c30e199"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -202,9 +202,15 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a4eb02a1ec6049cf5bc8f10ecd5d69886" id="r_a4eb02a1ec6049cf5bc8f10ecd5d69886"><td class="memItemLeft" align="right" valign="top">glm::mat4&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classvft_1_1TextBlock.html#a4eb02a1ec6049cf5bc8f10ecd5d69886">getTransform</a> () const</td></tr>
 <tr class="memdesc:a4eb02a1ec6049cf5bc8f10ecd5d69886"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get transform of text block.  <br /></td></tr>
 <tr class="separator:a4eb02a1ec6049cf5bc8f10ecd5d69886"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad975d6744a84b87f0c7ee3ba93b22f57" id="r_ad975d6744a84b87f0c7ee3ba93b22f57"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classvft_1_1TextBlock.html#ad975d6744a84b87f0c7ee3ba93b22f57">getWidth</a> () const</td></tr>
-<tr class="memdesc:ad975d6744a84b87f0c7ee3ba93b22f57"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get width of text block.  <br /></td></tr>
-<tr class="separator:ad975d6744a84b87f0c7ee3ba93b22f57"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac790b4eb5df95798ef6a1a4f3c535aff" id="r_ac790b4eb5df95798ef6a1a4f3c535aff"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classvft_1_1TextBlock.html#ac790b4eb5df95798ef6a1a4f3c535aff">getMaxWidth</a> () const</td></tr>
+<tr class="memdesc:ac790b4eb5df95798ef6a1a4f3c535aff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the maximum width of text block.  <br /></td></tr>
+<tr class="separator:ac790b4eb5df95798ef6a1a4f3c535aff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a79495c73300938c6707ad32ce1bd6124" id="r_a79495c73300938c6707ad32ce1bd6124"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classvft_1_1TextBlock.html#a79495c73300938c6707ad32ce1bd6124">getWidth</a> () const</td></tr>
+<tr class="memdesc:a79495c73300938c6707ad32ce1bd6124"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the width of text in text block.  <br /></td></tr>
+<tr class="separator:a79495c73300938c6707ad32ce1bd6124"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2293e60e1c8a6906bae4ddcdd3334256" id="r_a2293e60e1c8a6906bae4ddcdd3334256"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classvft_1_1TextBlock.html#a2293e60e1c8a6906bae4ddcdd3334256">getHeight</a> () const</td></tr>
+<tr class="memdesc:a2293e60e1c8a6906bae4ddcdd3334256"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the height of text in text block.  <br /></td></tr>
+<tr class="separator:a2293e60e1c8a6906bae4ddcdd3334256"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -259,8 +265,8 @@ Protected Attributes</h2></td></tr>
 <tr class="separator:a378fbd0c19eee54664686e96c59edbdf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6b3a7d4c163cc2ce82f4fe4f684aaf62" id="r_a6b3a7d4c163cc2ce82f4fe4f684aaf62"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classvft_1_1TextBlock.html#a6b3a7d4c163cc2ce82f4fe4f684aaf62">_fontSize</a> {0}</td></tr>
 <tr class="separator:a6b3a7d4c163cc2ce82f4fe4f684aaf62"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a97da868f8907afc25ac49459ccb04d92" id="r_a97da868f8907afc25ac49459ccb04d92"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classvft_1_1TextBlock.html#a97da868f8907afc25ac49459ccb04d92">_width</a> {0}</td></tr>
-<tr class="separator:a97da868f8907afc25ac49459ccb04d92"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae2d2bf5b89af0fddad83a31324b1b19f" id="r_ae2d2bf5b89af0fddad83a31324b1b19f"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classvft_1_1TextBlock.html#ae2d2bf5b89af0fddad83a31324b1b19f">_maxWidth</a> {0}</td></tr>
+<tr class="separator:ae2d2bf5b89af0fddad83a31324b1b19f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5030c9091b149c5917c402a8a570d546" id="r_a5030c9091b149c5917c402a8a570d546"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classvft_1_1TextAlignStrategy.html">TextAlignStrategy</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classvft_1_1TextBlock.html#a5030c9091b149c5917c402a8a570d546">_textAlign</a> {nullptr}</td></tr>
 <tr class="separator:a5030c9091b149c5917c402a8a570d546"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6f8428bfb86edec0f718f024595b202b" id="r_a6f8428bfb86edec0f718f024595b202b"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classvft_1_1TextBlock.html#a6f8428bfb86edec0f718f024595b202b">_lineSpacing</a> {1}</td></tr>
@@ -1214,6 +1220,26 @@ Protected Attributes</h2></td></tr>
 
 </div>
 </div>
+<a id="a2293e60e1c8a6906bae4ddcdd3334256" name="a2293e60e1c8a6906bae4ddcdd3334256"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2293e60e1c8a6906bae4ddcdd3334256">&#9670;&#160;</a></span>getHeight()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">double vft::TextBlock::getHeight </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get the height of text in text block. </p>
+<dl class="section return"><dt>Returns</dt><dd>Height </dd></dl>
+
+</div>
+</div>
 <a id="afd3ae391e2f56dcf9948f5ebb8d10cb7" name="afd3ae391e2f56dcf9948f5ebb8d10cb7"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#afd3ae391e2f56dcf9948f5ebb8d10cb7">&#9670;&#160;</a></span>getLineSpacing()</h2>
 
@@ -1231,6 +1257,26 @@ Protected Attributes</h2></td></tr>
 
 <p>Get current line spacing used in text block. </p>
 <dl class="section return"><dt>Returns</dt><dd>Line spacing </dd></dl>
+
+</div>
+</div>
+<a id="ac790b4eb5df95798ef6a1a4f3c535aff" name="ac790b4eb5df95798ef6a1a4f3c535aff"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac790b4eb5df95798ef6a1a4f3c535aff">&#9670;&#160;</a></span>getMaxWidth()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">unsigned int vft::TextBlock::getMaxWidth </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get the maximum width of text block. </p>
+<dl class="section return"><dt>Returns</dt><dd>Maxuimum width of text block </dd></dl>
 
 </div>
 </div>
@@ -1294,14 +1340,14 @@ Protected Attributes</h2></td></tr>
 
 </div>
 </div>
-<a id="ad975d6744a84b87f0c7ee3ba93b22f57" name="ad975d6744a84b87f0c7ee3ba93b22f57"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad975d6744a84b87f0c7ee3ba93b22f57">&#9670;&#160;</a></span>getWidth()</h2>
+<a id="a79495c73300938c6707ad32ce1bd6124" name="a79495c73300938c6707ad32ce1bd6124"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a79495c73300938c6707ad32ce1bd6124">&#9670;&#160;</a></span>getWidth()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int vft::TextBlock::getWidth </td>
+          <td class="memname">double vft::TextBlock::getWidth </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -1309,8 +1355,8 @@ Protected Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Get width of text block. </p>
-<dl class="section return"><dt>Returns</dt><dd>Width of text block </dd></dl>
+<p>Get the width of text in text block. </p>
+<dl class="section return"><dt>Returns</dt><dd>Width </dd></dl>
 
 </div>
 </div>
@@ -1543,6 +1589,32 @@ Protected Attributes</h2></td></tr>
 
 </div>
 </div>
+<a id="a3fff679360cdbbf7a9cab7fec253ba24" name="a3fff679360cdbbf7a9cab7fec253ba24"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3fff679360cdbbf7a9cab7fec253ba24">&#9670;&#160;</a></span>setMaxWidth()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void vft::TextBlock::setMaxWidth </td>
+          <td>(</td>
+          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramname"><em>maxWidth</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set the maximum width of text block. 0 indicates unlimited width. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">maxWidth</td><td>Maximum width of text block </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a id="af42dae7f853e2b7ea69cd89e9f0af105" name="af42dae7f853e2b7ea69cd89e9f0af105"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af42dae7f853e2b7ea69cd89e9f0af105">&#9670;&#160;</a></span>setPosition()</h2>
 
@@ -1615,32 +1687,6 @@ Protected Attributes</h2></td></tr>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">transform</td><td>Transform matrix </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a id="afc87eb4f02f98a579aac1ccfb4b8f15c" name="afc87eb4f02f98a579aac1ccfb4b8f15c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afc87eb4f02f98a579aac1ccfb4b8f15c">&#9670;&#160;</a></span>setWidth()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void vft::TextBlock::setWidth </td>
-          <td>(</td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>width</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Set width of text block. -1 indicates unlimited width. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">width</td><td>Width of text block </td></tr>
   </table>
   </dd>
 </dl>
@@ -1807,6 +1853,29 @@ Protected Attributes</h2></td></tr>
 
 </div>
 </div>
+<a id="ae2d2bf5b89af0fddad83a31324b1b19f" name="ae2d2bf5b89af0fddad83a31324b1b19f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae2d2bf5b89af0fddad83a31324b1b19f">&#9670;&#160;</a></span>_maxWidth</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">unsigned int vft::TextBlock::_maxWidth {0}</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Maximum width of text block. 0 indicates unlimited width </p>
+
+</div>
+</div>
 <a id="a74d987607d511af1f25e462dab3b161b" name="a74d987607d511af1f25e462dab3b161b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a74d987607d511af1f25e462dab3b161b">&#9670;&#160;</a></span>_position</h2>
 
@@ -1896,29 +1965,6 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 <p>Transform matrix of text block </p>
-
-</div>
-</div>
-<a id="a97da868f8907afc25ac49459ccb04d92" name="a97da868f8907afc25ac49459ccb04d92"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a97da868f8907afc25ac49459ccb04d92">&#9670;&#160;</a></span>_width</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">int vft::TextBlock::_width {0}</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Width of text block. -1 indicates unlimited width </p>
 
 </div>
 </div>

@@ -6,8 +6,8 @@ var classvft_1_1TextBlockBuilder =
     [ "setFont", "classvft_1_1TextBlockBuilder.html#a190c2c4feda55846a644737b2080b348", null ],
     [ "setFontSize", "classvft_1_1TextBlockBuilder.html#a3117a323de1e1b9ff6940c3a96b807f2", null ],
     [ "setLineSpacing", "classvft_1_1TextBlockBuilder.html#af179d9d621a4209c64acfa42afa35ced", null ],
+    [ "setMaxWidth", "classvft_1_1TextBlockBuilder.html#a2d01e312b2298dfc95d6a6e2094a6295", null ],
     [ "setPosition", "classvft_1_1TextBlockBuilder.html#adf24686efe6db9fcbd97e98a3d5aab9a", null ],
     [ "setTextAlign", "classvft_1_1TextBlockBuilder.html#a1ba28b710a55c7da5f46c7839a9446b2", null ],
-    [ "setWidth", "classvft_1_1TextBlockBuilder.html#ae21ac1d4445838a2fb6441a20b99cfc1", null ],
     [ "_block", "classvft_1_1TextBlockBuilder.html#aea874b73a067a017442553165d896864", null ]
 ];

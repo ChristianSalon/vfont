@@ -17,6 +17,7 @@ var classvft_1_1PolygonOperator =
     [ "_resolveIntersectingEdges", "classvft_1_1PolygonOperator.html#aef86fa66a28ce3c967275c8cdcaca72e", null ],
     [ "_resolveOverlappingEdges", "classvft_1_1PolygonOperator.html#aec3fa4d0b667aa332a8308d0d5a40b5b", null ],
     [ "_resolveSelfIntersections", "classvft_1_1PolygonOperator.html#a61c76c58e265d9d9ad977ab9e57dfec4", null ],
+    [ "_signedAreaOfContour", "classvft_1_1PolygonOperator.html#aef010eac57f65a3f02f5ea753dde70d5", null ],
     [ "_walkContours", "classvft_1_1PolygonOperator.html#ad48932452e88d523ea6c94bd1c1af1bf", null ],
     [ "_walkUntilIntersectionOrStart", "classvft_1_1PolygonOperator.html#a532cc928dabb799bbdb439980e76caee", null ],
     [ "getPolygon", "classvft_1_1PolygonOperator.html#ac966455eb32b68cafdfcc3d0ed388ada", null ],
