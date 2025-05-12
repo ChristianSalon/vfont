@@ -832,8 +832,8 @@ const Contour &PolygonOperator::_getContourOfEdge(CircularDLL<Edge>::Node *edge)
  *
  * @return Orienatation of subcontour
  */
-const Outline::Orientation &PolygonOperator::_getOrientationOfSubcontour(const Outline &outline,
-                                                                         CircularDLL<Edge>::Node *start) {
+Outline::Orientation PolygonOperator::_getOrientationOfSubcontour(const Outline &outline,
+                                                                  CircularDLL<Edge>::Node *start) {
     CircularDLL<Edge>::Node *current = start;
     double area = 0;
     bool isPartOfSubcontour = true;
@@ -867,6 +867,13 @@ const Outline::Orientation &PolygonOperator::_getOrientationOfSubcontour(const O
     return area >= 0 ? Outline::Orientation::CCW : Outline::Orientation::CW;
 }
 
+/**
+ * @brief Get the signed area of contour
+ *
+ * @param outline Contour
+ *
+ * @return Signed area
+ */
 double PolygonOperator::_signedAreaOfContour(const Outline &outline) {
     CircularDLL<Edge>::Node *current = outline.edges.getFirst();
     double area = 0;
