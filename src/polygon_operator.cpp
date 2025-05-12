@@ -159,9 +159,6 @@ std::vector<Outline> PolygonOperator::_resolveSelfIntersections(Outline outline)
                 if (glm::distance(intersection, this->_vertices.at(firstEdge.first)) <= this->_epsilon) {
                     // Polygons have intersection at start vertex of first edge
 
-                    // Insert shared vertex as intersection
-                    this->_addIntersectionIfNeeded(intersections, firstEdge.first);
-
                     // Update second polygon if neccessary
                     if (secondEdge.first != firstEdge.first && secondEdge.second != firstEdge.first) {
                         outline.edges.getAt(j)->value.second = firstEdge.first;
@@ -170,9 +167,6 @@ std::vector<Outline> PolygonOperator::_resolveSelfIntersections(Outline outline)
                 } else if (glm::distance(intersection, this->_vertices.at(firstEdge.second)) <= this->_epsilon) {
                     // Polygons have intersection at end vertex of first edge
 
-                    // Insert shared vertex as intersection
-                    this->_addIntersectionIfNeeded(intersections, firstEdge.second);
-
                     // Update second polygon if neccessary
                     if (secondEdge.first != firstEdge.second && secondEdge.second != firstEdge.second) {
                         outline.edges.getAt(j)->value.second = firstEdge.second;
@@ -180,9 +174,6 @@ std::vector<Outline> PolygonOperator::_resolveSelfIntersections(Outline outline)
                     }
                 } else if (glm::distance(intersection, this->_vertices.at(secondEdge.first)) <= this->_epsilon) {
                     // Polygons have intersection at start vertex of second edge
-
-                    // Insert shared vertex as intersection
-                    this->_addIntersectionIfNeeded(intersections, secondEdge.first);
 
                     // Update first polygon if neccessary
                     if (firstEdge.first != secondEdge.first && firstEdge.second != secondEdge.first) {
@@ -193,9 +184,6 @@ std::vector<Outline> PolygonOperator::_resolveSelfIntersections(Outline outline)
                     }
                 } else if (glm::distance(intersection, this->_vertices.at(secondEdge.second)) <= this->_epsilon) {
                     // Polygons have intersection at end vertex of second edge
-
-                    // Insert shared vertex as intersection
-                    this->_addIntersectionIfNeeded(intersections, secondEdge.second);
 
                     // Update first polygon if neccessary
                     if (firstEdge.first != secondEdge.second && firstEdge.second != secondEdge.second) {

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file benchmark_scene.cpp
  * @author Christian Saloň
  */
