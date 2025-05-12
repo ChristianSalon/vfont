@@ -73,7 +73,7 @@ var searchData=
   ['_5fgetcodepointglobalindexbasedonsegment_70',['_getCodePointGlobalIndexBasedOnSegment',['../classvft_1_1TextBlock.html#a7c0d49314e4b22dd835834802091ada1',1,'vft::TextBlock']]],
   ['_5fgetcontourofedge_71',['_getContourOfEdge',['../classvft_1_1PolygonOperator.html#ae12a6b7270261fb4c055c548fb10f8cc',1,'vft::PolygonOperator']]],
   ['_5fgetedgesstartingat_72',['_getEdgesStartingAt',['../classvft_1_1PolygonOperator.html#adb152abc3887ab193d83b9573df322a7',1,'vft::PolygonOperator']]],
-  ['_5fgetorientationofsubcontour_73',['_getOrientationOfSubcontour',['../classvft_1_1PolygonOperator.html#a70a1bbc04d3ad4f7f1bbf8d20531f737',1,'vft::PolygonOperator']]],
+  ['_5fgetorientationofsubcontour_73',['_getOrientationOfSubcontour',['../classvft_1_1PolygonOperator.html#ac458395b2a79cc056682ed2c6534facc',1,'vft::PolygonOperator']]],
   ['_5fgetrangesglyphids_74',['_getRangesGlyphIds',['../classvft_1_1FontAtlas.html#a574a21544a43ade207a03d8e1a788e13',1,'vft::FontAtlas']]],
   ['_5fgetsegmentbasedoncharacterglobalindex_75',['_getSegmentBasedOnCharacterGlobalIndex',['../classvft_1_1TextBlock.html#a8ca54cb83b376f89b71248f0497b2422',1,'vft::TextBlock']]],
   ['_5fgetsegmentbasedoncodepointglobalindex_76',['_getSegmentBasedOnCodePointGlobalIndex',['../classvft_1_1TextBlock.html#a2f73eb086d20e4932a8cf533d1d5d52e',1,'vft::TextBlock']]],

@@ -6,7 +6,7 @@ var classvft_1_1PolygonOperator =
     [ "_determinant", "classvft_1_1PolygonOperator.html#a1aa6681e1ec1eb1ee092f0af051b35af", null ],
     [ "_getContourOfEdge", "classvft_1_1PolygonOperator.html#ae12a6b7270261fb4c055c548fb10f8cc", null ],
     [ "_getEdgesStartingAt", "classvft_1_1PolygonOperator.html#adb152abc3887ab193d83b9573df322a7", null ],
-    [ "_getOrientationOfSubcontour", "classvft_1_1PolygonOperator.html#a70a1bbc04d3ad4f7f1bbf8d20531f737", null ],
+    [ "_getOrientationOfSubcontour", "classvft_1_1PolygonOperator.html#ac458395b2a79cc056682ed2c6534facc", null ],
     [ "_initializeContours", "classvft_1_1PolygonOperator.html#a16a5f09913139a823ff956a198a47003", null ],
     [ "_intersect", "classvft_1_1PolygonOperator.html#adfdadaf3a3bcba28aa48838364117d58", null ],
     [ "_isEdgeOnEdge", "classvft_1_1PolygonOperator.html#ab6592686cc2395b4d73c174322361515", null ],
