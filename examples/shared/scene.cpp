@@ -271,8 +271,8 @@ void Scene::_createInstance() {
     VkInstanceCreateInfo instanceCreateInfo{};
     instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instanceCreateInfo.pApplicationInfo = &applicationInfo;
-    instanceCreateInfo.enabledLayerCount = 0;
-    instanceCreateInfo.ppEnabledLayerNames = nullptr;
+    instanceCreateInfo.enabledLayerCount = validationLayers.size();
+    instanceCreateInfo.ppEnabledLayerNames = validationLayers.data();
     instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     instanceCreateInfo.ppEnabledExtensionNames = extensions.data();
 
@@ -870,11 +870,15 @@ void Scene::_createRenderPass() {
     colorAttachmentDescription.format = this->_swapChainImageFormat;
     colorAttachmentDescription.samples = this->_msaaSampleCount;
     colorAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    colorAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachmentDescription.storeOp = this->_msaaSampleCount & VK_SAMPLE_COUNT_1_BIT
+                                             ? VK_ATTACHMENT_STORE_OP_STORE
+                                             : VK_ATTACHMENT_STORE_OP_DONT_CARE;
     colorAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colorAttachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     colorAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    colorAttachmentDescription.finalLayout = this->_msaaSampleCount & VK_SAMPLE_COUNT_1_BIT
+                                                 ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+                                                 : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkAttachmentDescription depthAttachmentDescription{};
     depthAttachmentDescription.format = this->_selectDepthFormat();
@@ -913,7 +917,8 @@ void Scene::_createRenderPass() {
     subpassDescription.colorAttachmentCount = 1;
     subpassDescription.pColorAttachments = &colorAttachmentReference;
     subpassDescription.pDepthStencilAttachment = &depthAttachmentReference;
-    subpassDescription.pResolveAttachments = &colorAttachmentResolveReference;
+    subpassDescription.pResolveAttachments =
+        this->_msaaSampleCount & VK_SAMPLE_COUNT_1_BIT ? nullptr : &colorAttachmentResolveReference;
 
     VkSubpassDependency subpassDependency{};
     subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -927,8 +932,10 @@ void Scene::_createRenderPass() {
         VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     subpassDependency.dependencyFlags = 0;
 
-    std::array<VkAttachmentDescription, 3> attachments = {colorAttachmentDescription, depthAttachmentDescription,
-                                                          colorAttachmentResolveDescription};
+    std::vector<VkAttachmentDescription> attachments = {colorAttachmentDescription, depthAttachmentDescription};
+    if (!(this->_msaaSampleCount & VK_SAMPLE_COUNT_1_BIT)) {
+        attachments.push_back(colorAttachmentResolveDescription);
+    }
 
     VkRenderPassCreateInfo renderPassCreateInfo{};
     renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -951,10 +958,18 @@ void Scene::_createFramebuffers() {
     this->_framebuffers.resize(this->_swapChainImageViews.size());
 
     for (size_t i = 0; i < this->_framebuffers.size(); i++) {
-        std::array<VkImageView, 3> attachments = {
-            this->_msaaImageView,
-            this->_depthImageView,
-            this->_swapChainImageViews[i],
+        std::vector<VkImageView> attachments;
+        if (this->_msaaSampleCount & VK_SAMPLE_COUNT_1_BIT) {
+            attachments = {
+                this->_swapChainImageViews[i],
+                this->_depthImageView,
+            };
+        } else {
+            attachments = {
+                this->_msaaImageView,
+                this->_depthImageView,
+                this->_swapChainImageViews[i],
+            };
         };
 
         VkFramebufferCreateInfo framebufferCreateInfo{};
