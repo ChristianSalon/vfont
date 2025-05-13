@@ -287,9 +287,19 @@ std::vector<Outline> PolygonOperator::_resolveSelfIntersections(Outline outline)
                     selectedEdgeIndex = i;
                 }
             } else {
-                // Select the left-most edge
-                if (isOnLeftSide) {
-                    selectedEdgeIndex = i;
+                if (processedIntersections < intersectionCount) {
+                    // First select the right-most edge
+                    if (!isOnLeftSide) {
+                        selectedEdgeIndex = i;
+                    }
+
+                    // Later select the left-most edge
+                    intersections.push_back(intersectionVertex);
+                } else {
+                    // Now select the left-most edge
+                    if (isOnLeftSide) {
+                        selectedEdgeIndex = i;
+                    }
                 }
             }
         }
@@ -626,9 +636,24 @@ void PolygonOperator::_walkContours() {
                     selectedEdgeIndex = i;
                 }
             } else {
-                // Select the left-most edge
-                if (isOnLeftSide) {
-                    selectedEdgeIndex = i;
+                // Check if area of filled area is bigger than hole
+                if (this->_getContourOfEdge(edges[selectedEdgeIndex]).outline.orientation == Outline::Orientation::CW &&
+                        std::abs(
+                            this->_signedAreaOfContour(this->_getContourOfEdge(edges[selectedEdgeIndex]).outline)) >
+                            std::abs(this->_signedAreaOfContour(this->_getContourOfEdge(edges[i]).outline)) ||
+                    this->_getContourOfEdge(edges[i]).outline.orientation == Outline::Orientation::CW &&
+                        std::abs(this->_signedAreaOfContour(this->_getContourOfEdge(edges[i]).outline)) >
+                            std::abs(this->_signedAreaOfContour(
+                                this->_getContourOfEdge(edges[selectedEdgeIndex]).outline))) {
+                    // First select the right-most edge
+                    if (!isOnLeftSide) {
+                        selectedEdgeIndex = i;
+                    }
+                } else {
+                    // Select the left-most edge
+                    if (isOnLeftSide) {
+                        selectedEdgeIndex = i;
+                    }
                 }
             }
         }
